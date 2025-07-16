@@ -72,13 +72,11 @@ class LoginScreenState extends State<LoginScreen> {
                 ),
               );
             }
-            
+
             if (state.role == 'Encadrant') {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const EncadrantHome(),
-                ),
+                MaterialPageRoute(builder: (context) => const EncadrantHome()),
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
