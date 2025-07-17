@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pfa/Cubit/internship_cubit.dart'; // Import your cubit
+// Import your model
 
 class GestionnaireHome extends StatelessWidget {
   const GestionnaireHome({super.key});
@@ -22,49 +25,53 @@ class GestionnaireHome extends StatelessWidget {
                 color: const Color(0xFF0A2847),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Column(
-                children: [
-                  SizedBox(height: screenHeight * 0.05),
-                  //* Logo
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.dashboard,
-                      color: Color(0xFF0A2847),
-                      size: 40,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    SizedBox(height: screenHeight * 0.05),
+                    //* Logo
+                    const CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.dashboard,
+                        color: Color(0xFF0A2847),
+                        size: 40,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.05),
-                  Text(
-                    "Micon Protocol",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.02,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                    SizedBox(height: screenHeight * 0.05),
+                    Text(
+                      "Micon Protocol",
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.02,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.05),
-                  //* Navigation Items
-                  SidebarItem(icon: Icons.dashboard, label: "Dashboard"),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-
-                  SidebarItem(icon: Icons.business, label: "Papers"),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-
-                  SidebarItem(
-                    icon: Icons.account_balance_wallet,
-                    label: "Accounting and Finance",
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-
-                  SidebarItem(icon: Icons.people, label: "Supervisors"),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-
-                  SidebarItem(icon: Icons.access_time, label: "Attendance"),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.06),
-                  SidebarItem(icon: Icons.logout, label: "Log Out"),
-                ],
+                    SizedBox(height: screenHeight * 0.05),
+                    //* Navigation Items
+                    const SidebarItem(
+                      icon: Icons.dashboard,
+                      label: "Dashboard",
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
+                    const SidebarItem(icon: Icons.business, label: "Papers"),
+                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
+                    const SidebarItem(
+                      icon: Icons.account_balance_wallet,
+                      label: "Accounting and Finance",
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
+                    const SidebarItem(icon: Icons.people, label: "Supervisors"),
+                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
+                    const SidebarItem(
+                      icon: Icons.access_time,
+                      label: "Attendance",
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.width * 0.06),
+                    const SidebarItem(icon: Icons.logout, label: "Log Out"),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 24),
@@ -76,24 +83,24 @@ class GestionnaireHome extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      SizedBox(width: 200),
+                      const SizedBox(width: 200), // Adjust as needed
                       SizedBox(
                         width: screenWidth * 0.4,
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: "Search here",
-                            prefixIcon: Icon(Icons.search),
+                            prefixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                               vertical: 0,
                               horizontal: 16,
                             ),
                           ),
                         ),
                       ),
-                      CircleAvatar(
+                      const CircleAvatar(
                         backgroundImage: NetworkImage(
                           "https://randomuser.me/api/portraits/men/1.jpg",
                         ),
@@ -102,8 +109,8 @@ class GestionnaireHome extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  //? Stats sneek peek
-                  Row(
+                  //? Stats sneak peek
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       StatCard(title: "Active Employee", value: "1081"),
@@ -114,17 +121,17 @@ class GestionnaireHome extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   //? Department Cards
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      DeptCard(title: "Manage Internships"),
+                      DeptCard(title: "Manage Subjects"),
                       DeptCard(title: "Manage Student"),
-                      DeptCard(title: "Manage Subject"),
                       DeptCard(title: "Manage Supervisor"),
+                      //DeptCard(title: "Manage Internships"),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  //? Attendance Table
+                  //? Internships Table (Attendance Table renamed)
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -134,46 +141,128 @@ class GestionnaireHome extends StatelessWidget {
                       child: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
-                          Text(
+                          const Text(
                             "Internships",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
                           ),
-                          DataTable(
-                            columns: const [
-                              DataColumn(label: Text("Student Name")),
-                              DataColumn(label: Text("Subject")),
-                              DataColumn(label: Text("Supervisor")),
-                              DataColumn(label: Text("Type")),
-                              DataColumn(label: Text("Start Date")),
-                              DataColumn(label: Text("End Date")),
-                              DataColumn(label: Text("Status")),
-                              DataColumn(label: Text("Actions")),
-                            ],
-                            rows: [
-                              attendanceRow(
-                                "Syed Mahamudul Hasan",
-                                "09:36",
-                                "18:55",
-                                "09hr 02min",
-                                "45min",
-                                "(+30min)",
-                                "Late",
-                              ),
-                              attendanceRow(
-                                "Kamrul Hasan",
-                                "09:00",
-                                "18:30",
-                                "09hr 30min",
-                                "1hr 05min",
-                                "--",
-                                "In time",
-                              ),
-                              // Add more rows as needed
-                            ],
+                          const SizedBox(height: 16), // Add some spacing
+                          // --- BlocBuilder for Internship List ---
+                          BlocBuilder<InternshipCubit, InternshipState>(
+                            builder: (context, state) {
+                              if (state is InternshipLoading) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              } else if (state is InternshipError) {
+                                return Center(
+                                  child: Text('Error: ${state.message}'),
+                                );
+                              } else if (state is InternshipLoaded) {
+                                if (state.internships.isEmpty) {
+                                  return const Center(
+                                    child: Text('No internships found.'),
+                                  );
+                                }
+                                return SingleChildScrollView(
+                                  // Use SingleChildScrollView for DataTable
+                                  scrollDirection: Axis
+                                      .horizontal, // Allows horizontal scrolling if columns are too wide
+                                  child: DataTable(
+                                    columns: const [
+                                      DataColumn(label: Text("Student Name")),
+                                      DataColumn(label: Text("Subject")),
+                                      DataColumn(label: Text("Supervisor")),
+                                      DataColumn(label: Text("Type")),
+                                      DataColumn(label: Text("Start Date")),
+                                      DataColumn(label: Text("End Date")),
+                                      DataColumn(label: Text("Status")),
+                                      DataColumn(
+                                        label: Text("Actions"),
+                                      ), // For edit/delete buttons
+                                    ],
+                                    rows: state.internships.map((internship) {
+                                      return DataRow(
+                                        cells: [
+                                          DataCell(
+                                            Text(
+                                              internship.studentName ?? 'N/A',
+                                            ),
+                                          ),
+                                          DataCell(
+                                            Text(
+                                              internship.subjectTitle ?? 'N/A',
+                                            ),
+                                          ),
+                                          DataCell(
+                                            Text(
+                                              internship.supervisorName ??
+                                                  'N/A',
+                                            ),
+                                          ),
+                                          DataCell(
+                                            Text(internship.typeStage ?? 'N/A'),
+                                          ),
+                                          DataCell(
+                                            Text(internship.dateDebut ?? 'N/A'),
+                                          ),
+                                          DataCell(
+                                            Text(internship.dateFin ?? 'N/A'),
+                                          ),
+                                          DataCell(
+                                            Text(
+                                              internship.statut ?? 'N/A',
+                                              style: TextStyle(
+                                                color: _getStatusColor(
+                                                  internship.statut,
+                                                ),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            Row(
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.edit,
+                                                    size: 20,
+                                                  ),
+                                                  onPressed: () {
+                                                    // TODO: Implement edit functionality
+                                                    print(
+                                                      'Edit ${internship.internshipID}',
+                                                    );
+                                                  },
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete,
+                                                    size: 20,
+                                                    color: Colors.red,
+                                                  ),
+                                                  onPressed: () {
+                                                    // TODO: Implement delete functionality
+                                                    print(
+                                                      'Delete ${internship.internshipID}',
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink(); // Initial or unexpected state
+                            },
                           ),
+                          // --- End BlocBuilder ---
                         ],
                       ),
                     ),
@@ -186,9 +275,23 @@ class GestionnaireHome extends StatelessWidget {
       ),
     );
   }
+
+  // Helper function for status color
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'validé':
+        return Colors.green;
+      case 'en attente':
+        return Colors.orange;
+      case 'refusé':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
 }
 
-//! Sidebar item widget
+//! Sidebar item widget (No changes needed)
 class SidebarItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -208,12 +311,14 @@ class SidebarItem extends StatelessWidget {
           fontSize: MediaQuery.of(context).size.width * 0.01,
         ),
       ),
-      onTap: () {},
+      onTap: () {
+        // Implement navigation here
+      },
     );
   }
 }
 
-//! Stat card widget
+//! Stat card widget (No changes needed)
 class StatCard extends StatelessWidget {
   final String title, value;
   const StatCard({super.key, required this.title, required this.value});
@@ -230,19 +335,19 @@ class StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.black54)),
+          Text(title, style: const TextStyle(color: Colors.black54)),
           Text(
             value,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
           ),
-          Text("See More", style: TextStyle(color: Colors.green)),
+          const Text("See More", style: TextStyle(color: Colors.green)),
         ],
       ),
     );
   }
 }
 
-//! Department card widget
+//! Department card widget (No changes needed)
 class DeptCard extends StatelessWidget {
   final String title;
   const DeptCard({super.key, required this.title});
@@ -257,42 +362,8 @@ class DeptCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
-        child: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+        child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
-}
-
-//! Attendance
-DataRow attendanceRow(
-  String name,
-  String inTime,
-  String outTime,
-  String working,
-  String breakTime,
-  String extra,
-  String status,
-) {
-  return DataRow(
-    cells: [
-      DataCell(Text(name)),
-      DataCell(Text(inTime)),
-      DataCell(Text(outTime)),
-      DataCell(Text(working)),
-      DataCell(Text(breakTime)),
-      DataCell(Text(extra)),
-      DataCell(
-        Text(
-          inTime,
-          style: TextStyle(color: inTime == "Late" ? Colors.red : Colors.green),
-        ),
-      ),
-      DataCell(
-        Text(
-          status,
-          style: TextStyle(color: status == "Late" ? Colors.red : Colors.green),
-        ),
-      ),
-    ],
-  );
 }

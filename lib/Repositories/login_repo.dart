@@ -1,20 +1,24 @@
+// lib/repositories/login_repo.dart
 import 'package:dio/dio.dart';
 import 'package:pfa/Model/Login/login_response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; 
-import 'package:flutter/foundation.dart'; 
+import 'dart:convert';
+import 'package:flutter/foundation.dart'; // For debugPrint
 import '../Services/login_service.dart';
 
 class LoginRepository extends ChangeNotifier {
   final LoginService loginService;
 
   LoginRepository({required this.loginService});
-//* Login
+
+  //* Login
   Future<LoginResponse> loginUser(String email, String password) async {
     try {
+      // The loginService.login method now handles saving the token directly.
       final response = await loginService.login(email, password);
       if (response['status'] == 'success') {
         debugPrint('LoginRepo: Login successful. Calling notifyListeners().');
+        // Notify listeners (GoRouter) that authentication status might have changed.
         notifyListeners();
       }
       return LoginResponse.fromJson(response);
@@ -27,23 +31,17 @@ class LoginRepository extends ChangeNotifier {
     }
   }
 
-//* Get Token
+  //* Get Token
   Future<String?> getToken() async {
     try {
-      debugPrint(
-        'LoginRepository: Attempting to get SharedPreferences instance for getToken...',
-      );
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      debugPrint(
-        'LoginRepository: SharedPreferences instance obtained for getToken.',
-      );
       final String? token = prefs.getString('jwt_token');
       if (token != null) {
         debugPrint(
-          'LoginRepository: Token retrieved in getToken: ${token.length} chars.',
+          'LoginRepository: Token retrieved from SharedPreferences: ${token.length} chars.',
         );
       } else {
-        debugPrint('LoginRepository: No token found in getToken.');
+        debugPrint('LoginRepository: No token found in SharedPreferences.');
       }
       return token;
     } catch (e) {
@@ -52,21 +50,22 @@ class LoginRepository extends ChangeNotifier {
     }
   }
 
-//* Delete Token
- Future<void> deleteToken() async {
+  //* Delete Token
+  Future<void> deleteToken() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.remove('jwt_token');
       debugPrint('LoginRepository: Token deleted. Calling notifyListeners().');
-      notifyListeners(); 
+      // Notify listeners (GoRouter) that authentication status has changed (logged out).
+      notifyListeners();
     } catch (e) {
       debugPrint('LoginRepository Error deleting token: $e');
     }
   }
 
-
+  // Helper to parse the role from the JWT payload
   Future<String?> getUserRoleFromToken() async {
-    final String? token = await getToken(); 
+    final String? token = await getToken();
     if (token == null) {
       debugPrint('LoginRepository: No token to get role from.');
       return null;
@@ -78,11 +77,14 @@ class LoginRepository extends ChangeNotifier {
         return null;
       }
       final String payload = parts[1];
+      // JWT payloads are base64url encoded. Ensure correct decoding.
       String normalizedPayload = base64Url.normalize(payload);
       final String decodedPayload = utf8.decode(
         base64Url.decode(normalizedPayload),
       );
-       final Map<String, dynamic> data = json.decode(decodedPayload)['data'];
+      // Assuming your JWT payload has a 'data' object with 'role' inside it.
+      // Adjust 'data' and 'role' keys based on your actual JWT structure.
+      final Map<String, dynamic> data = json.decode(decodedPayload)['data'];
       final String? role = data['role'] as String?;
       debugPrint('LoginRepository: Decoded role: $role');
       return role;
@@ -92,7 +94,6 @@ class LoginRepository extends ChangeNotifier {
     }
   }
 
-  
   Future<int?> getUserIdFromToken() async {
     final String? token = await getToken();
     if (token == null) {
@@ -109,8 +110,10 @@ class LoginRepository extends ChangeNotifier {
       final String decodedPayload = utf8.decode(
         base64Url.decode(normalizedPayload),
       );
+      // Assuming your JWT payload has a 'data' object with 'userID' inside it.
+      // Adjust 'data' and 'userID' keys based on your actual JWT structure.
       final Map<String, dynamic> data = json.decode(decodedPayload)['data'];
-      return data['userID'] as int?; 
+      return data['userID'] as int?;
     } catch (e) {
       debugPrint('LoginRepository Error decoding JWT or getting user ID: $e');
       return null;
