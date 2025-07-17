@@ -25,19 +25,14 @@ class GestionnaireHome extends StatefulWidget {
 }
 
 class _GestionnaireHomeState extends State<GestionnaireHome> {
-  int _selectedIndex = 0; // Current selected index for the main content
-  String? _currentUserRole; // To store the role fetched from token
-
-  // List of content widgets that correspond to the sidebar items
-  // Ensure the order here matches the 'index' in your SidebarItemData for Gestionnaire
-  // Use your actual screen widgets here
+  int _selectedIndex = 0; 
+  String? _currentUserRole; 
   final List<Widget> _gestionnaireContentPages = [
-    const GestionnaireDashboard(), // Index 0 for Dashboard
-    const Certificates(), // Index 1 for Papers (assuming Certificates.dart handles this)
-    const Statistics(), // Index 2 for Accounting and Finance (assuming Statistics.dart handles this)
-    // Add your other specific screens for Gestionnaire here based on sidebar_config.dart
-    const Text('Supervisors Screen Placeholder'), // Replace with actual screen
-    const Text('Attendance Screen Placeholder'), // Replace with actual screen
+    const GestionnaireDashboard(), 
+    const Certificates(), 
+    const Statistics(), 
+    const Text('Supervisors Screen Placeholder'), 
+    const Text('Attendance Screen Placeholder'), 
   ];
 
   @override

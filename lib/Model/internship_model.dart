@@ -1,20 +1,18 @@
 // lib/models/internship.dart
 class Internship {
-  final String? internshipID;
-  final String?
-  studentID; // Still good to keep the ID if needed for other operations
-  final String? studentName; // NEW: From backend join
-  final String?
-  sujetID; // Changed from sujetStageID to sujetID to match PHP output
-  final String? subjectTitle; // NEW: From backend join
+  final int? internshipID; // This should be int? as discussed
+  final String? studentID;
+  final String? studentName;
+  final String? sujetID;
+  final String? subjectTitle;
   final String? typeStage;
-  final String? dateDebut; // Changed from startDate to dateDebut
-  final String? dateFin; // Changed from endDate to dateFin
-  final String? statut; // Changed from status to statut
+  final String? dateDebut;
+  final String? dateFin;
+  final String? statut;
   final String? estRemunere;
   final String? montantRemuneration;
-  final String? encadrantProID; // Still good to keep the ID
-  final String? supervisorName; // NEW: From backend join
+  final String? encadrantProID;
+  final String? supervisorName;
   final String? chefCentreValidationID;
 
   Internship({
@@ -36,26 +34,30 @@ class Internship {
 
   factory Internship.fromJson(Map<String, dynamic> json) {
     return Internship(
-      internshipID: json['stageID']?.toString(), // Matches PHP output 'stageID'
-      studentID: json['etudiantID']
-          ?.toString(), // Matches PHP output 'etudiantID'
-      studentName: json['studentName'] as String?, // Directly map
-      sujetID: json['sujetID']?.toString(), // Matches PHP output 'sujetID'
-      subjectTitle: json['subjectTitle'] as String?, // Directly map
+      // === FIX IS HERE ===
+      internshipID: int.tryParse(json['stageID']?.toString() ?? ''),
+
+      // json['stageID']?.toString() ensures it's a string (or null)
+      // int.tryParse attempts to convert that string to an int.
+      // If it fails (e.g., 'abc' or null string), it returns null,
+      // which matches the int? type.
+      studentID: json['etudiantID']?.toString(),
+      studentName: json['studentName'] as String?,
+      sujetID: json['sujetID']?.toString(),
+      subjectTitle: json['subjectTitle'] as String?,
       typeStage: json['typeStage'] as String?,
-      dateDebut: json['dateDebut'] as String?, // Matches PHP output 'dateDebut'
-      dateFin: json['dateFin'] as String?, // Matches PHP output 'dateFin'
-      statut: json['statut'] as String?, // Matches PHP output 'statut'
+      dateDebut: json['dateDebut'] as String?,
+      dateFin: json['dateFin'] as String?,
+      statut: json['statut'] as String?,
       estRemunere: json['estRemunere']?.toString(),
       montantRemuneration: json['montantRemuneration']?.toString(),
-      encadrantProID: json['encadrantProID']
-          ?.toString(), // Matches PHP output 'encadrantProID'
-      supervisorName: json['supervisorName'] as String?, // Directly map
+      encadrantProID: json['encadrantProID']?.toString(),
+      supervisorName: json['supervisorName'] as String?,
       chefCentreValidationID: json['chefCentreValidationID']?.toString(),
     );
   }
 
-  // Optional: A toJson method if you need to send Internship objects back to the API
+  // Your toJson method (no changes needed for this specific issue)
   Map<String, dynamic> toJson() {
     return {
       'stageID': internshipID,
@@ -69,8 +71,6 @@ class Internship {
       'montantRemuneration': montantRemuneration,
       'encadrantProID': encadrantProID,
       'chefCentreValidationID': chefCentreValidationID,
-      // Note: We typically don't send the 'name' fields back, as they are derived.
-      // If your API expects them, add them here.
     };
   }
 }

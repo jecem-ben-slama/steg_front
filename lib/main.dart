@@ -16,9 +16,7 @@ import 'package:pfa/Repositories/internship_repo.dart';
 //* Screens
 import 'package:pfa/Screens/login.dart';
 import 'package:pfa/Screens/Gestionnaire/gestionnaire_home.dart';
-// import 'package:pfa/Screens/Gestionnaire/gestionnaire_details_page.dart'; // No longer directly used as a route if we embed content
 import 'package:pfa/Screens/Encadrant/encadrant_home.dart';
-import 'package:pfa/Screens/Encadrant/encadrant_profile_page.dart';
 import 'package:pfa/Screens/ChefCentreInformatique/chef_home.dart';
 
 void main() {
