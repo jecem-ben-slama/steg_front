@@ -1,34 +1,31 @@
-// lib/main.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:provider/provider.dart';
-
-// Import your BLoC, Repositories, Services
+//* Login
 import 'package:pfa/BLoc/Login/login_bloc.dart';
 import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/Services/login_service.dart';
 
-// NEW IMPORTS FOR INTERNSHIPS
-import 'package:pfa/Cubit/internship_cubit.dart'; // Import your InternshipCubit
-import 'package:pfa/Repositories/internship_repo.dart'; // Import your InternshipRepository
+//* Internship
+import 'package:pfa/Cubit/internship_cubit.dart';
+import 'package:pfa/Repositories/internship_repo.dart';
 
-// Import your Screens - adjust paths as per your project
+//* Screens
 import 'package:pfa/Screens/login.dart';
 import 'package:pfa/Screens/Gestionnaire/gestionnaire_home.dart';
-import 'package:pfa/Screens/Gestionnaire/gestionnaire_details_page.dart';
+// import 'package:pfa/Screens/Gestionnaire/gestionnaire_details_page.dart'; // No longer directly used as a route if we embed content
 import 'package:pfa/Screens/Encadrant/encadrant_home.dart';
 import 'package:pfa/Screens/Encadrant/encadrant_profile_page.dart';
+import 'package:pfa/Screens/ChefCentreInformatique/chef_home.dart';
 
-// This is the main entry point of your Flutter application.
 void main() {
   runApp(const MyApp());
 }
 
-// Global variable for GoRouter instance. It will be initialized in MyApp's initState.
-late final GoRouter _router;
+late final GoRouter router;
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -38,61 +35,43 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late final LoginService _loginService;
-  late final LoginRepository _loginRepository;
-  late final Dio _dio; // Declare your Dio instance
-
-  // Declare InternshipRepository
-  late final InternshipRepository _internshipRepository;
+  late final LoginService loginService;
+  late final LoginRepository loginRepository;
+  late final Dio dio;
+  late final InternshipRepository internshipRepository;
 
   @override
   void initState() {
     super.initState();
 
-    // --- CONFIGURE AND INITIALIZE DIO ---
-    _dio =
+    dio =
         Dio(
             BaseOptions(
-              // IMPORTANT: Set your backend base URL correctly for your platform:
-              // - Android Emulator: 'http://10.0.2.2/backend'
-              // - iOS Simulator/Physical Device: 'http://<YOUR_LOCAL_IP_ADDRESS>/backend'
-              // - Flutter Web: 'http://localhost/backend'
-              baseUrl:
-                  'http://localhost/backend/', // <--- REPLACE THIS WITH YOUR ACTUAL BASE URL
-              connectTimeout: const Duration(seconds: 10), // Increased timeout
-              receiveTimeout: const Duration(seconds: 10), // Increased timeout
+              baseUrl: 'http://localhost/backend/',
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
               },
             ),
           )
-          ..interceptors.add(
-            AuthInterceptor(),
-          ) // Add your custom JWT interceptor
+          ..interceptors.add(AuthInterceptor())
           ..interceptors.add(
             LogInterceptor(responseBody: true, requestBody: true),
-          ); // For debugging HTTP calls
+          );
+    loginService = LoginService(dio: dio);
+    loginRepository = LoginRepository(loginService: loginService);
 
-    // Initialize Login related services/repos, passing the configured Dio instance
-    _loginService = LoginService(dio: _dio); // Pass the configured Dio instance
-    _loginRepository = LoginRepository(loginService: _loginService);
-
-    // Initialize InternshipRepository, passing the configured Dio instance
-    _internshipRepository = InternshipRepository(dio: _dio);
-
-    _router = GoRouter(
+    internshipRepository = InternshipRepository(dio: dio);
+    //* Router
+    router = GoRouter(
       initialLocation: '/login',
-      refreshListenable: _loginRepository,
+      refreshListenable: loginRepository,
       redirect: (BuildContext context, GoRouterState state) async {
-        debugPrint(
-          'GoRouter Redirect: Evaluating for path: ${state.matchedLocation}',
-        );
-
-        final bool loggedIn = await _loginRepository.getToken() != null;
+        final bool loggedIn = await loginRepository.getToken() != null;
         debugPrint('GoRouter Redirect: Logged In Status: $loggedIn');
-
-        final String? currentUserRole = await _loginRepository
+        final String? currentUserRole = await loginRepository
             .getUserRoleFromToken();
         debugPrint('GoRouter Redirect: Current User Role: $currentUserRole');
 
@@ -105,12 +84,12 @@ class _MyAppState extends State<MyApp> {
           debugPrint('GoRouter Redirect: User NOT logged in.');
           if (tryingToLogin || tryingToSplash) {
             debugPrint('GoRouter Redirect: Allowing access to login/splash.');
-            return null; // Allow access to login/splash
+            return null;
           } else {
             debugPrint(
               'GoRouter Redirect: Redirecting to /login (not logged in).',
             );
-            return '/login'; // Redirect to login
+            return '/login';
           }
         }
 
@@ -118,43 +97,50 @@ class _MyAppState extends State<MyApp> {
         debugPrint('GoRouter Redirect: User IS logged in.');
         if (tryingToLogin || tryingToSplash) {
           if (currentUserRole == 'Gestionnaire') {
-            debugPrint(
-              'GoRouter Redirect: Logged in, trying to login/splash. Redirecting to /gestionnaire/home.',
-            );
             return '/gestionnaire/home';
           } else if (currentUserRole == 'Encadrant') {
-            debugPrint(
-              'GoRouter Redirect: Logged in, trying to login/splash. Redirecting to /encadrant/home.',
-            );
             return '/encadrant/home';
+          } else if (currentUserRole == "ChefCentreInformatique") {
+            return '/ChefCentreInformatique/home';
           }
           debugPrint(
             'GoRouter Redirect: Logged in, but unknown role. Logging out and redirecting to /login.',
           );
-          await _loginRepository.deleteToken();
+          await loginRepository.deleteToken();
           return '/login';
         }
-
+        //!!! Change this to handle the new role
         // --- AUTHORIZATION LOGIC (Role-based access) ---
         if (currentUserRole == 'Gestionnaire') {
-          if (location.startsWith('/encadrant')) {
+          if (location.startsWith('/encadrant') ||
+              location.startsWith('/ChefCentreInformatique')) {
             debugPrint(
-              'GoRouter Redirect: Gestionnaire trying to access Encadrant route. Redirecting to /gestionnaire/home.',
+              'GoRouter Redirect: Gestionnaire trying to access Encadrant/ChefCentreInformatique route. Redirecting to /gestionnaire/home.',
             );
             return '/gestionnaire/home';
           }
         } else if (currentUserRole == 'Encadrant') {
-          if (location.startsWith('/gestionnaire')) {
+          if (location.startsWith('/gestionnaire') ||
+              location.startsWith('/ChefCentreInformatique')) {
             debugPrint(
-              'GoRouter Redirect: Encadrant trying to access Gestionnaire route. Redirecting to /encadrant/home.',
+              'GoRouter Redirect: Encadrant trying to access Gestionnaire/ChefCentreInformatique route. Redirecting to /encadrant/home.',
             );
             return '/encadrant/home';
+          }
+        } else if (currentUserRole == 'ChefCentreInformatique') {
+          // <--- ADD THIS NEW BLOCK
+          if (location.startsWith('/gestionnaire') ||
+              location.startsWith('/encadrant')) {
+            debugPrint(
+              'GoRouter Redirect: ChefCentreInformatique trying to access Gestionnaire/Encadrant route. Redirecting to /ChefCentreInformatique/home.',
+            );
+            return '/ChefCentreInformatique/home';
           }
         } else {
           debugPrint(
             'GoRouter Redirect: Authorization check: User has unhandled role ($currentUserRole). Logging out.',
           );
-          await _loginRepository.deleteToken();
+          await loginRepository.deleteToken();
           return '/login';
         }
 
@@ -178,16 +164,11 @@ class _MyAppState extends State<MyApp> {
           path: '/gestionnaire/home',
           builder: (BuildContext context, GoRouterState state) => BlocProvider(
             create: (context) =>
-                InternshipCubit(_internshipRepository)..fetchInternships(),
-            child: const GestionnaireHome(),
+                InternshipCubit(internshipRepository)
+                  ..fetchInternships(), // Cubit is provided here
+            child: const GestionnaireHome(), // GestionnaireHome is the child
           ),
-          routes: <RouteBase>[
-            GoRoute(
-              path: 'details',
-              builder: (BuildContext context, GoRouterState state) =>
-                  const GestionnaireDetailsPage(),
-            ),
-          ],
+         
         ),
         GoRoute(
           path: '/encadrant/home',
@@ -201,15 +182,13 @@ class _MyAppState extends State<MyApp> {
             ),
           ],
         ),
+        GoRoute(
+          path: '/ChefCentreInformatique/home',
+          builder: (BuildContext context, GoRouterState state) =>
+              const ChefCentreInformatiqueHome(),
+        ),
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    _loginRepository.dispose();
-    // Dio instance generally doesn't need explicit dispose unless managing custom adapters.
-    super.dispose();
   }
 
   @override
@@ -217,12 +196,12 @@ class _MyAppState extends State<MyApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<LoginBloc>(
-          create: (context) => LoginBloc(loginRepository: _loginRepository),
+          create: (context) => LoginBloc(loginRepository: loginRepository),
         ),
-        ChangeNotifierProvider<LoginRepository>.value(value: _loginRepository),
+        ChangeNotifierProvider<LoginRepository>.value(value: loginRepository),
       ],
       child: MaterialApp.router(
-        routerConfig: _router,
+        routerConfig: router,
         debugShowCheckedModeBanner: false,
       ),
     );
