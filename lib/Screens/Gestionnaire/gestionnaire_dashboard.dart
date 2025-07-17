@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/internship_cubit.dart';
-import 'package:pfa/Screens/Gestionnaire/gestionnaire_details_page.dart';
+import 'package:pfa/Utils/Widgets/deptcard.dart';
+import 'package:pfa/Utils/Widgets/statcard.dart';
 
-// This is the original main content. We'll rename it slightly
-// and make it one of the views.
-class DashboardView extends StatelessWidget {
-  const DashboardView({super.key});
+class GestionnaireDashboard extends StatelessWidget {
+  const GestionnaireDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +17,7 @@ class DashboardView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox(width: 200), // Adjust as needed
+            const SizedBox(width: 200),
             SizedBox(
               width: screenWidth * 0.4,
               child: TextField(
@@ -191,75 +190,5 @@ class DashboardView extends StatelessWidget {
       default:
         return Colors.grey;
     }
-  }
-}
-
-class PapersView extends StatelessWidget {
-  const PapersView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Papers Management Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class AccountingFinanceView extends StatelessWidget {
-  const AccountingFinanceView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Accounting and Finance Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class SupervisorsView extends StatelessWidget {
-  const SupervisorsView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Supervisors Management Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class AttendanceView extends StatelessWidget {
-  const AttendanceView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Attendance Records Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class LogoutView extends StatelessWidget {
-  const LogoutView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Logging Out...',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    );
   }
 }

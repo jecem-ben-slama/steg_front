@@ -168,7 +168,17 @@ class _MyAppState extends State<MyApp> {
                   ..fetchInternships(), // Cubit is provided here
             child: const GestionnaireHome(), // GestionnaireHome is the child
           ),
-         
+          // Removed nested 'details' route if it's now an internal view
+          // routes: <RouteBase>[
+          //   GoRoute(
+          //     path: 'details', // Full path: /gestionnaire/home/details
+          //     builder: (BuildContext context, GoRouterState state) =>
+          //         BlocProvider.value(
+          //           value: BlocProvider.of<InternshipCubit>(context),
+          //           child: const GestionnaireMainContent(),
+          //         ),
+          //   ),
+          // ],
         ),
         GoRoute(
           path: '/encadrant/home',
