@@ -1,76 +1,85 @@
-// lib/models/internship.dart
+// lib/Model/internship_model.dart
 class Internship {
-  final int? internshipID; // This should be int? as discussed
-  final String? studentID;
+  final int? internshipID;
   final String? studentName;
-  final String? sujetID;
-  final String? subjectTitle;
+  final String? subjectTitle; // Already declared here
+  final String? supervisorName; // Already declared here
   final String? typeStage;
   final String? dateDebut;
   final String? dateFin;
   final String? statut;
-  final String? estRemunere;
-  final String? montantRemuneration;
-  final String? encadrantProID;
-  final String? supervisorName;
-  final String? chefCentreValidationID;
+  final bool? estRemunere;
+  final double? montantRemuneration;
 
   Internship({
     this.internshipID,
-    this.studentID,
     this.studentName,
-    this.sujetID,
     this.subjectTitle,
+    this.supervisorName,
     this.typeStage,
     this.dateDebut,
     this.dateFin,
     this.statut,
     this.estRemunere,
     this.montantRemuneration,
-    this.encadrantProID,
-    this.supervisorName,
-    this.chefCentreValidationID,
   });
 
   factory Internship.fromJson(Map<String, dynamic> json) {
-    return Internship(
-      // === FIX IS HERE ===
-      internshipID: int.tryParse(json['stageID']?.toString() ?? ''),
+    // Helper function to parse boolean from various formats
+    bool? parseBoolean(dynamic value) {
+      if (value == null) return null;
+      if (value is bool) return value;
+      if (value is int) return value == 1; // Handles 0 or 1
+      if (value is String) {
+        final lowerCaseValue = value.toLowerCase();
+        if (lowerCaseValue == '1' || lowerCaseValue == 'true') return true;
+        if (lowerCaseValue == '0' || lowerCaseValue == 'false') return false;
+      }
+      return null; // Or throw an error if you expect strict boolean values
+    }
 
-      // json['stageID']?.toString() ensures it's a string (or null)
-      // int.tryParse attempts to convert that string to an int.
-      // If it fails (e.g., 'abc' or null string), it returns null,
-      // which matches the int? type.
-      studentID: json['etudiantID']?.toString(),
+    return Internship(
+      internshipID: int.tryParse(json['stageID'].toString()),
       studentName: json['studentName'] as String?,
-      sujetID: json['sujetID']?.toString(),
-      subjectTitle: json['subjectTitle'] as String?,
+      // FIX: Change 'titreSujet' to 'subjectTitle' as seen in Postman response
+      subjectTitle: json['subjectTitle'] as String?, // Corrected key
+      // FIX: Change 'nomEncadrant' to 'supervisorName' as seen in Postman response
+      supervisorName: json['supervisorName'] as String?, // Corrected key
       typeStage: json['typeStage'] as String?,
       dateDebut: json['dateDebut'] as String?,
       dateFin: json['dateFin'] as String?,
       statut: json['statut'] as String?,
-      estRemunere: json['estRemunere']?.toString(),
-      montantRemuneration: json['montantRemuneration']?.toString(),
-      encadrantProID: json['encadrantProID']?.toString(),
-      supervisorName: json['supervisorName'] as String?,
-      chefCentreValidationID: json['chefCentreValidationID']?.toString(),
+      estRemunere: parseBoolean(json['estRemunere']), // Use the helper
+      montantRemuneration: json['montantRemuneration'] != null
+          ? double.tryParse(json['montantRemuneration'].toString())
+          : null,
+      // You might also want to parse other IDs if they are relevant elsewhere in your app,
+      // e.g., 'etudiantID', 'sujetID', 'encadrantProID', 'chefCentreValidationID'
+      // For example:
+      // etudiantID: int.tryParse(json['etudiantID'].toString()),
+      // sujetID: int.tryParse(json['sujetID'].toString()),
+      // encadrantProID: int.tryParse(json['encadrantProID']?.toString() ?? ''),
+      // chefCentreValidationID: int.tryParse(json['chefCentreValidationID']?.toString() ?? ''),
     );
   }
 
-  // Your toJson method (no changes needed for this specific issue)
   Map<String, dynamic> toJson() {
     return {
       'stageID': internshipID,
-      'etudiantID': studentID,
-      'sujetID': sujetID,
       'typeStage': typeStage,
       'dateDebut': dateDebut,
       'dateFin': dateFin,
       'statut': statut,
-      'estRemunere': estRemunere,
+      'estRemunere': estRemunere != null
+          ? (estRemunere! ? 1 : 0)
+          : null, // Send as int (0 or 1)
       'montantRemuneration': montantRemuneration,
-      'encadrantProID': encadrantProID,
-      'chefCentreValidationID': chefCentreValidationID,
+      // If studentName, subjectTitle, supervisorName are part of the update payload
+      // expected by your PHP script, include them here. Otherwise, they can be omitted
+      // if they are only for display and not for modification in the update process.
+      'studentName': studentName,
+      'subjectTitle': subjectTitle,
+      'supervisorName': supervisorName,
     };
   }
 }

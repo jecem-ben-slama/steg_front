@@ -1,64 +1,126 @@
-// lib/Utils/Widgets/internship_edit_dialog.dart
+// lib/Utils/Widgets/internshipeditdialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/internship_cubit.dart';
 import 'package:pfa/Model/internship_model.dart';
-import 'package:pfa/Utils/snackbar.dart'; // Assuming you have showSuccessSnackBar and showFailureSnackBar
+import 'package:pfa/Utils/snackbar.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
-class EditInternshipPopup extends StatefulWidget {
+class InternshipEditDialog extends StatefulWidget {
   final Internship internship;
 
-  const EditInternshipPopup({super.key, required this.internship});
+  const InternshipEditDialog({super.key, required this.internship});
 
   @override
-  State<EditInternshipPopup> createState() => _EditInternshipPopupState();
+  State<InternshipEditDialog> createState() => InternshipEditDialogState();
 }
 
-class _EditInternshipPopupState extends State<EditInternshipPopup> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _studentNameController;
-  late TextEditingController _subjectTitleController;
-  late TextEditingController _supervisorNameController;
-  late TextEditingController _typeStageController;
-  late TextEditingController _dateDebutController;
-  late TextEditingController _dateFinController;
-  late TextEditingController
-  _statutController; // For status, might use a dropdown later
+class InternshipEditDialogState extends State<InternshipEditDialog> {
+  final formKey = GlobalKey<FormState>();
+  late TextEditingController studentNameController;
+  late TextEditingController subjectTitleController;
+  late TextEditingController supervisorNameController;
+  late TextEditingController typeStageController;
+  late TextEditingController dateDebutController;
+  late TextEditingController dateFinController;
+  late String selectedStatut; // Use a String for dropdown
+  late bool estRemunere;
+  late TextEditingController montantRemunerationController;
+
+  // These are the canonical status options your dropdown expects
+  final List<String> statusOptions = ['Validé', 'En attente', 'Refusé'];
 
   @override
   void initState() {
     super.initState();
-    _studentNameController = TextEditingController(
-      text: widget.internship.studentName,
+    studentNameController = TextEditingController(
+      text: widget.internship.studentName ?? '',
     );
-    _subjectTitleController = TextEditingController(
-      text: widget.internship.subjectTitle,
+    subjectTitleController = TextEditingController(
+      text: widget.internship.subjectTitle ?? '',
     );
-    _supervisorNameController = TextEditingController(
-      text: widget.internship.supervisorName,
+    supervisorNameController = TextEditingController(
+      text: widget.internship.supervisorName ?? '',
     );
-    _typeStageController = TextEditingController(
-      text: widget.internship.typeStage,
+    typeStageController = TextEditingController(
+      text: widget.internship.typeStage ?? '',
     );
-    _dateDebutController = TextEditingController(
-      text: widget.internship.dateDebut,
+    dateDebutController = TextEditingController(
+      text: widget.internship.dateDebut ?? '',
     );
-    _dateFinController = TextEditingController(text: widget.internship.dateFin);
-    _statutController = TextEditingController(
-      text: widget.internship.statut,
-    ); // Initialize with current status
+    dateFinController = TextEditingController(
+      text: widget.internship.dateFin ?? '',
+    );
+
+    // FIX FOR DROPDOWN ERROR: Normalize the incoming statut string
+    String incomingStatut =
+        widget.internship.statut ?? 'En attente'; // Default if null
+    incomingStatut = incomingStatut.trim(); // Remove leading/trailing spaces
+
+    // Try to find an exact match in statusOptions.
+    // If no exact match, fallback to a safe default ('En attente')
+    // This ensures selectedStatut always holds a value present in statusOptions.
+    if (statusOptions.contains(incomingStatut)) {
+      selectedStatut = incomingStatut;
+    } else {
+      selectedStatut = 'En attente'; // Fallback for unmatched/unknown statuses
+      // Consider logging a warning here if you get unexpected status values from the backend.
+      print(
+        'Warning: Incoming status "${widget.internship.statut}" from backend did not match known options. Defaulting to "En attente".',
+      );
+    }
+
+    // FIX FOR TYPE ERROR: Ensure estRemunere is always a bool
+    // The Internship model's fromJson should now ensure widget.internship.estRemunere is bool?
+    estRemunere = widget.internship.estRemunere ?? false;
+
+    // Handle null or invalid numbers for remuneration amount controller
+    String initialMontantText;
+    if (widget.internship.montantRemuneration != null) {
+      initialMontantText = widget.internship.montantRemuneration!
+          .toStringAsFixed(2);
+    } else {
+      initialMontantText = '0.00';
+    }
+    montantRemunerationController = TextEditingController(
+      text: initialMontantText,
+    );
   }
 
   @override
   void dispose() {
-    _studentNameController.dispose();
-    _subjectTitleController.dispose();
-    _supervisorNameController.dispose();
-    _typeStageController.dispose();
-    _dateDebutController.dispose();
-    _dateFinController.dispose();
-    _statutController.dispose();
+    studentNameController.dispose();
+    subjectTitleController.dispose();
+    supervisorNameController.dispose();
+    typeStageController.dispose();
+    dateDebutController.dispose();
+    dateFinController.dispose();
+    montantRemunerationController.dispose();
     super.dispose();
+  }
+
+  Future<void> selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    DateTime initialDate;
+    try {
+      initialDate = DateFormat('yyyy-MM-dd').parseStrict(controller.text);
+    } catch (e) {
+      initialDate = DateTime.now();
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
   }
 
   @override
@@ -77,44 +139,27 @@ class _EditInternshipPopupState extends State<EditInternshipPopup> {
         title: const Text('Edit Internship'),
         content: SingleChildScrollView(
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Display only, not editable as they are typically foreign keys/derived
                 TextFormField(
-                  controller: _studentNameController,
+                  controller: studentNameController,
                   decoration: const InputDecoration(labelText: 'Student Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter student name';
-                    }
-                    return null;
-                  },
                 ),
                 TextFormField(
-                  controller: _subjectTitleController,
+                  controller: subjectTitleController,
                   decoration: const InputDecoration(labelText: 'Subject Title'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter subject title';
-                    }
-                    return null;
-                  },
                 ),
                 TextFormField(
-                  controller: _supervisorNameController,
+                  controller: supervisorNameController,
                   decoration: const InputDecoration(
                     labelText: 'Supervisor Name',
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter supervisor name';
-                    }
-                    return null;
-                  },
                 ),
                 TextFormField(
-                  controller: _typeStageController,
+                  controller: typeStageController,
                   decoration: const InputDecoration(
                     labelText: 'Internship Type',
                   ),
@@ -126,11 +171,15 @@ class _EditInternshipPopupState extends State<EditInternshipPopup> {
                   },
                 ),
                 TextFormField(
-                  controller: _dateDebutController,
-                  decoration: const InputDecoration(
+                  controller: dateDebutController,
+                  decoration: InputDecoration(
                     labelText: 'Start Date (YYYY-MM-DD)',
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () => selectDate(context, dateDebutController),
+                    ),
                   ),
-                  // Add date picker logic here later if needed
+                  readOnly: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter start date';
@@ -139,11 +188,15 @@ class _EditInternshipPopupState extends State<EditInternshipPopup> {
                   },
                 ),
                 TextFormField(
-                  controller: _dateFinController,
-                  decoration: const InputDecoration(
+                  controller: dateFinController,
+                  decoration: InputDecoration(
                     labelText: 'End Date (YYYY-MM-DD)',
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () => selectDate(context, dateFinController),
+                    ),
                   ),
-                  // Add date picker logic here later if needed
+                  readOnly: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter end date';
@@ -151,17 +204,62 @@ class _EditInternshipPopupState extends State<EditInternshipPopup> {
                     return null;
                   },
                 ),
-                // For status, consider using a DropdownButtonFormField for predefined options
-                TextFormField(
-                  controller: _statutController,
+                // Drodown for Status - Initial value is set to selectedStatut
+                // onChanged is null because you stated it's not meant to be changed
+                DropdownButtonFormField<String>(
+                  value: selectedStatut,
                   decoration: const InputDecoration(labelText: 'Status'),
+                  items: statusOptions.map((String status) {
+                    return DropdownMenuItem<String>(
+                      value: status,
+                      child: Text(status),
+                    );
+                  }).toList(),
+                  onChanged:
+                      null, // This makes the dropdown read-only/unchangeable
+                  // You can also add `enabled: false` to make it visually disabled if preferred
+                  // enabled: false,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter status';
+                      return 'Please select a status';
                     }
                     return null;
                   },
                 ),
+                Row(
+                  children: [
+                    const Text('Remunerated:'),
+                    Switch(
+                      value: estRemunere,
+                      onChanged: (bool value) {
+                        setState(() {
+                          estRemunere = value;
+                          // If remuneration is turned off, clear the amount
+                          if (!estRemunere) {
+                            montantRemunerationController.clear();
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                if (estRemunere)
+                  TextFormField(
+                    controller: montantRemunerationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Remuneration Amount',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (estRemunere && (value == null || value.isEmpty)) {
+                        return 'Please enter remuneration amount';
+                      }
+                      if (estRemunere && double.tryParse(value ?? '') == null) {
+                        return 'Please enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
               ],
             ),
           ),
@@ -175,27 +273,32 @@ class _EditInternshipPopupState extends State<EditInternshipPopup> {
           ),
           BlocBuilder<InternshipCubit, InternshipState>(
             builder: (context, state) {
-              // Show loading indicator on button if an action (delete/update) is in progress
-              if (state is InternshipLoading && (state is! InternshipLoaded)) {
-                // Ensure it's not a background loading
+              // Show loading indicator on button if an update is in progress
+              if (state is InternshipLoading) {
                 return const CircularProgressIndicator();
               }
               return ElevatedButton(
                 onPressed: () {
-                  if (_formKey.currentState!.validate()) {
+                  if (formKey.currentState!.validate()) {
                     final updatedInternship = Internship(
-                      internshipID: widget
-                          .internship
-                          .internshipID, // Keep the original ID
-                      studentName: _studentNameController.text,
-                      subjectTitle: _subjectTitleController.text,
-                      supervisorName: _supervisorNameController.text,
-                      typeStage: _typeStageController.text,
-                      dateDebut: _dateDebutController.text,
-                      dateFin: _dateFinController.text,
-                      statut: _statutController.text,
-                      // Add other fields from your Internship model if they exist
-                      // and are relevant for editing
+                      internshipID: widget.internship.internshipID,
+                      // Fields that are not editable via form, keep original values
+                      studentName: widget.internship.studentName,
+                      subjectTitle: widget.internship.subjectTitle,
+                      supervisorName: widget.internship.supervisorName,
+                      // Editable fields
+                      typeStage: typeStageController.text,
+                      dateDebut: dateDebutController.text,
+                      dateFin: dateFinController.text,
+                      statut:
+                          selectedStatut, // Use the (normalized) initial value
+                      estRemunere: estRemunere,
+                      montantRemuneration: estRemunere
+                          ? double.tryParse(montantRemunerationController.text)
+                          : null, // Parse to double or null
+                      // Add other IDs if they are relevant for the update but not shown in UI
+                      // e.g., encadrantProID: widget.internship.encadrantProID,
+                      // chefCentreValidationID: widget.internship.chefCentreValidationID,
                     );
                     context.read<InternshipCubit>().updateInternship(
                       updatedInternship,

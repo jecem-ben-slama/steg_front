@@ -89,10 +89,10 @@ class InternshipRepository {
       rethrow; // Re-throw any other unexpected errors
     }
   }
-//* Edit an internship
-Future<bool> updateInternship(Internship internship) async {
+
+  //* Edit an internship
+  Future<bool> updateInternship(Internship internship) async {
     try {
-   
       await Future.delayed(
         const Duration(milliseconds: 500),
       ); // Simulate network delay
@@ -108,6 +108,7 @@ Future<bool> updateInternship(Internship internship) async {
       ); // Re-throw for Cubit to catch
     }
   }
+
   // Your commented-out addStage method is fine, just ensure it uses _dio.post
   /*
   Future<void> addStage(...) async {

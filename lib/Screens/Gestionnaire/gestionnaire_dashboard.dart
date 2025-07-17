@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/internship_cubit.dart';
 import 'package:pfa/Model/internship_model.dart'; // Ensure this import is correct
 import 'package:pfa/Utils/Widgets/deptcard.dart';
+import 'package:pfa/Utils/Widgets/edit_internship.dart';
 import 'package:pfa/Utils/Widgets/statcard.dart';
 import 'package:pfa/Utils/snackbar.dart'; // Ensure this import is correct
 
@@ -54,10 +55,15 @@ class GestionnaireDashboard extends StatelessWidget {
     return BlocListener<InternshipCubit, InternshipState>(
       listener: (context, state) {
         if (state is InternshipActionSuccess) {
-          showSuccessSnackBar(context, "yess!!");
+          showSuccessSnackBar(
+            context,
+            state.message,
+          ); // Use your custom snackbar
         } else if (state is InternshipError) {
-          // This listener always shows a SnackBar for any error.
-          showFailureSnackBar(context, 'Error: ${state.message}');
+          showFailureSnackBar(
+            context,
+            'Error: ${state.message}',
+          ); // Use your custom snackbar
         }
       },
       child: Column(
@@ -137,22 +143,23 @@ class GestionnaireDashboard extends StatelessWidget {
                       if (state is InternshipLoaded) {
                         internshipsToDisplay = state.internships;
                       } else if (state is InternshipError) {
-                        // If the error state carries previous data, display that data
                         internshipsToDisplay = state.lastLoadedInternships;
-                      } else if (context.read<InternshipCubit>().state
-                          is InternshipLoaded) {
+                      } else if (state is InternshipLoading &&
+                          context.read<InternshipCubit>().state
+                              is InternshipLoaded) {
                         // If currently loading but previous state was loaded, show previous data
                         internshipsToDisplay =
                             (context.read<InternshipCubit>().state
                                     as InternshipLoaded)
                                 .internships;
-                      } else if (context.read<InternshipCubit>().state
+                      } else if (state is InternshipLoading &&
+                          context.read<InternshipCubit>().state
                               is InternshipError &&
                           (context.read<InternshipCubit>().state
                                       as InternshipError)
                                   .lastLoadedInternships !=
                               null) {
-                        // If currently in error but previous state (or error state itself) has data, show it
+                        // If currently loading and previous state was an error with data, show that data
                         internshipsToDisplay =
                             (context.read<InternshipCubit>().state
                                     as InternshipError)
@@ -163,7 +170,7 @@ class GestionnaireDashboard extends StatelessWidget {
                       if (internshipsToDisplay == null ||
                           internshipsToDisplay.isEmpty) {
                         if (state is InternshipLoading) {
-                          // Show loading only if no data has ever been loaded
+                          // Show loading only if no data has ever been loaded or explicitly cleared
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
@@ -189,9 +196,7 @@ class GestionnaireDashboard extends StatelessWidget {
                           columns: const [
                             DataColumn(label: Text("Student Name")),
                             DataColumn(label: Text("Subject")),
-                            DataColumn(
-                              label: Text("Supervisor"),
-                            ), // Assuming supervisorName
+                            DataColumn(label: Text("Supervisor")),
                             DataColumn(label: Text("Type")),
                             DataColumn(label: Text("Start Date")),
                             DataColumn(label: Text("End Date")),
@@ -199,6 +204,7 @@ class GestionnaireDashboard extends StatelessWidget {
                             DataColumn(label: Text("Actions")),
                           ],
                           rows: internshipsToDisplay.map((internship) {
+                            // Use non-nullable here since we checked above
                             return DataRow(
                               cells: [
                                 DataCell(Text(internship.studentName ?? 'N/A')),
@@ -207,7 +213,7 @@ class GestionnaireDashboard extends StatelessWidget {
                                 ),
                                 DataCell(
                                   Text(internship.supervisorName ?? 'N/A'),
-                                ), // Use correct field here
+                                ),
                                 DataCell(Text(internship.typeStage ?? 'N/A')),
                                 DataCell(Text(internship.dateDebut ?? 'N/A')),
                                 DataCell(Text(internship.dateFin ?? 'N/A')),
@@ -226,8 +232,18 @@ class GestionnaireDashboard extends StatelessWidget {
                                       IconButton(
                                         icon: const Icon(Icons.edit, size: 20),
                                         onPressed: () {
-                                          print(
-                                            'Edit ${internship.internshipID}',
+                                          showDialog(
+                                            context: context,
+                                            builder: (dialogContext) {
+                                              return BlocProvider.value(
+                                                // Pass existing Cubit
+                                                value: context
+                                                    .read<InternshipCubit>(),
+                                                child: InternshipEditDialog(
+                                                  internship: internship,
+                                                ),
+                                              );
+                                            },
                                           );
                                         },
                                       ),
@@ -253,7 +269,7 @@ class GestionnaireDashboard extends StatelessWidget {
                                             } else {
                                               showFailureSnackBar(
                                                 context,
-                                                "zebi, internship ID is null",
+                                                "Internship ID is missing for deletion.",
                                               );
                                             }
                                           }
