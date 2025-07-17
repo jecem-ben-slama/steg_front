@@ -1,9 +1,21 @@
+// lib/Screens/Gestionnaire/gestionnaire_home.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart'; // Import go_router
-import 'package:pfa/Screens/Gestionnaire/gestionnaire_details_page.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pfa/Screens/Gestionnaire/Certificates.dart';
+import 'package:pfa/Screens/Gestionnaire/gestionnaire_dashboard.dart';
+import 'package:pfa/Screens/Gestionnaire/statistics.dart';
+import 'package:pfa/Utils/Widgets/sidebar_item.dart';
+import 'package:provider/provider.dart';
+
+// Import from your Widgets folder
+
+// Your statistics screen (example for 'Accounting and Finance')
+// Import your other Gestionnaire screens here
+// import 'package:pfa/Gestionnaire/supervisors_management.dart';
+// import 'package:pfa/Gestionnaire/attendance_records.dart';
+
 import 'package:pfa/Repositories/login_repo.dart';
-import 'package:pfa/Utils/Widgets/sidebar_item.dart'; // Import LoginRepository to access logout
+import 'package:pfa/utils/sidebar_config.dart'; // Import the new sidebar config
 
 class GestionnaireHome extends StatefulWidget {
   const GestionnaireHome({super.key});
@@ -13,19 +25,51 @@ class GestionnaireHome extends StatefulWidget {
 }
 
 class _GestionnaireHomeState extends State<GestionnaireHome> {
-  int _selectedIndex =
-      0; // 0: Dashboard, 1: Papers, 2: Accounting, 3: Supervisors, 4: Attendance, 5: Logout
+  int _selectedIndex = 0; // Current selected index for the main content
+  String? _currentUserRole; // To store the role fetched from token
 
-  void _onItemTapped(int index) async {
+  // List of content widgets that correspond to the sidebar items
+  // Ensure the order here matches the 'index' in your SidebarItemData for Gestionnaire
+  // Use your actual screen widgets here
+  final List<Widget> _gestionnaireContentPages = [
+    const GestionnaireDashboard(), // Index 0 for Dashboard
+    const Certificates(), // Index 1 for Papers (assuming Certificates.dart handles this)
+    const Statistics(), // Index 2 for Accounting and Finance (assuming Statistics.dart handles this)
+    // Add your other specific screens for Gestionnaire here based on sidebar_config.dart
+    const Text('Supervisors Screen Placeholder'), // Replace with actual screen
+    const Text('Attendance Screen Placeholder'), // Replace with actual screen
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserRole();
+  }
+
+  Future<void> _fetchUserRole() async {
+    final loginRepository = Provider.of<LoginRepository>(
+      context,
+      listen: false,
+    );
+    final role = await loginRepository.getUserRoleFromToken();
+    setState(() {
+      _currentUserRole = role;
+    });
+  }
+
+  void _onItemTapped(int index, SidebarItemData itemData) async {
     setState(() {
       _selectedIndex = index;
     });
 
-    if (index == 5) {
-    
-      final loginRepository = RepositoryProvider.of<LoginRepository>(context);
+    if (itemData.label == logoutSidebarItem.label) {
+      // Handle logout
+      final loginRepository = Provider.of<LoginRepository>(
+        context,
+        listen: false,
+      );
       await loginRepository.deleteToken();
-      GoRouter.of(context).go('/login'); 
+      GoRouter.of(context).go('/login');
     }
   }
 
@@ -34,99 +78,94 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
+    // Filter sidebar items based on the current user's role
+    final List<SidebarItemData> currentRoleSidebarItems =
+        gestionnaireSidebarItems
+            .where((item) => item.roles.contains(_currentUserRole))
+            .toList();
+
+    // Add the common logout item at the end
+    if (_currentUserRole != null &&
+        logoutSidebarItem.roles.contains(_currentUserRole)) {
+      currentRoleSidebarItems.add(logoutSidebarItem);
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFE6F0F7),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            //* Sidebar
-            Container(
-              width: screenWidth * 0.2,
-              height: screenHeight,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0A2847),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SizedBox(height: screenHeight * 0.05),
-                    //* Logo
-                    const CircleAvatar(
-                      radius: 32,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.dashboard,
-                        color: Color(0xFF0A2847),
-                        size: 40,
+      body: _currentUserRole == null
+          ? const Center(
+              child: CircularProgressIndicator(),
+            ) // Show loading while role is being fetched
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  //* Sidebar
+                  Container(
+                    width: screenWidth * 0.2,
+                    height: screenHeight,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A2847),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          SizedBox(height: screenHeight * 0.05),
+                          //* Logo
+                          const CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.dashboard,
+                              color: Color(0xFF0A2847),
+                              size: 40,
+                            ),
+                          ),
+                          SizedBox(height: screenHeight * 0.05),
+                          Text(
+                            "Micon Protocol",
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.02,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: screenHeight * 0.05),
+                          //* Navigation Items
+                          // Dynamically build sidebar items based on role
+                          ...currentRoleSidebarItems.map((item) {
+                            // Determine the actual index for content display (skip -1 for logout)
+                            final contentIndex =
+                                (item.label == logoutSidebarItem.label)
+                                ? -1
+                                : item.index;
+
+                            return SidebarItem(
+                              icon: item.icon,
+                              label: item.label,
+                              isSelected: _selectedIndex == contentIndex,
+                              onTap: () => _onItemTapped(contentIndex, item),
+                            );
+                          }).toList(),
+                        ],
                       ),
                     ),
-                    SizedBox(height: screenHeight * 0.05),
-                    Text(
-                      "Micon Protocol",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.02,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.05),
-                    //* Navigation Items
-                    SidebarItem(
-                      icon: Icons.dashboard,
-                      label: "Dashboard",
-                      isSelected: _selectedIndex == 0,
-                      onTap: () => _onItemTapped(0),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-                    SidebarItem(
-                      icon: Icons.business,
-                      label: "Papers",
-                      isSelected: _selectedIndex == 1,
-                      onTap: () => _onItemTapped(1),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-                    SidebarItem(
-                      icon: Icons.account_balance_wallet,
-                      label: "Accounting and Finance",
-                      isSelected: _selectedIndex == 2,
-                      onTap: () => _onItemTapped(2),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-                    SidebarItem(
-                      icon: Icons.people,
-                      label: "Supervisors",
-                      isSelected: _selectedIndex == 3,
-                      onTap: () => _onItemTapped(3),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.width * 0.015),
-                    SidebarItem(
-                      icon: Icons.access_time,
-                      label: "Attendance",
-                      isSelected: _selectedIndex == 4,
-                      onTap: () => _onItemTapped(4),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.width * 0.06),
-                    SidebarItem(
-                      icon: Icons.logout,
-                      label: "Log Out",
-                      isSelected: _selectedIndex == 5,
-                      onTap: () => _onItemTapped(5),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 24),
+                  //* Main Content
+                  Expanded(
+                    child:
+                        _selectedIndex >= 0 &&
+                            _selectedIndex < _gestionnaireContentPages.length
+                        ? _gestionnaireContentPages[_selectedIndex]
+                        : const Center(
+                            child: Text("Select an option"),
+                          ), // Fallback or initial message
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 24),
-            //* Main Content
-            GestionnaireMainContent(
-              selectedPageIndex: _selectedIndex, // Pass the selected index
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
-

@@ -184,18 +184,11 @@ class _MyAppState extends State<MyApp> {
           path: '/encadrant/home',
           builder: (BuildContext context, GoRouterState state) =>
               const EncadrantHome(),
-          routes: <RouteBase>[
-            GoRoute(
-              path: 'profile',
-              builder: (BuildContext context, GoRouterState state) =>
-                  const EncadrantProfilePage(),
-            ),
-          ],
         ),
         GoRoute(
           path: '/ChefCentreInformatique/home',
           builder: (BuildContext context, GoRouterState state) =>
-              const ChefCentreInformatiqueHome(),
+              const ChefHome(),
         ),
       ],
     );
