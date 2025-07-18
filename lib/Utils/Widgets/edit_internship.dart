@@ -20,7 +20,8 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
   late TextEditingController studentNameController;
   late TextEditingController subjectTitleController;
   late TextEditingController supervisorNameController;
-  late TextEditingController typeStageController;
+  // late TextEditingController typeStageController; // REMOVE this
+  late String selectedTypeStage; // NEW: For the dropdown's selected value
   late TextEditingController dateDebutController;
   late TextEditingController dateFinController;
   late String selectedStatut; // Use a String for dropdown
@@ -36,6 +37,15 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     'Proposé',
   ];
 
+  // NEW: List of available internship types
+  final List<String> typeStageOptions = [
+    'PFE',
+    'Été',
+    'Observation',
+    'Stage Ouvrier',
+    'Autre', // Add 'Other' if there can be types not in your predefined list
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -48,9 +58,31 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     supervisorNameController = TextEditingController(
       text: widget.internship.supervisorName ?? '',
     );
-    typeStageController = TextEditingController(
-      text: widget.internship.typeStage ?? '',
-    );
+
+    // Initialize selectedTypeStage
+    String incomingTypeStage = widget.internship.typeStage ?? '';
+    incomingTypeStage = incomingTypeStage.trim();
+
+    if (typeStageOptions.contains(incomingTypeStage)) {
+      selectedTypeStage = incomingTypeStage;
+    } else {
+      // If the incoming type isn't in your predefined list, fallback or add it
+      // For now, defaulting to the first option or a suitable default
+      selectedTypeStage = typeStageOptions.isNotEmpty
+          ? typeStageOptions.first
+          : '';
+      if (!incomingTypeStage.isEmpty) {
+        print(
+          'Warning: Incoming typeStage "$incomingTypeStage" from backend did not match known options. Defaulting to "$selectedTypeStage".',
+        );
+        // Option: You could also add the incomingTypeStage to typeStageOptions if it's a valid, but new, type.
+        // if (!typeStageOptions.contains(incomingTypeStage)) {
+        //   typeStageOptions.add(incomingTypeStage);
+        //   selectedTypeStage = incomingTypeStage;
+        // }
+      }
+    }
+
     dateDebutController = TextEditingController(
       text: widget.internship.dateDebut ?? '',
     );
@@ -77,7 +109,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     }
 
     // FIX FOR TYPE ERROR: Ensure estRemunere is always a bool
-    // The Internship model's fromJson should now ensure widget.internship.estRemunere is bool?
     estRemunere = widget.internship.estRemunere ?? false;
 
     // Handle null or invalid numbers for remuneration amount controller
@@ -98,7 +129,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     studentNameController.dispose();
     subjectTitleController.dispose();
     supervisorNameController.dispose();
-    typeStageController.dispose();
+    // typeStageController.dispose(); // REMOVE this
     dateDebutController.dispose();
     dateFinController.dispose();
     montantRemunerationController.dispose();
@@ -170,18 +201,32 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       true, // Assuming supervisor name is not editable here
                   enabled: false, // Visually disable it
                 ),
-                TextFormField(
-                  controller: typeStageController,
+                // NEW: Dropdown for Internship Type
+                DropdownButtonFormField<String>(
+                  value: selectedTypeStage,
                   decoration: const InputDecoration(
                     labelText: 'Internship Type',
+                    border: OutlineInputBorder(), // Add border for better look
                   ),
+                  items: typeStageOptions.map((String type) {
+                    return DropdownMenuItem<String>(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedTypeStage = newValue!;
+                    });
+                  },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter internship type';
+                      return 'Please select an internship type';
                     }
                     return null;
                   },
                 ),
+                const SizedBox(height: 16), // Add some spacing
                 TextFormField(
                   controller: dateDebutController,
                   decoration: InputDecoration(
@@ -220,7 +265,10 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                 // onChanged is null because you stated it's not meant to be changed
                 DropdownButtonFormField<String>(
                   value: selectedStatut,
-                  decoration: const InputDecoration(labelText: 'Status'),
+                  decoration: const InputDecoration(
+                    labelText: 'Status',
+                    border: OutlineInputBorder(), // Add border for better look
+                  ),
                   items: statusOptions.map((String status) {
                     return DropdownMenuItem<String>(
                       value: status,
@@ -297,7 +345,8 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       subjectTitle: widget.internship.subjectTitle,
                       supervisorName: widget.internship.supervisorName,
                       // Editable fields
-                      typeStage: typeStageController.text,
+                      typeStage:
+                          selectedTypeStage, // Use the new selectedTypeStage
                       dateDebut: dateDebutController.text,
                       dateFin: dateFinController.text,
                       statut:
@@ -321,7 +370,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                     print(
                       'Montant Remuneration: ${updatedInternship.montantRemuneration}',
                     );
-
                     print('-------------------------------------------');
                     // --- END ADDED DEBUG PRINTS ---
 
