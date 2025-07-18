@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/Repositories/user_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:provider/provider.dart';
 //* Login
@@ -37,6 +38,7 @@ class _MyAppState extends State<MyApp> {
   late final LoginRepository loginRepository;
   late final Dio dio;
   late final InternshipRepository internshipRepository;
+  late final UserRepository userRepository;
 
   @override
   void initState() {
@@ -60,8 +62,9 @@ class _MyAppState extends State<MyApp> {
           );
     loginService = LoginService(dio: dio);
     loginRepository = LoginRepository(loginService: loginService);
+    userRepository = UserRepository(dio: dio); // Initialized here
+    internshipRepository = InternshipRepository(dio: dio); // Initialized here
 
-    internshipRepository = InternshipRepository(dio: dio);
     //* Router
     router = GoRouter(
       initialLocation: '/login',
@@ -194,16 +197,25 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider<LoginBloc>(
-          create: (context) => LoginBloc(loginRepository: loginRepository),
+        // Provide UserRepository and InternshipRepository
+        RepositoryProvider<UserRepository>.value(value: userRepository),
+        RepositoryProvider<InternshipRepository>.value(
+          value: internshipRepository,
         ),
-        ChangeNotifierProvider<LoginRepository>.value(value: loginRepository),
       ],
-      child: MaterialApp.router(
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<LoginBloc>(
+            create: (context) => LoginBloc(loginRepository: loginRepository),
+          ),
+          ChangeNotifierProvider<LoginRepository>.value(value: loginRepository),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          debugShowCheckedModeBanner: false,
+        ),
       ),
     );
   }

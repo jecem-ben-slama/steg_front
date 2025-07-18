@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/internship_cubit.dart';
 import 'package:pfa/Model/internship_model.dart';
+import 'package:pfa/Repositories/user_repo.dart';
 import 'package:pfa/Utils/snackbar.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:pfa/Model/user_model.dart'; // Import your User model
+import 'package:dio/dio.dart'; // For DioException
 
 class InternshipEditDialog extends StatefulWidget {
   final Internship internship;
@@ -19,17 +22,20 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController studentNameController;
   late TextEditingController subjectTitleController;
-  late TextEditingController supervisorNameController;
-  // late TextEditingController typeStageController; // REMOVE this
-  late String selectedTypeStage; // NEW: For the dropdown's selected value
+
+  late String selectedTypeStage;
   late TextEditingController dateDebutController;
   late TextEditingController dateFinController;
-  late String selectedStatut; // Use a String for dropdown
+  late String selectedStatut;
   late bool estRemunere;
   late TextEditingController montantRemunerationController;
 
-  // These are the canonical status options your dropdown expects,
-  // now including 'Proposé'
+  // State for supervisors dropdown
+  List<User> _supervisors = [];
+  User?
+  _selectedSupervisor; // Will hold the currently selected supervisor object
+  bool _isLoadingSupervisors = true; // To show loading state for dropdown
+
   final List<String> statusOptions = [
     'Validé',
     'En attente',
@@ -37,13 +43,12 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     'Proposé',
   ];
 
-  // NEW: List of available internship types
   final List<String> typeStageOptions = [
     'PFE',
     'Été',
     'Observation',
     'Stage Ouvrier',
-    'Autre', // Add 'Other' if there can be types not in your predefined list
+    'Autre',
   ];
 
   @override
@@ -55,31 +60,20 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     subjectTitleController = TextEditingController(
       text: widget.internship.subjectTitle ?? '',
     );
-    supervisorNameController = TextEditingController(
-      text: widget.internship.supervisorName ?? '',
-    );
 
-    // Initialize selectedTypeStage
     String incomingTypeStage = widget.internship.typeStage ?? '';
     incomingTypeStage = incomingTypeStage.trim();
 
     if (typeStageOptions.contains(incomingTypeStage)) {
       selectedTypeStage = incomingTypeStage;
     } else {
-      // If the incoming type isn't in your predefined list, fallback or add it
-      // For now, defaulting to the first option or a suitable default
       selectedTypeStage = typeStageOptions.isNotEmpty
           ? typeStageOptions.first
           : '';
-      if (!incomingTypeStage.isEmpty) {
+      if (incomingTypeStage.isNotEmpty) {
         print(
           'Warning: Incoming typeStage "$incomingTypeStage" from backend did not match known options. Defaulting to "$selectedTypeStage".',
         );
-        // Option: You could also add the incomingTypeStage to typeStageOptions if it's a valid, but new, type.
-        // if (!typeStageOptions.contains(incomingTypeStage)) {
-        //   typeStageOptions.add(incomingTypeStage);
-        //   selectedTypeStage = incomingTypeStage;
-        // }
       }
     }
 
@@ -90,46 +84,110 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
       text: widget.internship.dateFin ?? '',
     );
 
-    // FIX FOR DROPDOWN ERROR: Normalize the incoming statut string
-    String incomingStatut =
-        widget.internship.statut ?? 'En attente'; // Default if null
-    incomingStatut = incomingStatut.trim(); // Remove leading/trailing spaces
+    String incomingStatut = widget.internship.statut ?? 'En attente';
+    incomingStatut = incomingStatut.trim();
 
-    // Try to find an exact match in statusOptions.
-    // If no exact match, fallback to a safe default ('En attente')
-    // This ensures selectedStatut always holds a value present in statusOptions.
     if (statusOptions.contains(incomingStatut)) {
       selectedStatut = incomingStatut;
     } else {
-      selectedStatut = 'En attente'; // Fallback for unmatched/unknown statuses
-      // Consider logging a warning here if you get unexpected status values from the backend.
+      selectedStatut = 'En attente';
       print(
         'Warning: Incoming status "${widget.internship.statut}" from backend did not match known options. Defaulting to "En attente".',
       );
     }
 
-    // FIX FOR TYPE ERROR: Ensure estRemunere is always a bool
     estRemunere = widget.internship.estRemunere ?? false;
 
-    // Handle null or invalid numbers for remuneration amount controller
     String initialMontantText;
     if (widget.internship.montantRemuneration != null) {
       initialMontantText = widget.internship.montantRemuneration!
-          .toStringAsFixed(2); // Format to 2 decimal places
+          .toStringAsFixed(2);
     } else {
       initialMontantText = '0.00';
     }
     montantRemunerationController = TextEditingController(
       text: initialMontantText,
     );
+
+    print(
+      'INIT STATE - Internship encadrantProID: ${widget.internship.encadrantProID}',
+    );
+    print(
+      'INIT STATE - Internship supervisorName: ${widget.internship.supervisorName}',
+    );
+
+    _fetchSupervisors(); // Fetch supervisors when dialog initializes
+  }
+
+  // Function to fetch supervisors from the backend using UserRepository
+  Future<void> _fetchSupervisors() async {
+    setState(() {
+      _isLoadingSupervisors = true;
+      _supervisors = []; // Clear previous supervisors to avoid stale data
+      _selectedSupervisor = null; // Clear selected supervisor
+    });
+    try {
+      final userRepository = RepositoryProvider.of<UserRepository>(
+        context,
+      ); // Access your UserRepository
+
+      print('Fetching supervisors with role "Encadrant"...');
+      final encadrantUsers = await userRepository.fetchUsersByRole('Encadrant');
+      print('Fetched ${encadrantUsers.length} supervisors from backend.');
+      for (var user in encadrantUsers) {
+        print('  - Supervisor: ${user.username}, ID: ${user.userID}');
+      }
+
+      setState(() {
+        _supervisors = encadrantUsers; // No need for local filtering now
+
+        // Try to find the currently assigned supervisor from the fetched list
+        if (widget.internship.encadrantProID != null) {
+          _selectedSupervisor = _supervisors.firstWhereOrNull(
+            (s) => s.userID == widget.internship.encadrantProID,
+          );
+          print(
+            'Attempted to pre-select supervisor by ID: ${widget.internship.encadrantProID}, Found: ${_selectedSupervisor?.username ?? "NOT FOUND"}',
+          );
+        }
+
+        // Only try to match by name if ID match failed or ID was null in the first place
+        if (_selectedSupervisor == null &&
+            widget.internship.supervisorName != null) {
+          _selectedSupervisor = _supervisors.firstWhereOrNull(
+            (s) => s.username == widget.internship.supervisorName,
+          );
+          print(
+            'Attempted to pre-select supervisor by Name (fallback): ${widget.internship.supervisorName}, Found: ${_selectedSupervisor?.username ?? "NOT FOUND"}',
+          );
+        }
+        print(
+          'Final _selectedSupervisor after fetch: ${_selectedSupervisor?.username ?? "None"} (ID: ${_selectedSupervisor?.userID ?? "N/A"})',
+        );
+      });
+    } on DioException catch (e) {
+      print('Dio error fetching supervisors: ${e.message}');
+      if (e.response != null) {
+        print('Dio error response data: ${e.response?.data}');
+      }
+      showFailureSnackBar(context, 'Network error: ${e.message}');
+    } catch (e) {
+      print('Error fetching supervisors: $e');
+      showFailureSnackBar(context, 'Failed to load supervisors: $e');
+    } finally {
+      setState(() {
+        _isLoadingSupervisors = false;
+        print(
+          'Supervisors loading complete. _isLoadingSupervisors: $_isLoadingSupervisors',
+        );
+      });
+    }
   }
 
   @override
   void dispose() {
     studentNameController.dispose();
     subjectTitleController.dispose();
-    supervisorNameController.dispose();
-    // typeStageController.dispose(); // REMOVE this
     dateDebutController.dispose();
     dateFinController.dispose();
     montantRemunerationController.dispose();
@@ -162,6 +220,11 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    print('BUILD METHOD - _supervisors count: ${_supervisors.length}');
+    print(
+      'BUILD METHOD - _selectedSupervisor: ${_selectedSupervisor?.username ?? "None"}',
+    );
+
     return BlocListener<InternshipCubit, InternshipState>(
       listener: (context, state) {
         if (state is InternshipActionSuccess) {
@@ -183,30 +246,67 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                 TextFormField(
                   controller: studentNameController,
                   decoration: const InputDecoration(labelText: 'Student Name'),
-                  readOnly: true, // Assuming student name is not editable here
-                  enabled: false, // Visually disable it
+                  readOnly: true,
+                  enabled: false,
                 ),
                 TextFormField(
                   controller: subjectTitleController,
                   decoration: const InputDecoration(labelText: 'Subject Title'),
-                  readOnly: true, // Assuming subject title is not editable here
-                  enabled: false, // Visually disable it
+                  readOnly: true,
+                  enabled: false,
                 ),
-                TextFormField(
-                  controller: supervisorNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Supervisor Name',
-                  ),
-                  readOnly:
-                      true, // Assuming supervisor name is not editable here
-                  enabled: false, // Visually disable it
-                ),
-                // NEW: Dropdown for Internship Type
+                // Dropdown for Supervisor Name
+                _isLoadingSupervisors
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: CircularProgressIndicator(),
+                      ) // Show loading spinner
+                    : (_supervisors.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                'No supervisors available. Cannot assign.',
+                              ),
+                            )
+                          : DropdownButtonFormField<User>(
+                              value: _selectedSupervisor,
+                              decoration: const InputDecoration(
+                                labelText: 'Supervisor Name',
+                                border: OutlineInputBorder(),
+                              ),
+                              // Map the list of User objects to DropdownMenuItem
+                              items: _supervisors.map((User supervisor) {
+                                return DropdownMenuItem<User>(
+                                  value: supervisor,
+                                  child: Text(supervisor.username),
+                                );
+                              }).toList(),
+                              onChanged: (User? newValue) {
+                                setState(() {
+                                  _selectedSupervisor = newValue;
+                                  print(
+                                    'Dropdown onChanged: Selected Supervisor: ${_selectedSupervisor?.username}, ID: ${_selectedSupervisor?.userID}',
+                                  );
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select a supervisor';
+                                }
+                                return null;
+                              },
+                              selectedItemBuilder: (context) {
+                                return _supervisors.map<Widget>((User item) {
+                                  return Text(item.username);
+                                }).toList();
+                              },
+                            )),
+                const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: selectedTypeStage,
                   decoration: const InputDecoration(
                     labelText: 'Internship Type',
-                    border: OutlineInputBorder(), // Add border for better look
+                    border: OutlineInputBorder(),
                   ),
                   items: typeStageOptions.map((String type) {
                     return DropdownMenuItem<String>(
@@ -226,7 +326,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16), // Add some spacing
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: dateDebutController,
                   decoration: InputDecoration(
@@ -261,13 +361,11 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                     return null;
                   },
                 ),
-                // Dropdown for Status - Initial value is set to selectedStatut
-                // onChanged is null because you stated it's not meant to be changed
                 DropdownButtonFormField<String>(
                   value: selectedStatut,
                   decoration: const InputDecoration(
                     labelText: 'Status',
-                    border: OutlineInputBorder(), // Add border for better look
+                    border: OutlineInputBorder(),
                   ),
                   items: statusOptions.map((String status) {
                     return DropdownMenuItem<String>(
@@ -276,7 +374,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                     );
                   }).toList(),
                   onChanged:
-                      null, // This makes the dropdown read-only/unchangeable
+                      null, // Keep this as null if status is not editable by the user
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please select a status';
@@ -292,7 +390,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       onChanged: (bool value) {
                         setState(() {
                           estRemunere = value;
-                          // If remuneration is turned off, clear the amount
                           if (!estRemunere) {
                             montantRemunerationController.clear();
                           }
@@ -325,13 +422,12 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog without saving
+              Navigator.of(context).pop();
             },
             child: const Text('Cancel'),
           ),
           BlocBuilder<InternshipCubit, InternshipState>(
             builder: (context, state) {
-              // Show loading indicator on button if an update is in progress
               if (state is InternshipLoading) {
                 return const CircularProgressIndicator();
               }
@@ -340,26 +436,20 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                   if (formKey.currentState!.validate()) {
                     final updatedInternship = Internship(
                       internshipID: widget.internship.internshipID,
-                      // Fields that are not editable via form, keep original values
                       studentName: widget.internship.studentName,
                       subjectTitle: widget.internship.subjectTitle,
-                      supervisorName: widget.internship.supervisorName,
-                      // Editable fields
-                      typeStage:
-                          selectedTypeStage, // Use the new selectedTypeStage
+                      supervisorName: _selectedSupervisor?.username,
+                      encadrantProID: _selectedSupervisor?.userID,
+                      typeStage: selectedTypeStage,
                       dateDebut: dateDebutController.text,
                       dateFin: dateFinController.text,
-                      statut:
-                          selectedStatut, // Use the (normalized) initial value
+                      statut: selectedStatut,
                       estRemunere: estRemunere,
                       montantRemuneration: estRemunere
                           ? double.tryParse(montantRemunerationController.text)
-                          : null, // Parse to double or null
-
-                      // Add other IDs if they are relevant for the update but not shown in UI
+                          : null,
                     );
 
-                    // --- ADDED DEBUG PRINTS HERE ---
                     print('--- Flutter Debug: Sending Internship Update ---');
                     print('Internship ID: ${updatedInternship.internshipID}');
                     print('Type Stage: ${updatedInternship.typeStage}');
@@ -370,8 +460,13 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                     print(
                       'Montant Remuneration: ${updatedInternship.montantRemuneration}',
                     );
+                    print(
+                      'Supervisor Name (from dropdown): ${updatedInternship.supervisorName}',
+                    );
+                    print(
+                      'EncadrantPro ID (from dropdown): ${updatedInternship.encadrantProID}',
+                    );
                     print('-------------------------------------------');
-                    // --- END ADDED DEBUG PRINTS ---
 
                     context.read<InternshipCubit>().updateInternship(
                       updatedInternship,
@@ -385,5 +480,16 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
         ],
       ),
     );
+  }
+}
+
+extension ListExtension<T> on List<T> {
+  T? firstWhereOrNull(bool Function(T) test) {
+    for (var element in this) {
+      if (test(element)) {
+        return element;
+      }
+    }
+    return null;
   }
 }

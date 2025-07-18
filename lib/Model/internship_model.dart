@@ -2,8 +2,9 @@
 class Internship {
   final int? internshipID;
   final String? studentName;
-  final String? subjectTitle; // Already declared here
-  final String? supervisorName; // Already declared here
+  final String? subjectTitle;
+  final String? supervisorName;
+  final int? encadrantProID; // NEW: Add encadrantProID
   final String? typeStage;
   final String? dateDebut;
   final String? dateFin;
@@ -11,17 +12,28 @@ class Internship {
   final bool? estRemunere;
   final double? montantRemuneration;
 
+  // You might also want to include other IDs like etudiantID, sujetID, etc.,
+  // if they are part of your Internship object and need to be carried around.
+  // For this update, I'm focusing on encadrantProID as requested.
+  final int? etudiantID;
+  final int? sujetID;
+  final int? chefCentreValidationID;
+
   Internship({
     this.internshipID,
     this.studentName,
     this.subjectTitle,
     this.supervisorName,
+    this.encadrantProID, // NEW: Add to constructor
     this.typeStage,
     this.dateDebut,
     this.dateFin,
     this.statut,
     this.estRemunere,
     this.montantRemuneration,
+    this.etudiantID, // Added for completeness if present in JSON
+    this.sujetID, // Added for completeness if present in JSON
+    this.chefCentreValidationID, // Added for completeness if present in JSON
   });
 
   factory Internship.fromJson(Map<String, dynamic> json) {
@@ -41,10 +53,11 @@ class Internship {
     return Internship(
       internshipID: int.tryParse(json['stageID'].toString()),
       studentName: json['studentName'] as String?,
-      // FIX: Change 'titreSujet' to 'subjectTitle' as seen in Postman response
-      subjectTitle: json['subjectTitle'] as String?, // Corrected key
-      // FIX: Change 'nomEncadrant' to 'supervisorName' as seen in Postman response
-      supervisorName: json['supervisorName'] as String?, // Corrected key
+      subjectTitle: json['subjectTitle'] as String?,
+      supervisorName: json['supervisorName'] as String?,
+      encadrantProID: int.tryParse(
+        json['encadrantProID']?.toString() ?? '',
+      ), // NEW: Parse encadrantProID
       typeStage: json['typeStage'] as String?,
       dateDebut: json['dateDebut'] as String?,
       dateFin: json['dateFin'] as String?,
@@ -53,13 +66,11 @@ class Internship {
       montantRemuneration: json['montantRemuneration'] != null
           ? double.tryParse(json['montantRemuneration'].toString())
           : null,
-      // You might also want to parse other IDs if they are relevant elsewhere in your app,
-      // e.g., 'etudiantID', 'sujetID', 'encadrantProID', 'chefCentreValidationID'
-      // For example:
-      // etudiantID: int.tryParse(json['etudiantID'].toString()),
-      // sujetID: int.tryParse(json['sujetID'].toString()),
-      // encadrantProID: int.tryParse(json['encadrantProID']?.toString() ?? ''),
-      // chefCentreValidationID: int.tryParse(json['chefCentreValidationID']?.toString() ?? ''),
+      etudiantID: int.tryParse(json['etudiantID']?.toString() ?? ''),
+      sujetID: int.tryParse(json['sujetID']?.toString() ?? ''),
+      chefCentreValidationID: int.tryParse(
+        json['chefCentreValidationID']?.toString() ?? '',
+      ),
     );
   }
 
@@ -74,12 +85,16 @@ class Internship {
           ? (estRemunere! ? 1 : 0)
           : null, // Send as int (0 or 1)
       'montantRemuneration': montantRemuneration,
-      // If studentName, subjectTitle, supervisorName are part of the update payload
-      // expected by your PHP script, include them here. Otherwise, they can be omitted
-      // if they are only for display and not for modification in the update process.
-      'studentName': studentName,
-      'subjectTitle': subjectTitle,
-      'supervisorName': supervisorName,
+      'studentName':
+          studentName, // Generally not sent for update, but kept if your backend expects it
+      'subjectTitle':
+          subjectTitle, // Generally not sent for update, but kept if your backend expects it
+      'supervisorName':
+          supervisorName, // Generally not sent for update, but kept if your backend expects it
+      'encadrantProID': encadrantProID, // NEW: Add to toJson
+      'etudiantID': etudiantID,
+      'sujetID': sujetID,
+      'chefCentreValidationID': chefCentreValidationID,
     };
   }
 }

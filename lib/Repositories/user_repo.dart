@@ -1,18 +1,27 @@
+// lib/repositories/user_repo.dart
 import 'package:dio/dio.dart';
 import 'package:pfa/Model/user_model.dart';
 
 class UserRepository {
-  static const String usersPath = '/Users';
+  static const String usersPath = '/User'; // Corrected to /User as per your URL
   final Dio _dio;
 
   UserRepository({required Dio dio}) : _dio = dio;
 
-  //* Fetch All Users 
+  //* Fetch All Users (if no role is specified)
   Future<List<User>> fetchAllUsers() async {
+    return _fetchUsers('$usersPath/list_users.php');
+  }
+
+  //* Fetch Users by Role
+  Future<List<User>> fetchUsersByRole(String role) async {
+    return _fetchUsers('$usersPath/list_users.php?roles=$role');
+  }
+
+  // Private helper method to handle the common fetching logic
+  Future<List<User>> _fetchUsers(String endpoint) async {
     try {
-      final response = await _dio.get(
-        '$usersPath/list_users.php',
-      ); // Example endpoint
+      final response = await _dio.get(endpoint);
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] == 'success') {
@@ -54,11 +63,10 @@ class UserRepository {
       final response = await _dio.post(
         '$usersPath/add_user.php',
         data: user.toJson(),
-      ); // Example endpoint
+      );
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] == 'success') {
-          // Assuming the backend returns the newly created user with its ID
           return User.fromJson(responseData['data']);
         } else {
           throw Exception(
@@ -92,15 +100,13 @@ class UserRepository {
       if (user.userID == null) {
         throw Exception('User ID is required for updating a user.');
       }
-      // Send only fields that can be updated. Password should only be sent if changed.
       final response = await _dio.post(
         '$usersPath/edit_user.php',
         data: user.toJson(),
-      ); // Example endpoint
+      );
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] == 'success') {
-          // Assuming the backend returns the updated user object
           return User.fromJson(responseData['data']);
         } else {
           throw Exception(
@@ -134,7 +140,7 @@ class UserRepository {
       final response = await _dio.post(
         '$usersPath/delete_user.php',
         data: {'userID': userID},
-      ); // Example endpoint
+      );
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] != 'success') {
