@@ -3,17 +3,16 @@ import 'package:dio/dio.dart';
 import 'package:pfa/Model/internship_model.dart';
 
 class InternshipRepository {
-  // _gestionnairePath is relative to the Dio's baseUrl set in main.dart
-  static const String gestionnairePath = '/Gestionnaire';
+  static const String gestionnairePath =
+      '/Gestionnaire'; // This path is for GET/DELETE
+  // Correct path for your update script, assuming it's directly under 'api/'
   final Dio _dio; // The Dio instance will be injected
 
-  // Constructor now REQUIRES a Dio instance
   InternshipRepository({required Dio dio}) : _dio = dio;
+
   //* Fetch all internships
   Future<List<Internship>> fetchAllInternships() async {
     try {
-      // Use the injected _dio instance.
-      // The full URL will be: baseUrl/Gestionnaire/list_stages.php
       final response = await _dio.get('$gestionnairePath/list_stage.php');
 
       if (response.statusCode == 200) {
@@ -62,13 +61,11 @@ class InternshipRepository {
         if (responseData['status'] == 'success') {
           return true; // Deletion was successful
         } else {
-          // If the backend returns a 'status: fail' or similar
           throw Exception(
             'Failed to delete internship: ${responseData['message'] ?? 'Unknown error.'}',
           );
         }
       } else {
-        // Handle non-200 status codes (e.g., 404 Not Found, 400 Bad Request)
         throw Exception(
           'Failed to delete internship. Status code: ${response.statusCode}',
         );
@@ -76,54 +73,63 @@ class InternshipRepository {
     } on DioException catch (e) {
       String errorMessage = 'Failed to delete internship.';
       if (e.response != null) {
-        // Try to parse server-provided error message
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
       print('Dio Error deleting internship: $errorMessage');
-      throw Exception(errorMessage); // Re-throw as a generic Exception
+      throw Exception(errorMessage);
     } catch (e) {
       print('General Error deleting internship: $e');
-      rethrow; // Re-throw any other unexpected errors
+      rethrow;
     }
   }
 
   //* Edit an internship
   Future<bool> updateInternship(Internship internship) async {
     try {
-      await Future.delayed(
-        const Duration(milliseconds: 500),
-      ); // Simulate network delay
-      if (internship.internshipID == 999) {
-        // Example: Simulate failure for a specific ID
-        throw Exception('Simulated update failure for ID 999');
-      }
-      return true; // Assume success for now
-    } catch (e) {
-      print('Error in InternshipRepository.updateInternship: $e');
-      throw Exception(
-        'Failed to update internship: $e',
-      ); // Re-throw for Cubit to catch
-    }
-  }
-
-  // Your commented-out addStage method is fine, just ensure it uses _dio.post
-  /*
-  Future<void> addStage(...) async {
-    try {
-      final response = await _dio.post(
-        '$_gestionnairePath/add_stage.php', // Example path
-        data: {
-          // Your data for adding a stage
-        },
+      final response = await _dio.put(
+        '$gestionnairePath/edit_stage.php', // Use the dedicated path for update
+        data: internship.toJson(), // Convert the Internship object to JSON
+        // Dio automatically sets Content-Type: application/json if data is a Map
+        // Ensure your Dio interceptor (if any) or base options handle Authorization header.
       );
-      // Handle response
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = response.data;
+        if (responseData['status'] == 'success' ||
+            responseData['status'] == 'info') {
+          // 'info' for no changes made
+          return true; // Update was successful or no changes needed
+        } else {
+          // If the backend returns a 'status: error' or similar
+          throw Exception(
+            'Failed to update internship: ${responseData['message'] ?? 'Unknown error.'}',
+          );
+        }
+      } else {
+        // Handle non-200 status codes (e.g., 404 Not Found, 400 Bad Request)
+        throw Exception(
+          'Failed to update internship. Status code: ${response.statusCode}',
+        );
+      }
     } on DioException catch (e) {
-      // Handle error
-      rethrow;
+      String errorMessage = 'Failed to update internship.';
+      if (e.response != null) {
+        errorMessage =
+            'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+        print(
+          'Dio response data for update error: ${e.response?.data}',
+        ); // More detailed error
+      } else {
+        errorMessage = 'Network error: ${e.message}';
+      }
+      print('Dio Error updating internship: $errorMessage');
+      throw Exception(errorMessage); // Re-throw as a generic Exception
+    } catch (e) {
+      print('General Error updating internship: $e');
+      rethrow; // Re-throw any other unexpected errors
     }
   }
-  */
 }

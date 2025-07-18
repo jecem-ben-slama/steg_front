@@ -27,8 +27,14 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
   late bool estRemunere;
   late TextEditingController montantRemunerationController;
 
-  // These are the canonical status options your dropdown expects
-  final List<String> statusOptions = ['Validé', 'En attente', 'Refusé'];
+  // These are the canonical status options your dropdown expects,
+  // now including 'Proposé'
+  final List<String> statusOptions = [
+    'Validé',
+    'En attente',
+    'Refusé',
+    'Proposé',
+  ];
 
   @override
   void initState() {
@@ -78,7 +84,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     String initialMontantText;
     if (widget.internship.montantRemuneration != null) {
       initialMontantText = widget.internship.montantRemuneration!
-          .toStringAsFixed(2);
+          .toStringAsFixed(2); // Format to 2 decimal places
     } else {
       initialMontantText = '0.00';
     }
@@ -132,7 +138,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
           Navigator.of(context).pop(); // Close the dialog on success
         } else if (state is InternshipError) {
           showFailureSnackBar(context, 'Error updating: ${state.message}');
-          // Don't close the dialog on error, let the user try again
+          print('Internship update error: ${state.message}'); // Log the error
         }
       },
       child: AlertDialog(
@@ -143,20 +149,26 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Display only, not editable as they are typically foreign keys/derived
                 TextFormField(
                   controller: studentNameController,
                   decoration: const InputDecoration(labelText: 'Student Name'),
+                  readOnly: true, // Assuming student name is not editable here
+                  enabled: false, // Visually disable it
                 ),
                 TextFormField(
                   controller: subjectTitleController,
                   decoration: const InputDecoration(labelText: 'Subject Title'),
+                  readOnly: true, // Assuming subject title is not editable here
+                  enabled: false, // Visually disable it
                 ),
                 TextFormField(
                   controller: supervisorNameController,
                   decoration: const InputDecoration(
                     labelText: 'Supervisor Name',
                   ),
+                  readOnly:
+                      true, // Assuming supervisor name is not editable here
+                  enabled: false, // Visually disable it
                 ),
                 TextFormField(
                   controller: typeStageController,
@@ -204,7 +216,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                     return null;
                   },
                 ),
-                // Drodown for Status - Initial value is set to selectedStatut
+                // Dropdown for Status - Initial value is set to selectedStatut
                 // onChanged is null because you stated it's not meant to be changed
                 DropdownButtonFormField<String>(
                   value: selectedStatut,
@@ -217,8 +229,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                   }).toList(),
                   onChanged:
                       null, // This makes the dropdown read-only/unchangeable
-                  // You can also add `enabled: false` to make it visually disabled if preferred
-                  // enabled: false,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please select a status';
@@ -296,10 +306,25 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       montantRemuneration: estRemunere
                           ? double.tryParse(montantRemunerationController.text)
                           : null, // Parse to double or null
+
                       // Add other IDs if they are relevant for the update but not shown in UI
-                      // e.g., encadrantProID: widget.internship.encadrantProID,
-                      // chefCentreValidationID: widget.internship.chefCentreValidationID,
                     );
+
+                    // --- ADDED DEBUG PRINTS HERE ---
+                    print('--- Flutter Debug: Sending Internship Update ---');
+                    print('Internship ID: ${updatedInternship.internshipID}');
+                    print('Type Stage: ${updatedInternship.typeStage}');
+                    print('Date Debut: ${updatedInternship.dateDebut}');
+                    print('Date Fin: ${updatedInternship.dateFin}');
+                    print('Statut: ${updatedInternship.statut}');
+                    print('Est Remunere: ${updatedInternship.estRemunere}');
+                    print(
+                      'Montant Remuneration: ${updatedInternship.montantRemuneration}',
+                    );
+
+                    print('-------------------------------------------');
+                    // --- END ADDED DEBUG PRINTS ---
+
                     context.read<InternshipCubit>().updateInternship(
                       updatedInternship,
                     );
