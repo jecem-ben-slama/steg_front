@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pfa/Repositories/user_repo.dart';
+import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:provider/provider.dart';
 //* Login
@@ -200,7 +200,10 @@ class _MyAppState extends State<MyApp> {
     return MultiRepositoryProvider(
       providers: [
         // Provide UserRepository and InternshipRepository
-        RepositoryProvider<UserRepository>.value(value: userRepository),
+        RepositoryProvider<UserRepository>(
+          create: (context) =>
+              UserRepository(dio: dio), // Your UserRepository instance
+        ),
         RepositoryProvider<InternshipRepository>.value(
           value: internshipRepository,
         ),
