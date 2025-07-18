@@ -8,8 +8,27 @@ import 'package:pfa/Utils/Widgets/edit_internship.dart';
 import 'package:pfa/Utils/Widgets/statcard.dart';
 import 'package:pfa/Utils/snackbar.dart'; // Ensure this import is correct
 
-class GestionnaireDashboard extends StatelessWidget {
+class GestionnaireDashboard extends StatefulWidget {
   const GestionnaireDashboard({super.key});
+
+  @override
+  State<GestionnaireDashboard> createState() => _GestionnaireDashboardState();
+}
+
+class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
+  String _searchQuery = '';
+  String? _selectedStatusFilter;
+  String? _selectedTypeFilter;
+
+  final List<String> _statusOptions = [
+    'All',
+    'Validé',
+    'En attente',
+    'Refusé',
+    'Proposé',
+  ];
+
+  final List<String> _typeOptions = ['All', 'PFA', 'PFE', 'Stage Ouvrier'];
 
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
@@ -19,6 +38,8 @@ class GestionnaireDashboard extends StatelessWidget {
         return Colors.orange;
       case 'refusé':
         return Colors.red;
+      case 'proposé':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
@@ -48,6 +69,40 @@ class GestionnaireDashboard extends StatelessWidget {
     );
   }
 
+  //* --- Filter ---
+  List<Internship> _applyFilters(List<Internship> internships) {
+    List<Internship> filteredList = List.from(internships);
+
+    if (_searchQuery.isNotEmpty) {
+      filteredList = filteredList.where((internship) {
+        final query = _searchQuery.toLowerCase();
+        return (internship.studentName?.toLowerCase().contains(query) ??
+                false) ||
+            (internship.subjectTitle?.toLowerCase().contains(query) ?? false) ||
+            (internship.supervisorName?.toLowerCase().contains(query) ??
+                false) ||
+            (internship.typeStage?.toLowerCase().contains(query) ?? false) ||
+            (internship.statut?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    if (_selectedStatusFilter != null && _selectedStatusFilter != 'All') {
+      filteredList = filteredList.where((internship) {
+        return internship.statut?.toLowerCase() ==
+            _selectedStatusFilter!.toLowerCase();
+      }).toList();
+    }
+
+    if (_selectedTypeFilter != null && _selectedTypeFilter != 'All') {
+      filteredList = filteredList.where((internship) {
+        return internship.typeStage?.toLowerCase() ==
+            _selectedTypeFilter!.toLowerCase();
+      }).toList();
+    }
+
+    return filteredList;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -55,47 +110,118 @@ class GestionnaireDashboard extends StatelessWidget {
     return BlocListener<InternshipCubit, InternshipState>(
       listener: (context, state) {
         if (state is InternshipActionSuccess) {
-          showSuccessSnackBar(
-            context,
-            state.message,
-          ); // Use your custom snackbar
+          showSuccessSnackBar(context, state.message);
         } else if (state is InternshipError) {
-          showFailureSnackBar(
-            context,
-            'Error: ${state.message}',
-          ); // Use your custom snackbar
+          showFailureSnackBar(context, 'Error: ${state.message}');
         }
       },
       child: Column(
         children: [
-          //? Search Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(width: 200),
-              SizedBox(
-                width: screenWidth * 0.4,
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search here",
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
+          //? Search Bar and Filters
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SizedBox(
+                  width: screenWidth * 0.3, // Adjust width as needed
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText:
+                          "Search by student, subject, supervisor, status...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 16,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 0,
-                      horizontal: 16,
-                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                   ),
                 ),
-              ),
-              const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  "https://randomuser.me/api/portraits/men/1.jpg",
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: screenWidth * 0.1, // Adjust width as needed
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Status',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedStatusFilter ?? 'All', // Default to 'All'
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedStatusFilter = newValue == 'All'
+                            ? null
+                            : newValue;
+                      });
+                    },
+                    items: _statusOptions.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
                 ),
-                radius: 24,
-              ),
-            ],
+                const SizedBox(width: 16),
+                // Type Filter Dropdown
+                SizedBox(
+                  width: screenWidth * 0.2, // Adjust width as needed
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Type',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedTypeFilter ?? 'All', // Default to 'All'
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedTypeFilter = newValue == 'All'
+                            ? null
+                            : newValue;
+                      });
+                    },
+                    items: _typeOptions.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                CircleAvatar(
+                  backgroundImage: NetworkImage(
+                    "https://randomuser.me/api/portraits/men/1.jpg",
+                  ),
+                  radius: 24,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           //? Stats sneak peek
@@ -137,18 +263,18 @@ class GestionnaireDashboard extends StatelessWidget {
                   const SizedBox(height: 16),
                   BlocBuilder<InternshipCubit, InternshipState>(
                     builder: (context, state) {
-                      List<Internship>? internshipsToDisplay;
+                      List<Internship>?
+                      internshipsRaw; // This will hold the unfiltered data
 
-                      // Determine what list of internships to display
+                      // Determine the raw list of internships
                       if (state is InternshipLoaded) {
-                        internshipsToDisplay = state.internships;
+                        internshipsRaw = state.internships;
                       } else if (state is InternshipError) {
-                        internshipsToDisplay = state.lastLoadedInternships;
+                        internshipsRaw = state.lastLoadedInternships;
                       } else if (state is InternshipLoading &&
                           context.read<InternshipCubit>().state
                               is InternshipLoaded) {
-                        // If currently loading but previous state was loaded, show previous data
-                        internshipsToDisplay =
+                        internshipsRaw =
                             (context.read<InternshipCubit>().state
                                     as InternshipLoaded)
                                 .internships;
@@ -159,32 +285,41 @@ class GestionnaireDashboard extends StatelessWidget {
                                       as InternshipError)
                                   .lastLoadedInternships !=
                               null) {
-                        // If currently loading and previous state was an error with data, show that data
-                        internshipsToDisplay =
+                        internshipsRaw =
                             (context.read<InternshipCubit>().state
                                     as InternshipError)
                                 .lastLoadedInternships;
+                      }
+
+                      // Apply filters to the raw list if it exists
+                      List<Internship>? internshipsToDisplay;
+                      if (internshipsRaw != null) {
+                        internshipsToDisplay = _applyFilters(internshipsRaw);
                       }
 
                       // Handle different display scenarios
                       if (internshipsToDisplay == null ||
                           internshipsToDisplay.isEmpty) {
                         if (state is InternshipLoading) {
-                          // Show loading only if no data has ever been loaded or explicitly cleared
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
                         } else if (state is InternshipError) {
-                          // Show full error message only if no data could ever be loaded
                           return Center(
                             child: Text(
                               'Error loading internships: ${state.message}',
                             ),
                           );
                         } else {
-                          // No internships found after load, or initial state
-                          return const Center(
-                            child: Text('No internships found.'),
+                          // No internships found after load, or initial state, or no results after filter
+                          return Center(
+                            child: Text(
+                              _searchQuery.isNotEmpty ||
+                                      _selectedStatusFilter != null ||
+                                      _selectedTypeFilter != null
+                                  ? 'No matching internships found for current filters.'
+                                  : 'No internships found.',
+                            ),
                           );
                         }
                       }
@@ -204,7 +339,6 @@ class GestionnaireDashboard extends StatelessWidget {
                             DataColumn(label: Text("Actions")),
                           ],
                           rows: internshipsToDisplay.map((internship) {
-                            // Use non-nullable here since we checked above
                             return DataRow(
                               cells: [
                                 DataCell(Text(internship.studentName ?? 'N/A')),
@@ -236,7 +370,6 @@ class GestionnaireDashboard extends StatelessWidget {
                                             context: context,
                                             builder: (dialogContext) {
                                               return BlocProvider.value(
-                                                // Pass existing Cubit
                                                 value: context
                                                     .read<InternshipCubit>(),
                                                 child: InternshipEditDialog(
