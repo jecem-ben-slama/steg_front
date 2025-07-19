@@ -4,9 +4,8 @@ import 'package:pfa/Model/internship_model.dart';
 
 class InternshipRepository {
   static const String gestionnairePath =
-      '/Gestionnaire'; // This path is for GET/DELETE
-  // Correct path for your update script, assuming it's directly under 'api/'
-  final Dio _dio; // The Dio instance will be injected
+      '/Gestionnaire/Stage'; 
+  final Dio _dio;
 
   InternshipRepository({required Dio dio}) : _dio = dio;
 

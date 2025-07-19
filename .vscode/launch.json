@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Test Chrome Profile",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d",
+        "chrome",
+        "--web-browser-flag=--user-data-dir=C:/Users/LENOVO/AppData/Local/Google/Chrome/User Data",
+        "--web-browser-flag=--profile-directory=Profile 2"
+      ]
+    }
+  ]
+}

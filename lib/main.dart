@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/repositories/student_repo.dart';
 import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:provider/provider.dart';
@@ -199,14 +200,17 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        // Provide UserRepository and InternshipRepository
         RepositoryProvider<UserRepository>(
-          create: (context) =>
-              UserRepository(dio: dio), // Your UserRepository instance
+          create: (context) => UserRepository(dio: dio),
         ),
-        RepositoryProvider<InternshipRepository>.value(
-          value: internshipRepository,
+        RepositoryProvider<StudentRepository>(
+          // Provide StudentRepository
+          create: (context) => StudentRepository(dio: dio),
         ),
+        /*  RepositoryProvider<SubjectRepository>(
+          // Provide SubjectRepository (for later)
+          create: (context) => SubjectRepository(dio: dio),
+        ), */
       ],
       child: MultiBlocProvider(
         providers: [

@@ -1,9 +1,12 @@
-// lib/Utils/Widgets/dept_card.dart (Updated)
+// lib/Utils/Widgets/dept_card.dart (Updated part)
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Cubit/user_cubit.dart';
-import 'package:pfa/repositories/user_repo.dart'; // Ensure correct casing: 'repositories'
-import 'package:pfa/Utils/Widgets/manage_user.dart'; // Assuming ManageSupervisorsDialog is here
+import 'package:pfa/Cubit/user_cubit.dart'; // For Manage Supervisor
+import 'package:pfa/Cubit/student_cubit.dart'; // Import StudentCubit
+import 'package:pfa/Utils/Widgets/manage_students.dart';
+import 'package:pfa/Utils/Widgets/manage_supervisor.dart';
+import 'package:pfa/repositories/user_repo.dart';
+import 'package:pfa/repositories/student_repo.dart'; // Import StudentRepository
 
 class DeptCard extends StatefulWidget {
   final String title;
@@ -14,24 +17,30 @@ class DeptCard extends StatefulWidget {
 }
 
 class _DeptCardState extends State<DeptCard> {
-  void _showSupervisorManagement(BuildContext context) {
-    // 'context' here is the DeptCard's context
+  void _showManagementDialog(BuildContext context) {
     print('DeptCard tapped! Title: "${widget.title}"');
     if (widget.title == 'Manage Supervisor') {
       print('Condition met: "Manage Supervisor" card tapped.');
       showDialog(
-        context:
-            context, // Use the original 'context' that has access to UserRepository
+        context: context,
         builder: (dialogContext) {
-          // 'dialogContext' is for the dialog's subtree
-          print('Attempting to show ManageSupervisorsDialog.');
           return BlocProvider(
-            // Use the 'context' from DeptCard's build method, which *should* have access
-            // to the RepositoryProvider for UserRepository.
-            create: (_) => UserCubit(
-              RepositoryProvider.of<UserRepository>(context),
-            ), // <--- IMPORTANT CHANGE HERE
-            child: const ManageSupervisorsDialog(),
+            create: (_) =>
+                UserCubit(RepositoryProvider.of<UserRepository>(context)),
+            child: const ManageUsers(),
+          );
+        },
+      );
+    } else if (widget.title == 'Manage Student') {
+      // <-- New Condition
+      print('Condition met: "Manage Student" card tapped.');
+      showDialog(
+        context: context,
+        builder: (dialogContext) {
+          return BlocProvider(
+            create: (_) =>
+                StudentCubit(RepositoryProvider.of<StudentRepository>(context)),
+            child: const ManageStudents(),
           );
         },
       );
@@ -44,30 +53,12 @@ class _DeptCardState extends State<DeptCard> {
 
   @override
   Widget build(BuildContext context) {
-    // This 'context' implicitly has access to all providers above DeptCard in the tree.
     return GestureDetector(
       onTap: () {
-        print(
-          'GestureDetector onTap called for DeptCard with title: "${widget.title}"',
-        );
-        _showSupervisorManagement(context); // Pass this 'context'
+        _showManagementDialog(context);
       },
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.11,
-        height: MediaQuery.of(context).size.height * 0.1,
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
+        // ... (your existing DeptCard UI)
         child: Center(
           child: Text(
             widget.title,
