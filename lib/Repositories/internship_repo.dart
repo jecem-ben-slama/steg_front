@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pfa/Model/internship_model.dart';
 
 class InternshipRepository {
@@ -44,7 +45,8 @@ class InternshipRepository {
       rethrow;
     }
   }
-//* Add an internship
+
+  //* Add an internship
   Future<Internship> addInternship(Internship internship) async {
     try {
       // The backend screenshot (image_0b9f03.png) shows a POST request to add_stage.php
@@ -56,8 +58,7 @@ class InternshipRepository {
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] == 'success') {
-          
- final int? newStageId = int.tryParse(
+          final int? newStageId = int.tryParse(
             responseData['stageID']?.toString() ?? '',
           );
           if (newStageId != null) {
@@ -171,6 +172,72 @@ class InternshipRepository {
     } catch (e) {
       print('General Error updating internship: $e');
       rethrow;
+    }
+  }
+
+  //* Fetch internships by status, used by chefCentre
+  Future<List<Internship>> fetchInternshipsByStatus(String status) async {
+    try {
+      final response = await _dio.get(
+        '$gestionnairePath/list_stage.php',
+        queryParameters: {'statut': status},
+      );
+      if (response.statusCode == 200) {
+        // FIX HERE: Access the 'data' key of the response.data map
+        final List<dynamic> internshipJsonList =
+            response.data['data']; // <--- Change is here
+        return internshipJsonList
+            .map((json) => Internship.fromJson(json))
+            .toList();
+      } else {
+        debugPrint(
+          'Failed to fetch internships by status $status: ${response.statusCode}: ${response.data}',
+        );
+        throw Exception('Failed to fetch internships by status');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException fetching internships by status: ${e.message}');
+      debugPrint('Error Response: ${e.response?.data}');
+      throw Exception('Failed to fetch internships by status: ${e.message}');
+    } catch (e) {
+      debugPrint('Error fetching internships by status: $e');
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  //* Update an internship's status, used by chefCentre
+  Future<Internship> updateInternshipStatus(
+    int? internshipId,
+    String newStatus,
+  ) async {
+    if (internshipId == null) {
+      throw ArgumentError('internshipId cannot be null for status update.');
+    }
+    try {
+      final response = await _dio.put(
+        // Ensure this path matches your Postman URL (e.g., '/ChefCentre/update_internship_status.php')
+        '/ChefCentre/update_internship_status.php',
+        data: {
+          'stageID': internshipId, // <--- Make sure this line is here
+          'statut': newStatus,
+        },
+      );
+      if (response.statusCode == 200) {
+        debugPrint('Internship status updated successfully: ${response.data}');
+        return Internship.fromJson(response.data);
+      } else {
+        debugPrint(
+          'Failed to update internship status ${response.statusCode}: ${response.data}',
+        );
+        throw Exception('Failed to update internship status');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException updating internship status: ${e.message}');
+      debugPrint('Error Response: ${e.response?.data}');
+      throw Exception('Failed to update internship status: ${e.message}');
+    } catch (e) {
+      debugPrint('Error updating internship status: $e');
+      throw Exception('An unexpected error occurred: $e');
     }
   }
 }

@@ -193,19 +193,20 @@ class _MyAppState extends State<MyApp> {
     if (kDebugMode) {
       final prefs = await SharedPreferences.getInstance();
       //*gestionnaire
-      //const String devToken =
-      //  'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTI3Mzc5OTAsImV4cCI6MTc1MzM0Mjc5MCwiZGF0YSI6eyJ1c2VySUQiOjEsInVzZXJuYW1lIjoiZ2VzdGlvbm5haXJlIiwicm9sZSI6Ikdlc3Rpb25uYWlyZSJ9fQ.k9s5rMp5-dRAUWwNbOdV-P0YfV3AjOuG_AwJBrP9Ldk'; // Replace with YOUR token
+      const String devToken =
+          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTI3Mzc5OTAsImV4cCI6MTc1MzM0Mjc5MCwiZGF0YSI6eyJ1c2VySUQiOjEsInVzZXJuYW1lIjoiZ2VzdGlvbm5haXJlIiwicm9sZSI6Ikdlc3Rpb25uYWlyZSJ9fQ.k9s5rMp5-dRAUWwNbOdV-P0YfV3AjOuG_AwJBrP9Ldk'; // Replace with YOUR token
 
       //*encadrant
-      //const String devToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5NjEsImV4cCI6MTc1MzYyOTc2MSwiZGF0YSI6eyJ1c2VySUQiOjUsInVzZXJuYW1lIjoiRW5jYWRyYW50VXBkYXRlZCIsInJvbGUiOiJFbmNhZHJhbnQifX0.bJQJufOTJkBTRA2fEzzb0P7IcIDL_sUMXnnSCm1kh_s";
+      const String devToken1 =
+          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5NjEsImV4cCI6MTc1MzYyOTc2MSwiZGF0YSI6eyJ1c2VySUQiOjUsInVzZXJuYW1lIjoiRW5jYWRyYW50VXBkYXRlZCIsInJvbGUiOiJFbmNhZHJhbnQifX0.bJQJufOTJkBTRA2fEzzb0P7IcIDL_sUMXnnSCm1kh_s";
       //* chef
-      const String devToken =
+      const String devToken2 =
           "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5MTEsImV4cCI6MTc1MzYyOTcxMSwiZGF0YSI6eyJ1c2VySUQiOjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJDaGVmQ2VudHJlSW5mb3JtYXRpcXVlIn19.LKXQ_w6WexprOW8oZqevmZapnHA6JrRlMZlPiwERGyU";
 
-      await prefs.setString('jwt_token', devToken);
+      await prefs.setString('jwt_token', devToken2);
       debugPrint('Development token set in SharedPreferences.');
 
-      await loginRepository.setToken(devToken);
+      await loginRepository.setToken(devToken2);
     }
   }
 

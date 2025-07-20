@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/utils/sidebar_config.dart';
 import 'package:pfa/Screens/ChefCentreInformatique/chef_dashboard.dart';
+// Make sure UserManagementScreen is defined or imported correctly
+import 'package:pfa/Screens/ChefCentreInformatique/chef_user_management.dart'; // Assuming this path
 
 class ChefHome extends StatefulWidget {
   const ChefHome({super.key});
@@ -14,13 +16,15 @@ class ChefHome extends StatefulWidget {
 }
 
 class _ChefHomeState extends State<ChefHome> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Default to the first item (Dashboard)
   String? _currentUserRole;
 
+  // The list of content pages for the sidebar
   final List<Widget> _chefContentPages = [
-    const ChefDashboardScreen(), 
-    const UserManagementScreen(),
-    ];
+    const ChefDashboardScreen(), // Now contains the internship logic
+    const UserManagementScreen(), // Your other screen
+    // Add more screens here as needed for other sidebar items
+  ];
 
   @override
   void initState() {
@@ -34,7 +38,7 @@ class _ChefHomeState extends State<ChefHome> {
       listen: false,
     );
     final role = await loginRepository.getUserRoleFromToken();
-    debugPrint('Fetched User Role in ChefHome: $role'); 
+    debugPrint('Fetched User Role in ChefHome: $role');
     setState(() {
       _currentUserRole = role;
     });
@@ -71,9 +75,8 @@ class _ChefHomeState extends State<ChefHome> {
     return Scaffold(
       backgroundColor: const Color(0xFFE6F0F7),
       body: _currentUserRole == null
-          ? const Center(
-              child: CircularProgressIndicator(),
-            ): Padding(
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
@@ -89,20 +92,19 @@ class _ChefHomeState extends State<ChefHome> {
                       child: Column(
                         children: [
                           SizedBox(height: screenHeight * 0.05),
-                          //* Logo (can be dynamic based on role or a generic app logo)
+                          //* Logo
                           const CircleAvatar(
                             radius: 32,
                             backgroundColor: Colors.white,
                             child: Icon(
-                              Icons
-                                  .admin_panel_settings,
+                              Icons.admin_panel_settings,
                               color: Color(0xFF0A2847),
                               size: 40,
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.05),
                           Text(
-                            "Chef Panel", 
+                            "Chef Panel",
                             style: TextStyle(
                               fontSize: screenWidth * 0.02,
                               color: Colors.white,
@@ -114,8 +116,8 @@ class _ChefHomeState extends State<ChefHome> {
                           ...currentRoleSidebarItems.map((item) {
                             final contentIndex =
                                 (item.label == logoutSidebarItem.label)
-                                ? -1
-                                : item.index;
+                                ? -1 // Logout is not a content page
+                                : item.index; // Use the index defined in sidebar_config for content pages
                             return SidebarItem(
                               icon: item.icon,
                               label: item.label,

@@ -1,6 +1,9 @@
+// lib/Model/internship_model.dart
+
 class Internship {
-  final int? internshipID;
+  final int? internshipID; // Changed back to nullable
   final String? studentName;
+  final String? studentEmail; // Added for completeness
   final String? subjectTitle;
   final String? supervisorName;
   final int? encadrantProID;
@@ -14,8 +17,9 @@ class Internship {
   final int? sujetID;
 
   Internship({
-    this.internshipID,
+    this.internshipID, // No longer required in constructor
     this.studentName,
+    this.studentEmail, // Added for completeness
     this.subjectTitle,
     this.supervisorName,
     this.encadrantProID,
@@ -43,7 +47,9 @@ class Internship {
     }
 
     return Internship(
-      internshipID: int.tryParse(json['stageID'].toString()),
+      internshipID: int.tryParse(
+        json['stageID']?.toString() ?? '',
+      ), // Handle potential null from backend
       studentName: json['studentName'] as String?,
       subjectTitle: json['subjectTitle'] as String?,
       supervisorName: json['supervisorName'] as String?,
@@ -79,13 +85,49 @@ class Internship {
     };
   }
 
+  // Updated copyWith method for nullable internshipID
   Internship copyWith({
     int? internshipID,
-    // add other fields here as needed, e.g. String? title, etc.
+    String? studentName,
+    String? subjectTitle,
+    String? supervisorName,
+    int? encadrantProID,
+    String? typeStage,
+    String? dateDebut,
+    String? dateFin,
+    String? statut,
+    bool? estRemunere,
+    double? montantRemuneration,
+    int? etudiantID,
+    int? sujetID,
   }) {
     return Internship(
       internshipID: internshipID ?? this.internshipID,
-      // copy other fields here, e.g. title: title ?? this.title, etc.
+      studentName: studentName ?? this.studentName,
+      subjectTitle: subjectTitle ?? this.subjectTitle,
+      supervisorName: supervisorName ?? this.supervisorName,
+      encadrantProID: encadrantProID ?? this.encadrantProID,
+      typeStage: typeStage ?? this.typeStage,
+      dateDebut: dateDebut ?? this.dateDebut,
+      dateFin: dateFin ?? this.dateFin,
+      statut: statut ?? this.statut,
+      estRemunere: estRemunere ?? this.estRemunere,
+      montantRemuneration: montantRemuneration ?? this.montantRemuneration,
+      etudiantID: etudiantID ?? this.etudiantID,
+      sujetID: sujetID ?? this.sujetID,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    // If internshipID is null, then they are only equal if all other fields are equal.
+    // However, for typical list operations (removeWhere, indexOf), if the ID is null,
+    // it's likely a temporary object, so equality based on ID won't work.
+    // For practical purposes, when dealing with items in a list, they should have IDs.
+    return other is Internship && other.internshipID == internshipID;
+  }
+
+  @override
+  int get hashCode => internshipID.hashCode;
 }
