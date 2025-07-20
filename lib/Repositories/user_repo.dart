@@ -1,9 +1,8 @@
-// lib/repositories/user_repo.dart
 import 'package:dio/dio.dart';
 import 'package:pfa/Model/user_model.dart';
 
 class UserRepository {
-  static const String usersPath = '/User'; // Corrected to /User as per your URL
+  static const String usersPath = '/User';
   final Dio _dio;
 
   UserRepository({required Dio dio}) : _dio = dio;
@@ -18,7 +17,6 @@ class UserRepository {
     return _fetchUsers('$usersPath/list_users.php?roles=$role');
   }
 
-  // Private helper method to handle the common fetching logic
   Future<List<User>> _fetchUsers(String endpoint) async {
     try {
       final response = await _dio.get(endpoint);
@@ -56,7 +54,6 @@ class UserRepository {
   //* Add a new User
   Future<User> addUser(User user) async {
     try {
-      // For adding, password is required
       if (user.password == null || user.password!.isEmpty) {
         throw Exception('Password is required for new user creation.');
       }

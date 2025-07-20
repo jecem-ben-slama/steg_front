@@ -1,4 +1,3 @@
-// lib/Screens/ChefCentreInformatique/chef_dashboard.dart
 import 'package:flutter/material.dart';
 
 class ChefDashboardScreen extends StatelessWidget {
@@ -15,8 +14,6 @@ class ChefDashboardScreen extends StatelessWidget {
   }
 }
 
-// You might also have:
-// lib/Screens/ChefCentreInformatique/user_management_screen.dart
 class UserManagementScreen extends StatelessWidget {
   const UserManagementScreen({super.key});
 

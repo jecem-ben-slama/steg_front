@@ -1,10 +1,10 @@
 class LoginResponse {
   final String status;
   final String message;
-  final int? userId; // Nullable if login fails
-  final String? username; // Nullable if login fails
-  final String? role; // Nullable if login fails
-  final String? token; // Nullable if login fails
+  final int? userId; 
+  final String? username; 
+  final String? role; 
+  final String? token;
 
   LoginResponse({
     required this.status,

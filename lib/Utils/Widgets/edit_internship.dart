@@ -1,13 +1,12 @@
-// lib/Utils/Widgets/internshipeditdialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Cubit/internship_cubit.dart';
+import 'package:pfa/cubit/internship_cubit.dart';
 import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Repositories/user_repo.dart';
 import 'package:pfa/Utils/snackbar.dart';
-import 'package:intl/intl.dart'; // For date formatting
-import 'package:pfa/Model/user_model.dart'; // Import your User model
-import 'package:dio/dio.dart'; // For DioException
+import 'package:intl/intl.dart';
+import 'package:pfa/Model/user_model.dart';
+import 'package:dio/dio.dart';
 
 class InternshipEditDialog extends StatefulWidget {
   final Internship internship;
@@ -22,7 +21,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController studentNameController;
   late TextEditingController subjectTitleController;
-
   late String selectedTypeStage;
   late TextEditingController dateDebutController;
   late TextEditingController dateFinController;
@@ -30,11 +28,9 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
   late bool estRemunere;
   late TextEditingController montantRemunerationController;
 
-  // State for supervisors dropdown
   List<User> _supervisors = [];
-  User?
-  _selectedSupervisor; // Will hold the currently selected supervisor object
-  bool _isLoadingSupervisors = true; // To show loading state for dropdown
+  User? _selectedSupervisor;
+  bool _isLoadingSupervisors = true;
 
   final List<String> statusOptions = [
     'Validé',
@@ -116,20 +112,17 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
       'INIT STATE - Internship supervisorName: ${widget.internship.supervisorName}',
     );
 
-    _fetchSupervisors(); // Fetch supervisors when dialog initializes
+    _fetchSupervisors();
   }
 
-  // Function to fetch supervisors from the backend using UserRepository
   Future<void> _fetchSupervisors() async {
     setState(() {
       _isLoadingSupervisors = true;
-      _supervisors = []; // Clear previous supervisors to avoid stale data
-      _selectedSupervisor = null; // Clear selected supervisor
+      _supervisors = [];
+      _selectedSupervisor = null;
     });
     try {
-      final userRepository = RepositoryProvider.of<UserRepository>(
-        context,
-      ); // Access your UserRepository
+      final userRepository = RepositoryProvider.of<UserRepository>(context);
 
       print('Fetching supervisors with role "Encadrant"...');
       final encadrantUsers = await userRepository.fetchUsersByRole('Encadrant');
@@ -139,9 +132,8 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
       }
 
       setState(() {
-        _supervisors = encadrantUsers; // No need for local filtering now
+        _supervisors = encadrantUsers;
 
-        // Try to find the currently assigned supervisor from the fetched list
         if (widget.internship.encadrantProID != null) {
           _selectedSupervisor = _supervisors.firstWhereOrNull(
             (s) => s.userID == widget.internship.encadrantProID,
@@ -151,7 +143,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
           );
         }
 
-        // Only try to match by name if ID match failed or ID was null in the first place
         if (_selectedSupervisor == null &&
             widget.internship.supervisorName != null) {
           _selectedSupervisor = _supervisors.firstWhereOrNull(
@@ -229,10 +220,10 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
       listener: (context, state) {
         if (state is InternshipActionSuccess) {
           showSuccessSnackBar(context, state.message);
-          Navigator.of(context).pop(); // Close the dialog on success
+          Navigator.of(context).pop();
         } else if (state is InternshipError) {
           showFailureSnackBar(context, 'Error updating: ${state.message}');
-          print('Internship update error: ${state.message}'); // Log the error
+          print('Internship update error: ${state.message}');
         }
       },
       child: AlertDialog(
@@ -255,12 +246,11 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                   readOnly: true,
                   enabled: false,
                 ),
-                // Dropdown for Supervisor Name
                 _isLoadingSupervisors
                     ? const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16.0),
                         child: CircularProgressIndicator(),
-                      ) // Show loading spinner
+                      )
                     : (_supervisors.isEmpty
                           ? const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -274,7 +264,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                                 labelText: 'Supervisor Name',
                                 border: OutlineInputBorder(),
                               ),
-                              // Map the list of User objects to DropdownMenuItem
                               items: _supervisors.map((User supervisor) {
                                 return DropdownMenuItem<User>(
                                   value: supervisor,
@@ -373,8 +362,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       child: Text(status),
                     );
                   }).toList(),
-                  onChanged:
-                      null, // Keep this as null if status is not editable by the user
+                  onChanged: null,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please select a status';

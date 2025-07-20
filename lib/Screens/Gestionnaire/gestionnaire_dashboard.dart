@@ -1,12 +1,18 @@
-// lib/Gestionnaire/gestionnaire_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Cubit/internship_cubit.dart';
-import 'package:pfa/Model/internship_model.dart'; // Ensure this import is correct
+import 'package:pfa/cubit/internship_cubit.dart';
+import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Utils/Widgets/deptcard.dart';
 import 'package:pfa/Utils/Widgets/edit_internship.dart';
+import 'package:pfa/Utils/Widgets/manage_internship.dart';
 import 'package:pfa/Utils/Widgets/statcard.dart';
-import 'package:pfa/Utils/snackbar.dart'; // Ensure this import is correct
+import 'package:pfa/Utils/snackbar.dart';
+import 'package:pfa/Cubit/student_cubit.dart'; // Needed for AddInternshipDialog
+import 'package:pfa/Cubit/subject_cubit.dart'; // Needed for AddInternshipDialog
+import 'package:pfa/Cubit/user_cubit.dart'; // Needed for AddInternshipDialog
+import 'package:pfa/repositories/student_repo.dart'; // Needed for providing repositories
+import 'package:pfa/repositories/subject_repo.dart'; // Needed for providing repositories
+import 'package:pfa/repositories/user_repo.dart'; // Needed for providing repositories
 
 class GestionnaireDashboard extends StatefulWidget {
   const GestionnaireDashboard({super.key});
@@ -103,6 +109,42 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     return filteredList;
   }
 
+  // Method to show the AddInternshipDialog
+  void _showAddInternshipDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return MultiBlocProvider(
+          providers: [
+            // Ensure InternshipCubit is available to dispatch add actions
+            BlocProvider.value(
+              value: BlocProvider.of<InternshipCubit>(context),
+            ),
+            // Provide StudentCubit for the student dropdown in the dialog
+            BlocProvider(
+              create: (_) => StudentCubit(
+                RepositoryProvider.of<StudentRepository>(dialogContext),
+              ),
+            ),
+            // Provide SubjectCubit for the subject dropdown in the dialog
+            BlocProvider(
+              create: (_) => SubjectCubit(
+                RepositoryProvider.of<SubjectRepository>(dialogContext),
+              ),
+            ),
+            // Provide UserCubit for the supervisor dropdown in the dialog
+            BlocProvider(
+              create: (_) => UserCubit(
+                RepositoryProvider.of<UserRepository>(dialogContext),
+              ),
+            ),
+          ],
+          child: const ManageInternshipsDialog(),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -127,7 +169,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 SizedBox(
-                  width: screenWidth * 0.3, // Adjust width as needed
+                  width: screenWidth * 0.3,
                   child: TextField(
                     decoration: InputDecoration(
                       hintText:
@@ -150,7 +192,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                 ),
                 const SizedBox(width: 16),
                 SizedBox(
-                  width: screenWidth * 0.1, // Adjust width as needed
+                  width: screenWidth * 0.1,
                   child: DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       labelText: 'Status',
@@ -162,7 +204,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                         vertical: 8,
                       ),
                     ),
-                    value: _selectedStatusFilter ?? 'All', // Default to 'All'
+                    value: _selectedStatusFilter ?? 'All',
                     onChanged: (String? newValue) {
                       setState(() {
                         _selectedStatusFilter = newValue == 'All'
@@ -181,9 +223,9 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Type Filter Dropdown
+
                 SizedBox(
-                  width: screenWidth * 0.2, // Adjust width as needed
+                  width: screenWidth * 0.2,
                   child: DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       labelText: 'Type',
@@ -195,7 +237,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                         vertical: 8,
                       ),
                     ),
-                    value: _selectedTypeFilter ?? 'All', // Default to 'All'
+                    value: _selectedTypeFilter ?? 'All',
                     onChanged: (String? newValue) {
                       setState(() {
                         _selectedTypeFilter = newValue == 'All'
@@ -239,7 +281,6 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              DeptCard(title: "Manage Internships"),
               DeptCard(title: "Manage Student"),
               DeptCard(title: "Manage Subject"),
               DeptCard(title: "Manage Supervisor"),
@@ -256,17 +297,38 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text(
-                    "Internships",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween, // Distribute space
+                    children: [
+                      const Text(
+                        "Internships",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      // Add Internship Button
+                      ElevatedButton.icon(
+                        onPressed: () => _showAddInternshipDialog(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Internship'),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   BlocBuilder<InternshipCubit, InternshipState>(
                     builder: (context, state) {
-                      List<Internship>?
-                      internshipsRaw; // This will hold the unfiltered data
-
-                      // Determine the raw list of internships
+                      List<Internship>? internshipsRaw;
                       if (state is InternshipLoaded) {
                         internshipsRaw = state.internships;
                       } else if (state is InternshipError) {
@@ -291,13 +353,11 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                 .lastLoadedInternships;
                       }
 
-                      // Apply filters to the raw list if it exists
                       List<Internship>? internshipsToDisplay;
                       if (internshipsRaw != null) {
                         internshipsToDisplay = _applyFilters(internshipsRaw);
                       }
 
-                      // Handle different display scenarios
                       if (internshipsToDisplay == null ||
                           internshipsToDisplay.isEmpty) {
                         if (state is InternshipLoading) {
@@ -311,7 +371,6 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                             ),
                           );
                         } else {
-                          // No internships found after load, or initial state, or no results after filter
                           return Center(
                             child: Text(
                               _searchQuery.isNotEmpty ||
@@ -324,7 +383,6 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                         }
                       }
 
-                      // If we have data, display the table
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(

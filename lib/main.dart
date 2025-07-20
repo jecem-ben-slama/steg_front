@@ -1,25 +1,28 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pfa/repositories/student_repo.dart';
-import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:provider/provider.dart';
-//* Login
+//* Repositories
 import 'package:pfa/BLoc/Login/login_bloc.dart';
-import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/Services/login_service.dart';
+// ↑↑ was coded using the BLoC pattern, which was later changed to Cubit for the rest of the app
+import 'package:pfa/Repositories/login_repo.dart';
+import 'package:pfa/Repositories/internship_repo.dart'; //* */
+import 'package:pfa/repositories/student_repo.dart';
+import 'package:pfa/repositories/user_repo.dart';
+import 'package:pfa/repositories/subject_repo.dart';
 
-//* Internship
-import 'package:pfa/Cubit/internship_cubit.dart';
-import 'package:pfa/Repositories/internship_repo.dart';
-
+//* Cubit
+import 'package:pfa/cubit/internship_cubit.dart';
 //* Screens
 import 'package:pfa/Screens/login.dart';
 import 'package:pfa/Screens/Gestionnaire/gestionnaire_home.dart';
 import 'package:pfa/Screens/Encadrant/encadrant_home.dart';
 import 'package:pfa/Screens/ChefCentreInformatique/chef_home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,11 +43,13 @@ class _MyAppState extends State<MyApp> {
   late final Dio dio;
   late final InternshipRepository internshipRepository;
   late final UserRepository userRepository;
+  late final SubjectRepository subjectRepository;
 
   @override
+  //* Configuration of Dio and Repositories
   void initState() {
     super.initState();
-
+    //? Initialize Dio with base options
     dio =
         Dio(
             BaseOptions(
@@ -61,12 +66,15 @@ class _MyAppState extends State<MyApp> {
           ..interceptors.add(
             LogInterceptor(responseBody: true, requestBody: true),
           );
+    //? Initialize Repositories
     loginService = LoginService(dio: dio);
     loginRepository = LoginRepository(loginService: loginService);
-    userRepository = UserRepository(dio: dio); // Initialized here
-    internshipRepository = InternshipRepository(dio: dio); // Initialized here
-
+    userRepository = UserRepository(dio: dio);
+    internshipRepository = InternshipRepository(dio: dio);
+    subjectRepository = SubjectRepository(dio: dio);
+    _setDevToken();
     //* Router
+    //! Move the router initialization to a separate file
     router = GoRouter(
       initialLocation: '/login',
       refreshListenable: loginRepository,
@@ -81,7 +89,6 @@ class _MyAppState extends State<MyApp> {
         final bool tryingToLogin = location == '/login';
         final bool tryingToSplash = location == '/';
 
-        // --- AUTHENTICATION LOGIC ---
         if (!loggedIn) {
           debugPrint('GoRouter Redirect: User NOT logged in.');
           if (tryingToLogin || tryingToSplash) {
@@ -95,7 +102,6 @@ class _MyAppState extends State<MyApp> {
           }
         }
 
-        // 2. If logged in:
         debugPrint('GoRouter Redirect: User IS logged in.');
         if (tryingToLogin || tryingToSplash) {
           if (currentUserRole == 'Gestionnaire') {
@@ -112,7 +118,6 @@ class _MyAppState extends State<MyApp> {
           return '/login';
         }
         //!!! Change this to handle the new role
-        // --- AUTHORIZATION LOGIC (Role-based access) ---
         if (currentUserRole == 'Gestionnaire') {
           if (location.startsWith('/encadrant') ||
               location.startsWith('/ChefCentreInformatique')) {
@@ -130,7 +135,6 @@ class _MyAppState extends State<MyApp> {
             return '/encadrant/home';
           }
         } else if (currentUserRole == 'ChefCentreInformatique') {
-          // <--- ADD THIS NEW BLOCK
           if (location.startsWith('/gestionnaire') ||
               location.startsWith('/encadrant')) {
             debugPrint(
@@ -166,21 +170,9 @@ class _MyAppState extends State<MyApp> {
           path: '/gestionnaire/home',
           builder: (BuildContext context, GoRouterState state) => BlocProvider(
             create: (context) =>
-                InternshipCubit(internshipRepository)
-                  ..fetchInternships(), // Cubit is provided here
-            child: const GestionnaireHome(), // GestionnaireHome is the child
+                InternshipCubit(internshipRepository)..fetchInternships(),
+            child: const GestionnaireHome(),
           ),
-          // Removed nested 'details' route if it's now an internal view
-          // routes: <RouteBase>[
-          //   GoRoute(
-          //     path: 'details', // Full path: /gestionnaire/home/details
-          //     builder: (BuildContext context, GoRouterState state) =>
-          //         BlocProvider.value(
-          //           value: BlocProvider.of<InternshipCubit>(context),
-          //           child: const GestionnaireMainContent(),
-          //         ),
-          //   ),
-          // ],
         ),
         GoRoute(
           path: '/encadrant/home',
@@ -196,6 +188,27 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  //! This function is used to set a development token for testing purposes.
+  void _setDevToken() async {
+    if (kDebugMode) {
+      final prefs = await SharedPreferences.getInstance();
+      //*gestionnaire
+      //const String devToken =
+      //  'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTI3Mzc5OTAsImV4cCI6MTc1MzM0Mjc5MCwiZGF0YSI6eyJ1c2VySUQiOjEsInVzZXJuYW1lIjoiZ2VzdGlvbm5haXJlIiwicm9sZSI6Ikdlc3Rpb25uYWlyZSJ9fQ.k9s5rMp5-dRAUWwNbOdV-P0YfV3AjOuG_AwJBrP9Ldk'; // Replace with YOUR token
+
+      //*encadrant
+      //const String devToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5NjEsImV4cCI6MTc1MzYyOTc2MSwiZGF0YSI6eyJ1c2VySUQiOjUsInVzZXJuYW1lIjoiRW5jYWRyYW50VXBkYXRlZCIsInJvbGUiOiJFbmNhZHJhbnQifX0.bJQJufOTJkBTRA2fEzzb0P7IcIDL_sUMXnnSCm1kh_s";
+      //* chef
+      const String devToken =
+          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5MTEsImV4cCI6MTc1MzYyOTcxMSwiZGF0YSI6eyJ1c2VySUQiOjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJDaGVmQ2VudHJlSW5mb3JtYXRpcXVlIn19.LKXQ_w6WexprOW8oZqevmZapnHA6JrRlMZlPiwERGyU";
+
+      await prefs.setString('jwt_token', devToken);
+      debugPrint('Development token set in SharedPreferences.');
+
+      await loginRepository.setToken(devToken);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -204,13 +217,16 @@ class _MyAppState extends State<MyApp> {
           create: (context) => UserRepository(dio: dio),
         ),
         RepositoryProvider<StudentRepository>(
-          // Provide StudentRepository
           create: (context) => StudentRepository(dio: dio),
         ),
-        /*  RepositoryProvider<SubjectRepository>(
-          // Provide SubjectRepository (for later)
+        RepositoryProvider<SubjectRepository>(
+          // Provide SubjectRepository
           create: (context) => SubjectRepository(dio: dio),
-        ), */
+        ),
+        RepositoryProvider<InternshipRepository>(
+          // Provide InternshipRepository
+          create: (context) => InternshipRepository(dio: dio),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [

@@ -105,7 +105,6 @@ class _ManageStudentsState extends State<ManageStudents> {
         height: MediaQuery.of(context).size.height * 0.8,
         child: Column(
           children: [
-            // Toggle Button and Title for the Form Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -134,7 +133,7 @@ class _ManageStudentsState extends State<ManageStudents> {
                   ? Padding(
                       key: const ValueKey(
                         'UserForm',
-                      ), // Key is important for AnimatedSwitcher
+                      ),
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Column(
@@ -217,10 +216,9 @@ class _ManageStudentsState extends State<ManageStudents> {
                         ),
                       ),
                     )
-                  : const SizedBox.shrink(), // Show nothing when hidden
+                  : const SizedBox.shrink(), 
             ),
-            const Divider(height: 30, thickness: 1), // A clearer divider
-            // User List Section Title
+            const Divider(height: 30, thickness: 1), 
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -265,7 +263,7 @@ class _ManageStudentsState extends State<ManageStudents> {
                             vertical: 6,
                             horizontal: 4,
                           ),
-                          elevation: 3, // Add some shadow
+                          elevation: 3,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -273,7 +271,7 @@ class _ManageStudentsState extends State<ManageStudents> {
                             leading: CircleAvatar(
                               child: Text(
                                 student.firstName[0].toUpperCase(),
-                              ), // First letter of Studentname
+                              ), 
                             ),
                             title: Text(
                               '${student.firstName} ${student.lastName}',
@@ -329,7 +327,7 @@ class _ManageStudentsState extends State<ManageStudents> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(); // Close the dialog
+            Navigator.of(context).pop(); 
           },
           child: const Text('Close'),
         ),

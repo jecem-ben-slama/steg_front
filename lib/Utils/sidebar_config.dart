@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 class SidebarItemData {
   final IconData icon;
   final String label;
-  final int index; // Index for IndexedStack
+  final int index;
   final String?
-  route; // GoRouter route if it's a top-level navigation, otherwise null
-  final List<String> roles; // Roles that can see this item
+  route; 
+  final List<String> roles; 
 
   const SidebarItemData({
     required this.icon,
@@ -17,7 +17,6 @@ class SidebarItemData {
   });
 }
 
-// Define your sidebar items here
 final List<SidebarItemData> gestionnaireSidebarItems = [
   const SidebarItemData(
     icon: Icons.dashboard,
@@ -64,7 +63,6 @@ final List<SidebarItemData> encadrantSidebarItems = [
     index: 1,
     roles: ['Encadrant'],
   ),
-  // Add other encadrant specific items
 ];
 
 final List<SidebarItemData> chefSidebarItems = [
@@ -75,27 +73,23 @@ final List<SidebarItemData> chefSidebarItems = [
     roles: ['ChefCentreInformatique'],
   ),
   const SidebarItemData(
-    icon: Icons.security, // Another example item
+    icon: Icons.security, 
     label: "User Management",
     index: 1,
     roles: ['ChefCentreInformatique'],
   ),
-  // Add other chef specific items
+ 
 ];
 
-// Combine all items (optional, but useful if a single sidebar serves multiple roles)
 final List<SidebarItemData> allSidebarItems = [
   ...gestionnaireSidebarItems,
   ...encadrantSidebarItems,
   ...chefSidebarItems,
-  // Logout is common, but its index needs to be consistent
-  // For now, handle logout separately as its action is special (GoRouter redirect)
-];
+  ];
 
-// If you want a common "Log Out" item for all:
 const SidebarItemData logoutSidebarItem = SidebarItemData(
   icon: Icons.logout,
   label: "Log Out",
-  index: -1, // Use a special index or handle directly
+  index: -1, 
   roles: ['Gestionnaire', 'Encadrant', 'ChefCentreInformatique'],
 );

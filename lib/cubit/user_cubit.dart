@@ -1,9 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:pfa/Model/user_model.dart'; // Ensure this import is correct
-import 'package:pfa/repositories/user_repo.dart'; // Ensure this import is correct
+import 'package:pfa/Model/user_model.dart'; 
+import 'package:pfa/repositories/user_repo.dart';
 
-// --- User States ---
 abstract class UserState extends Equatable {
   const UserState();
 
@@ -25,7 +24,7 @@ class UserLoaded extends UserState {
 
 class UserActionSuccess extends UserState {
   final String message;
-  final List<User>? lastLoadedUsers; // To retain current list after an action
+  final List<User>? lastLoadedUsers; 
   const UserActionSuccess(this.message, {this.lastLoadedUsers});
 
   @override
@@ -35,20 +34,18 @@ class UserActionSuccess extends UserState {
 class UserError extends UserState {
   final String message;
   final List<User>?
-  lastLoadedUsers; // To retain previously loaded data on error
+  lastLoadedUsers;// in case of error, we can provide the last loaded users
   const UserError(this.message, {this.lastLoadedUsers});
 
   @override
   List<Object?> get props => [message, lastLoadedUsers];
 }
 
-// --- User Cubit ---
 class UserCubit extends Cubit<UserState> {
   final UserRepository _repository;
 
   UserCubit(this._repository) : super(UserInitial());
-
-  // Helper to get current users from state if available
+//* Fetch Current users
   List<User>? _getCurrentUsers() {
     if (state is UserLoaded) {
       return (state as UserLoaded).users;
@@ -59,9 +56,9 @@ class UserCubit extends Cubit<UserState> {
     }
     return null;
   }
-
+//* Fetch users 
   Future<void> fetchUsers() async {
-    if (state is UserLoading) return; // Prevent multiple fetches
+    if (state is UserLoading) return;
 
     final currentUsers = _getCurrentUsers();
     emit(UserLoading());
@@ -77,20 +74,20 @@ class UserCubit extends Cubit<UserState> {
       );
     }
   }
-
+//* Add a new user
   Future<void> addUser(User user) async {
     List<User> currentUsers = List.from(_getCurrentUsers() ?? []);
-    emit(UserLoading()); // Or a more specific state like UserAdding
+    emit(UserLoading()); 
     try {
       final newUser = await _repository.addUser(user);
-      currentUsers.add(newUser); // Add the newly created user (with ID)
+      currentUsers.add(newUser); 
       emit(
         UserActionSuccess(
           'User added successfully!',
           lastLoadedUsers: currentUsers,
         ),
       );
-      emit(UserLoaded(currentUsers)); // Update the main list
+      emit(UserLoaded(currentUsers)); 
     } catch (e) {
       emit(
         UserError(
@@ -100,10 +97,10 @@ class UserCubit extends Cubit<UserState> {
       );
     }
   }
-
+//* Update user
   Future<void> updateUser(User user) async {
     List<User> currentUsers = List.from(_getCurrentUsers() ?? []);
-    emit(UserLoading()); // Or UserUpdating
+    emit(UserLoading()); 
     try {
       final updatedUser = await _repository.updateUser(user);
       final index = currentUsers.indexWhere(
@@ -111,7 +108,7 @@ class UserCubit extends Cubit<UserState> {
       );
       if (index != -1) {
         currentUsers[index] =
-            updatedUser; // Replace the old user with the updated one
+            updatedUser;
       }
       emit(
         UserActionSuccess(
@@ -119,7 +116,7 @@ class UserCubit extends Cubit<UserState> {
           lastLoadedUsers: currentUsers,
         ),
       );
-      emit(UserLoaded(currentUsers)); // Update the main list
+      emit(UserLoaded(currentUsers));
     } catch (e) {
       emit(
         UserError(
@@ -129,20 +126,20 @@ class UserCubit extends Cubit<UserState> {
       );
     }
   }
-
+//* Delete user
   Future<void> deleteUser(int userID) async {
     List<User> currentUsers = List.from(_getCurrentUsers() ?? []);
-    emit(UserLoading()); // Or UserDeleting
+    emit(UserLoading()); 
     try {
       await _repository.deleteUser(userID);
-      currentUsers.removeWhere((u) => u.userID == userID); // Remove from list
+      currentUsers.removeWhere((u) => u.userID == userID); 
       emit(
         UserActionSuccess(
           'User deleted successfully!',
           lastLoadedUsers: currentUsers,
         ),
       );
-      emit(UserLoaded(currentUsers)); // Update the main list
+      emit(UserLoaded(currentUsers)); 
     } catch (e) {
       emit(
         UserError(

@@ -1,4 +1,3 @@
-// lib/Screens/Gestionnaire/gestionnaire_home.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pfa/Screens/Gestionnaire/Certificates.dart';
@@ -6,16 +5,8 @@ import 'package:pfa/Screens/Gestionnaire/gestionnaire_dashboard.dart';
 import 'package:pfa/Screens/Gestionnaire/statistics.dart';
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
-
-// Import from your Widgets folder
-
-// Your statistics screen (example for 'Accounting and Finance')
-// Import your other Gestionnaire screens here
-// import 'package:pfa/Gestionnaire/supervisors_management.dart';
-// import 'package:pfa/Gestionnaire/attendance_records.dart';
-
 import 'package:pfa/Repositories/login_repo.dart';
-import 'package:pfa/utils/sidebar_config.dart'; // Import the new sidebar config
+import 'package:pfa/utils/sidebar_config.dart'; 
 
 class GestionnaireHome extends StatefulWidget {
   const GestionnaireHome({super.key});
@@ -72,14 +63,11 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // Filter sidebar items based on the current user's role
     final List<SidebarItemData> currentRoleSidebarItems =
         gestionnaireSidebarItems
             .where((item) => item.roles.contains(_currentUserRole))
             .toList();
 
-    // Add the common logout item at the end
     if (_currentUserRole != null &&
         logoutSidebarItem.roles.contains(_currentUserRole)) {
       currentRoleSidebarItems.add(logoutSidebarItem);
@@ -90,7 +78,7 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
       body: _currentUserRole == null
           ? const Center(
               child: CircularProgressIndicator(),
-            ) // Show loading while role is being fetched
+            ) 
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -128,9 +116,7 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
                           ),
                           SizedBox(height: screenHeight * 0.05),
                           //* Navigation Items
-                          // Dynamically build sidebar items based on role
                           ...currentRoleSidebarItems.map((item) {
-                            // Determine the actual index for content display (skip -1 for logout)
                             final contentIndex =
                                 (item.label == logoutSidebarItem.label)
                                 ? -1
@@ -156,7 +142,7 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
                         ? _gestionnaireContentPages[_selectedIndex]
                         : const Center(
                             child: Text("Select an option"),
-                          ), // Fallback or initial message
+                          ), 
                   ),
                 ],
               ),

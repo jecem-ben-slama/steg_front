@@ -3,27 +3,25 @@ import 'package:flutter/material.dart';
 class SidebarItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback? onTap; // Added onTap callback
-  final bool isSelected; // Added isSelected for visual feedback
+  final VoidCallback? onTap;
+  final bool isSelected; 
 
   const SidebarItem({
     super.key,
     required this.icon,
     required this.label,
     this.onTap,
-    this.isSelected = false, // Default to false
+    this.isSelected = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Use GestureDetector for better tap control
       onTap: onTap,
       child: Container(
-        // Wrap with Container to apply background color based on selection
         color: isSelected
             ? Colors.blue.withOpacity(0.2)
-            : Colors.transparent, // Highlight selected item
+            : Colors.transparent, 
         child: ListTile(
           leading: Icon(
             icon,
@@ -37,7 +35,7 @@ class SidebarItem extends StatelessWidget {
               fontSize: MediaQuery.of(context).size.width * 0.01,
               fontWeight: isSelected
                   ? FontWeight.bold
-                  : FontWeight.normal, // Make text bold if selected
+                  : FontWeight.normal, 
             ),
           ),
         ),

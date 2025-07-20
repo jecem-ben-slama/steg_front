@@ -1,8 +1,7 @@
-// lib/controllers/page_controller.dart (Create this new file)
 import 'package:flutter/foundation.dart';
 
 class PageController extends ChangeNotifier {
-  String _currentPage = 'dashboard'; // Initial page
+  String _currentPage = 'dashboard';
 
   String get currentPage => _currentPage;
 

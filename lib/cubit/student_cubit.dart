@@ -1,10 +1,8 @@
-// lib/Cubit/student_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:pfa/Model/student_model.dart'; // Adjust path
-import 'package:pfa/repositories/student_repo.dart'; // Adjust path
+import 'package:pfa/Model/student_model.dart';
+import 'package:pfa/repositories/student_repo.dart';
 
-// --- States ---
 abstract class StudentState extends Equatable {
   const StudentState();
 
@@ -40,12 +38,11 @@ class StudentError extends StudentState {
   List<Object?> get props => [message];
 }
 
-// --- Cubit ---
 class StudentCubit extends Cubit<StudentState> {
   final StudentRepository _studentRepository;
 
   StudentCubit(this._studentRepository) : super(StudentInitial());
-
+  //* Fetch all students
   Future<void> fetchStudents() async {
     try {
       emit(StudentLoading());
@@ -55,7 +52,7 @@ class StudentCubit extends Cubit<StudentState> {
       emit(StudentError('Failed to load students: ${e.toString()}'));
     }
   }
-
+//* Add a new student
   Future<void> addStudent(Student student) async {
     try {
       emit(StudentLoading()); // Or a more specific state like StudentAdding
@@ -70,7 +67,7 @@ class StudentCubit extends Cubit<StudentState> {
       emit(StudentError('Error adding student: ${e.toString()}'));
     }
   }
-
+//* Update student
   Future<void> updateStudent(Student student) async {
     try {
       emit(StudentLoading()); // Or StudentUpdating
@@ -85,17 +82,14 @@ class StudentCubit extends Cubit<StudentState> {
       emit(StudentError('Error updating student: ${e.toString()}'));
     }
   }
-
+///* Delete student
   Future<void> deleteStudent(int studentID) async {
     try {
-      emit(StudentLoading()); // Or StudentDeleting
+      emit(StudentLoading());
       await _studentRepository.deleteStudent(studentID);
-      // After deleting, refetch the list to update the UI
       final students = await _studentRepository.fetchStudents();
       emit(StudentLoaded(students));
-      emit(
-        StudentActionSuccess('Student deleted successfully!'),
-      ); // Send success message
+      emit(StudentActionSuccess('Student deleted successfully!'));
     } catch (e) {
       emit(StudentError('Error deleting student: ${e.toString()}'));
     }

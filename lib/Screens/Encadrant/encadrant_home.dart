@@ -21,7 +21,6 @@ class _EncadrantHomeState extends State<EncadrantHome> {
   int _selectedIndex = 0;
   String? _currentUserRole;
 
-  // Placeholder content pages for Encadrant. Replace with your actual screen widgets.
   final List<Widget> _encadrantContentPages = [
     const Center(
       child: Text(
@@ -32,7 +31,7 @@ class _EncadrantHomeState extends State<EncadrantHome> {
     const Center(
       child: Text('Encadrant Profile Content', style: TextStyle(fontSize: 24)),
     ),
-    // Add other Encadrant specific views here, e.g., const EncadrantDashboardScreen(),
+    
   ];
 
   @override
@@ -112,7 +111,7 @@ class _EncadrantHomeState extends State<EncadrantHome> {
                           ),
                           SizedBox(height: screenHeight * 0.05),
                           Text(
-                            "Encadrant Panel", // Change to Encadrant specific title
+                            "Encadrant Panel",
                             style: TextStyle(
                               fontSize: screenWidth * 0.02,
                               color: Colors.white,

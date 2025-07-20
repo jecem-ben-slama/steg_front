@@ -1,44 +1,41 @@
-
 import 'package:equatable/equatable.dart';
 
 class User extends Equatable {
   final int?
-  userID; // Nullable for new users (before ID is assigned by backend)
+  userID; 
   final String username;
-  final String? password; // Password can be null for updates if not changing
+  final String? password; 
   final String email;
   final String lastname;
   final String
-  role; // e.g., 'Gestionnaire', 'Encadrant', 'ChefCentreInformation'
+  role; 
 
   const User({
     this.userID,
     required this.username,
-    this.password, // Made nullable for convenience in updates, but required for creation
+    this.password, 
     required this.email,
     required this.lastname,
     required this.role,
   });
 
-  // Factory constructor to create a User from JSON (e.g., from API response)
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       userID: int.tryParse(
         json['userID'].toString(),
-      ), // Handle potential string ID from DB
+      ), 
       username: json['username'] as String,
-      // password is not usually returned in GET requests for security
-      // We might add it if a specific API endpoint returns it securely (e.g., for direct login).
-      // For general list/edit, it's typically omitted.
+      
+      
       password:
-          json['password'] as String?, // If your backend sometimes returns it
+          json['password'] as String?,
       email: json['email'] as String,
       lastname: json['lastname'] as String,
       role: json['role'] as String,
     );
   }
 
-  // Method to convert User to JSON (e.g., for sending to API)
+  
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       'username': username,
@@ -56,7 +53,7 @@ class User extends Equatable {
     return data;
   }
 
-  // Method to create a copy with updated fields (useful for editing)
+  
   User copyWith({
     int? userID,
     String? username,
@@ -76,5 +73,5 @@ class User extends Equatable {
   }
 
   @override
-  List<Object?> get props => [userID, username, email, lastname, role]; // Password excluded for equality check
+  List<Object?> get props => [userID, username, email, lastname, role]; 
 }

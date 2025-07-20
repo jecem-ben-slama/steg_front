@@ -1,14 +1,10 @@
-// lib/Screens/ChefCentreInformatique/chef_home.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
 import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/utils/sidebar_config.dart';
-
-// Import your Chef-specific screens
 import 'package:pfa/Screens/ChefCentreInformatique/chef_dashboard.dart';
-// import 'package:pfa/Screens/ChefCentreInformatique/user_management_screen.dart'; // Example
 
 class ChefHome extends StatefulWidget {
   const ChefHome({super.key});
@@ -21,12 +17,10 @@ class _ChefHomeState extends State<ChefHome> {
   int _selectedIndex = 0;
   String? _currentUserRole;
 
-  // List of content widgets for Chef
   final List<Widget> _chefContentPages = [
-    const ChefDashboardScreen(), // Matches index 0 in chefSidebarItems
-    const UserManagementScreen(), // Matches index 1 in chefSidebarItems
-    // Add other Chef specific views here, in the order of their 'index' in sidebar_config.dart
-  ];
+    const ChefDashboardScreen(), 
+    const UserManagementScreen(),
+    ];
 
   @override
   void initState() {
@@ -40,7 +34,7 @@ class _ChefHomeState extends State<ChefHome> {
       listen: false,
     );
     final role = await loginRepository.getUserRoleFromToken();
-    debugPrint('Fetched User Role in ChefHome: $role'); // For debugging
+    debugPrint('Fetched User Role in ChefHome: $role'); 
     setState(() {
       _currentUserRole = role;
     });
@@ -65,13 +59,10 @@ class _ChefHomeState extends State<ChefHome> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // Filter sidebar items based on the current user's role
     final List<SidebarItemData> currentRoleSidebarItems = chefSidebarItems
         .where((item) => item.roles.contains(_currentUserRole))
         .toList();
 
-    // Add the common logout item at the end
     if (_currentUserRole != null &&
         logoutSidebarItem.roles.contains(_currentUserRole)) {
       currentRoleSidebarItems.add(logoutSidebarItem);
@@ -82,8 +73,7 @@ class _ChefHomeState extends State<ChefHome> {
       body: _currentUserRole == null
           ? const Center(
               child: CircularProgressIndicator(),
-            ) // Show loading while role is being fetched
-          : Padding(
+            ): Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
@@ -105,14 +95,14 @@ class _ChefHomeState extends State<ChefHome> {
                             backgroundColor: Colors.white,
                             child: Icon(
                               Icons
-                                  .admin_panel_settings, // Example icon for Chef
+                                  .admin_panel_settings,
                               color: Color(0xFF0A2847),
                               size: 40,
                             ),
                           ),
                           SizedBox(height: screenHeight * 0.05),
                           Text(
-                            "Chef Panel", // Role-specific title
+                            "Chef Panel", 
                             style: TextStyle(
                               fontSize: screenWidth * 0.02,
                               color: Colors.white,

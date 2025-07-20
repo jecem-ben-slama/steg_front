@@ -1,4 +1,3 @@
-// lib/Screens/LoginScreen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/BLoc/Login/login_bloc.dart';
@@ -202,7 +201,7 @@ class LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Center(
                       child: Image.asset(
-                        'assets/STEG.png', // Your image path
+                        'assets/STEG.png', 
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,
