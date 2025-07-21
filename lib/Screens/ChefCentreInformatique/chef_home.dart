@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/Screens/profile_screen.dart';
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
 import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/utils/sidebar_config.dart';
 import 'package:pfa/Screens/ChefCentreInformatique/chef_dashboard.dart';
-// Make sure UserManagementScreen is defined or imported correctly
-import 'package:pfa/Screens/ChefCentreInformatique/chef_user_management.dart'; // Assuming this path
+import 'package:pfa/Screens/ChefCentreInformatique/gestionnaire_management.dart'; // Assuming this path
 
 class ChefHome extends StatefulWidget {
   const ChefHome({super.key});
@@ -22,7 +22,8 @@ class _ChefHomeState extends State<ChefHome> {
   // The list of content pages for the sidebar
   final List<Widget> _chefContentPages = [
     const ChefDashboardScreen(), // Now contains the internship logic
-    const UserManagementScreen(), // Your other screen
+    const GestionnaireManagementScreen(),
+    const ProfileScreen(), // Your other screen
     // Add more screens here as needed for other sidebar items
   ];
 

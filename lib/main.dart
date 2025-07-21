@@ -17,6 +17,8 @@ import 'package:pfa/repositories/subject_repo.dart';
 
 //* Cubit
 import 'package:pfa/cubit/internship_cubit.dart';
+import 'package:pfa/cubit/user_cubit.dart';
+
 //* Screens
 import 'package:pfa/Screens/login.dart';
 import 'package:pfa/Screens/Gestionnaire/gestionnaire_home.dart';
@@ -235,6 +237,15 @@ class _MyAppState extends State<MyApp> {
             create: (context) => LoginBloc(loginRepository: loginRepository),
           ),
           ChangeNotifierProvider<LoginRepository>.value(value: loginRepository),
+          BlocProvider<InternshipCubit>(
+            create: (context) => InternshipCubit(
+              RepositoryProvider.of<InternshipRepository>(context),
+            ),
+          ),
+          BlocProvider<UserCubit>(
+            create: (context) =>
+                UserCubit(RepositoryProvider.of<UserRepository>(context)),
+          ),
         ],
         child: MaterialApp.router(
           routerConfig: router,

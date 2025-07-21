@@ -1,23 +1,23 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Repositories/login_repo.dart';
-import 'login_event.dart'; 
+import 'login_event.dart';
 import 'login_state.dart';
+
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  final LoginRepository loginRepository; 
+  final LoginRepository loginRepository;
 
   LoginBloc({required this.loginRepository}) : super(LoginInitial()) {
     on<LoginButtonPressed>(_onLoginButtonPressed);
   }
 
-  
   Future<void> _onLoginButtonPressed(
     LoginButtonPressed event,
     Emitter<LoginState> emit,
   ) async {
-    emit(LoginLoading()); 
+    emit(LoginLoading());
 
     try {
-  //* Login Function
+      //* Login Function
       final response = await loginRepository.loginUser(
         event.email,
         event.password,
@@ -26,11 +26,13 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           response.token != null &&
           response.role != null &&
           response.username != null) {
+        // Ensure userID is set
         emit(
           LoginSuccess(
             token: response.token!,
             role: response.role!,
             username: response.username!,
+            userID: response.userId ?? 0, // Assuming userID is optional
           ),
         );
       } else {

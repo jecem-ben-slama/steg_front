@@ -1,6 +1,7 @@
 // lib/Screens/Encadrant/encadrant_home.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/Screens/profile_screen.dart';
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
 import 'package:pfa/Repositories/login_repo.dart';
@@ -22,16 +23,8 @@ class _EncadrantHomeState extends State<EncadrantHome> {
   String? _currentUserRole;
 
   final List<Widget> _encadrantContentPages = [
-    const Center(
-      child: Text(
-        'Encadrant Dashboard Content',
-        style: TextStyle(fontSize: 24),
-      ),
-    ),
-    const Center(
-      child: Text('Encadrant Profile Content', style: TextStyle(fontSize: 24)),
-    ),
-    
+    const EncadrantHome(),
+    const ProfileScreen(),
   ];
 
   @override

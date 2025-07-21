@@ -4,9 +4,8 @@ class SidebarItemData {
   final IconData icon;
   final String label;
   final int index;
-  final String?
-  route; 
-  final List<String> roles; 
+  final String? route;
+  final List<String> roles;
 
   const SidebarItemData({
     required this.icon,
@@ -17,6 +16,7 @@ class SidebarItemData {
   });
 }
 
+//* Sidebar items for Gestionnaire
 final List<SidebarItemData> gestionnaireSidebarItems = [
   const SidebarItemData(
     icon: Icons.dashboard,
@@ -44,12 +44,13 @@ final List<SidebarItemData> gestionnaireSidebarItems = [
   ),
   const SidebarItemData(
     icon: Icons.access_time,
-    label: "Attendance",
+    label: "My Profile",
     index: 4,
     roles: ['Gestionnaire'],
   ),
 ];
 
+//* Sidebar items for Encadrant
 final List<SidebarItemData> encadrantSidebarItems = [
   const SidebarItemData(
     icon: Icons.dashboard,
@@ -63,8 +64,10 @@ final List<SidebarItemData> encadrantSidebarItems = [
     index: 1,
     roles: ['Encadrant'],
   ),
+  
 ];
 
+//* Sidebar items for ChefCentreInformatique
 final List<SidebarItemData> chefSidebarItems = [
   const SidebarItemData(
     icon: Icons.settings,
@@ -73,23 +76,28 @@ final List<SidebarItemData> chefSidebarItems = [
     roles: ['ChefCentreInformatique'],
   ),
   const SidebarItemData(
-    icon: Icons.security, 
+    icon: Icons.security,
     label: "User Management",
     index: 1,
     roles: ['ChefCentreInformatique'],
   ),
- 
+  const SidebarItemData(
+    icon: Icons.person,
+    label: "My Profile",
+    index: 2,
+    roles: ['ChefCentreInformatique'],
+  ),
 ];
 
 final List<SidebarItemData> allSidebarItems = [
   ...gestionnaireSidebarItems,
   ...encadrantSidebarItems,
   ...chefSidebarItems,
-  ];
+];
 
 const SidebarItemData logoutSidebarItem = SidebarItemData(
   icon: Icons.logout,
   label: "Log Out",
-  index: -1, 
+  index: -1,
   roles: ['Gestionnaire', 'Encadrant', 'ChefCentreInformatique'],
 );

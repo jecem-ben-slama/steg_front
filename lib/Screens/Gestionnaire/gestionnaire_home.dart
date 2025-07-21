@@ -3,10 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:pfa/Screens/Gestionnaire/Certificates.dart';
 import 'package:pfa/Screens/Gestionnaire/gestionnaire_dashboard.dart';
 import 'package:pfa/Screens/Gestionnaire/statistics.dart';
+import 'package:pfa/Screens/profile_screen.dart';
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
 import 'package:pfa/Repositories/login_repo.dart';
-import 'package:pfa/utils/sidebar_config.dart'; 
+import 'package:pfa/utils/sidebar_config.dart';
 
 class GestionnaireHome extends StatefulWidget {
   const GestionnaireHome({super.key});
@@ -16,14 +17,14 @@ class GestionnaireHome extends StatefulWidget {
 }
 
 class _GestionnaireHomeState extends State<GestionnaireHome> {
-  int _selectedIndex = 0; 
-  String? _currentUserRole; 
+  int _selectedIndex = 0;
+  String? _currentUserRole;
   final List<Widget> _gestionnaireContentPages = [
-    const GestionnaireDashboard(), 
-    const Certificates(), 
-    const Statistics(), 
-    const Text('Supervisors Screen Placeholder'), 
-    const Text('Attendance Screen Placeholder'), 
+    const GestionnaireDashboard(),
+    const Certificates(),
+    const Statistics(),
+    const Text('Supervisors Screen Placeholder'),
+    const ProfileScreen(),
   ];
 
   @override
@@ -76,9 +77,7 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
     return Scaffold(
       backgroundColor: const Color(0xFFE6F0F7),
       body: _currentUserRole == null
-          ? const Center(
-              child: CircularProgressIndicator(),
-            ) 
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -140,9 +139,7 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
                         _selectedIndex >= 0 &&
                             _selectedIndex < _gestionnaireContentPages.length
                         ? _gestionnaireContentPages[_selectedIndex]
-                        : const Center(
-                            child: Text("Select an option"),
-                          ), 
+                        : const Center(child: Text("Select an option")),
                   ),
                 ],
               ),

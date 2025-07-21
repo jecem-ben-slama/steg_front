@@ -1,4 +1,3 @@
-
 import 'package:equatable/equatable.dart';
 
 abstract class LoginState extends Equatable {
@@ -19,11 +18,13 @@ class LoginSuccess extends LoginState {
   final String token;
   final String role;
   final String username;
+  final int userID;
 
   const LoginSuccess({
     required this.token,
     required this.role,
     required this.username,
+    required this.userID,
   });
 
   @override

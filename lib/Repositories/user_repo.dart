@@ -17,6 +17,51 @@ class UserRepository {
     return _fetchUsers('$usersPath/list_users.php?roles=$role');
   }
 
+  //* Fetch Users by ID
+  Future<User> fetchUserById(int userID) async {
+    try {
+      final response = await _dio.post(
+        '/User/get_user_by_id.php', // Now it's a POST request
+        data: {'userID': userID}, // Send userID in the request body as JSON
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json', // Explicitly set content type
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = response.data;
+        if (responseData['status'] == 'success') {
+          return User.fromJson(
+            responseData['data'],
+          ); // Parse the single user object
+        } else {
+          throw Exception(
+            'Failed to fetch user by ID: ${responseData['message'] ?? 'Unknown error.'}',
+          );
+        }
+      } else {
+        throw Exception(
+          'Failed to load user by ID. Status code: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Failed to fetch user by ID.';
+      if (e.response != null) {
+        errorMessage =
+            'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+      } else {
+        errorMessage = 'Network error: ${e.message}';
+      }
+      print('Dio Error fetching user by ID: $errorMessage');
+      throw Exception(errorMessage);
+    } catch (e) {
+      print('General Error fetching user by ID: $e');
+      rethrow;
+    }
+  }
+
   Future<List<User>> _fetchUsers(String endpoint) async {
     try {
       final response = await _dio.get(endpoint);
