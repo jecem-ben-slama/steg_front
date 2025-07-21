@@ -22,10 +22,7 @@ class _EncadrantHomeState extends State<EncadrantHome> {
   int _selectedIndex = 0;
   String? _currentUserRole;
 
-  final List<Widget> _encadrantContentPages = [
-    const EncadrantHome(),
-    const ProfileScreen(),
-  ];
+  final List<Widget> _encadrantContentPages = [const EncadrantHome()];
 
   @override
   void initState() {

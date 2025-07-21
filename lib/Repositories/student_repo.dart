@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pfa/Model/student_model.dart'; 
+import 'package:pfa/Model/student_model.dart';
 
 class StudentRepository {
   static const String studentsPath = 'Gestionnaire/Student';
@@ -7,6 +7,7 @@ class StudentRepository {
 
   StudentRepository({required Dio dio}) : _dio = dio;
 
+  //* Fetch All Students
   Future<List<Student>> fetchStudents() async {
     try {
       final response = await _dio.get('$studentsPath/list_students.php');
@@ -36,6 +37,7 @@ class StudentRepository {
     }
   }
 
+  //* Add Student
   Future<Student> addStudent(Student student) async {
     try {
       final response = await _dio.post(
@@ -45,7 +47,17 @@ class StudentRepository {
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['status'] == 'success') {
-        return Student.fromJson(response.data['data']);
+        // Assuming add_student.php returns the newly created student data
+        if (response.data['data'] != null) {
+          return Student.fromJson(response.data['data']);
+        } else {
+          // If server doesn't return data for add, but indicates success,
+          // you might return the original student object or refetch.
+          // For now, throwing to indicate missing data if expected.
+          throw Exception(
+            'Student added successfully, but no data returned from server.',
+          );
+        }
       } else {
         throw Exception(
           'Failed to add student: ${response.data?['message'] ?? response.statusMessage}',
@@ -67,19 +79,24 @@ class StudentRepository {
     }
   }
 
-  Future<Student> updateStudent(Student student) async {
+  //* Update Student
+  Future<void> updateStudent(Student student) async {
+    // Changed return type to Future<void>
     try {
       if (student.studentID == null) {
         throw Exception('Student ID is required for updating a student.');
       }
       final response = await _dio.post(
-        '$studentsPath/edit_student.php',
+        '$studentsPath/update_student.php',
         data: student.toJson(),
       );
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['status'] == 'success') {
-        return Student.fromJson(response.data['data']);
+        // Server confirmed success, but returned no 'data' field.
+        // So, we don't try to parse it into a Student object.
+        // We just return void to indicate success.
+        return;
       } else {
         throw Exception(
           'Failed to update student: ${response.data?['message'] ?? response.statusMessage}',
@@ -101,16 +118,17 @@ class StudentRepository {
     }
   }
 
+  //* Delete Student
   Future<void> deleteStudent(int studentID) async {
     try {
       final response = await _dio.post(
         '$studentsPath/delete_student.php',
-        data: {'studentID': studentID},
+        data: {'etudiantID': studentID},
       );
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['status'] == 'success') {
-        return; 
+        return;
       } else {
         throw Exception(
           'Failed to delete student: ${response.data?['message'] ?? response.statusMessage}',

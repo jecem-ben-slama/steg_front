@@ -205,10 +205,10 @@ class _MyAppState extends State<MyApp> {
       const String devToken2 =
           "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5MTEsImV4cCI6MTc1MzYyOTcxMSwiZGF0YSI6eyJ1c2VySUQiOjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJDaGVmQ2VudHJlSW5mb3JtYXRpcXVlIn19.LKXQ_w6WexprOW8oZqevmZapnHA6JrRlMZlPiwERGyU";
 
-      await prefs.setString('jwt_token', devToken2);
+      await prefs.setString('jwt_token', devToken1);
       debugPrint('Development token set in SharedPreferences.');
 
-      await loginRepository.setToken(devToken2);
+      await loginRepository.setToken(devToken1);
     }
   }
 

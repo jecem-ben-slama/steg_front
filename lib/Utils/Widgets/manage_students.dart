@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Cubit/student_cubit.dart';
-import 'package:pfa/Model/student_model.dart';
-// Adjust path
+import 'package:pfa/Cubit/student_cubit.dart'; // Make sure this path is correct
+import 'package:pfa/Model/student_model.dart'; // Make sure this path is correct
 
 class ManageStudents extends StatefulWidget {
   const ManageStudents({super.key});
@@ -15,14 +14,14 @@ class _ManageStudentsState extends State<ManageStudents> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController majorController =
-      TextEditingController(); // Renamed for clarity
+  final TextEditingController majorController = TextEditingController();
   Student? editingStudent;
-  bool isFormVisible = false; // Renamed for clarity
+  bool isFormVisible = false;
 
   @override
   void initState() {
     super.initState();
+    // Ensure data is fetched when the dialog opens
     context.read<StudentCubit>().fetchStudents();
   }
 
@@ -38,17 +37,17 @@ class _ManageStudentsState extends State<ManageStudents> {
 
   void populateForm(Student student) {
     firstNameController.text = student.firstName;
-    // Adjusted to match student model
     lastNameController.text = student.lastName;
     emailController.text = student.email;
-    majorController.text = student.major ?? ''; // Assuming major is the role
+    majorController.text = student.major ?? '';
     setState(() {
       editingStudent = student;
       isFormVisible = true; // Show the form when populating for editing
     });
   }
 
-  void submitForm() {
+  Future<void> submitForm() async {
+    // Made async
     final newStudent = Student(
       studentID: editingStudent?.studentID,
       firstName: firstNameController.text,
@@ -57,13 +56,24 @@ class _ManageStudentsState extends State<ManageStudents> {
       major: majorController.text,
     );
 
-    if (editingStudent == null) {
-      context.read<StudentCubit>().addStudent(newStudent);
-    } else {
-      context.read<StudentCubit>().updateStudent(newStudent);
+    try {
+      if (editingStudent == null) {
+        await context.read<StudentCubit>().addStudent(newStudent);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Student added successfully!')),
+        );
+      } else {
+        await context.read<StudentCubit>().updateStudent(newStudent);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Student updated successfully!')),
+        );
+      }
+      clearForm();
+      toggleFormVisibility(); // Hide the form after submission
+    } catch (e) {
+      // The Cubit will emit StudentError, which the BlocConsumer listener will catch.
+      // So no need for an extra SnackBar here, but you could add more specific handling if desired.
     }
-    clearForm();
-    toggleFormVisibility(); // Hide the form after submission
   }
 
   void deleteStudent(int studentId) {
@@ -78,9 +88,19 @@ class _ManageStudentsState extends State<ManageStudents> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              context.read<StudentCubit>().deleteStudent(studentId);
-              Navigator.of(ctx).pop();
+            onPressed: () async {
+              // Made async
+              Navigator.of(ctx).pop(); // Close the dialog first
+              try {
+                await context.read<StudentCubit>().deleteStudent(studentId);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Student deleted successfully!'),
+                  ),
+                );
+              } catch (e) {
+                // The Cubit will emit StudentError, which the BlocConsumer listener will catch.
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
@@ -123,7 +143,6 @@ class _ManageStudentsState extends State<ManageStudents> {
                 ),
               ],
             ),
-            // AnimatedSwitcher for smooth form visibility
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (Widget child, Animation<double> animation) {
@@ -131,9 +150,7 @@ class _ManageStudentsState extends State<ManageStudents> {
               },
               child: isFormVisible
                   ? Padding(
-                      key: const ValueKey(
-                        'UserForm',
-                      ),
+                      key: const ValueKey('UserForm'),
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Column(
@@ -216,9 +233,9 @@ class _ManageStudentsState extends State<ManageStudents> {
                         ),
                       ),
                     )
-                  : const SizedBox.shrink(), 
+                  : const SizedBox.shrink(),
             ),
-            const Divider(height: 30, thickness: 1), 
+            const Divider(height: 30, thickness: 1),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -230,11 +247,10 @@ class _ManageStudentsState extends State<ManageStudents> {
             Expanded(
               child: BlocConsumer<StudentCubit, StudentState>(
                 listener: (context, state) {
-                  if (state is StudentActionSuccess) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(state.message)));
-                  } else if (state is StudentError) {
+                  // The StudentActionSuccess state is now primarily for generic success messages
+                  // if you ever need them from the cubit for other reasons.
+                  // For add/update/delete success, we handle the SnackBar directly in the UI.
+                  if (state is StudentError) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(state.message),
@@ -269,9 +285,7 @@ class _ManageStudentsState extends State<ManageStudents> {
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              child: Text(
-                                student.firstName[0].toUpperCase(),
-                              ), 
+                              child: Text(student.firstName[0].toUpperCase()),
                             ),
                             title: Text(
                               '${student.firstName} ${student.lastName}',
@@ -302,8 +316,11 @@ class _ManageStudentsState extends State<ManageStudents> {
                                     Icons.delete,
                                     color: Colors.red,
                                   ),
-                                  onPressed: () =>
-                                      deleteStudent(student.studentID!),
+                                  onPressed: () {
+                                    if (student.studentID != null) {
+                                      deleteStudent(student.studentID!);
+                                    }
+                                  },
                                   tooltip: 'Delete Student',
                                 ),
                               ],
@@ -312,11 +329,11 @@ class _ManageStudentsState extends State<ManageStudents> {
                         );
                       },
                     );
-                  } else if (state is StudentError) {
-                    return Center(child: Text('Error: ${state.message}'));
                   }
+                  // This will primarily be for StudentInitial, or if any unexpected state occurs.
+                  // It's a fallback, usually, you'd want StudentLoading or StudentLoaded.
                   return const Center(
-                    child: Text('Start managing Students by adding one above.'),
+                    child: Text('Loading students or no data yet.'),
                   );
                 },
               ),
@@ -327,7 +344,7 @@ class _ManageStudentsState extends State<ManageStudents> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(); 
+            Navigator.of(context).pop();
           },
           child: const Text('Close'),
         ),
