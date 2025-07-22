@@ -66,8 +66,14 @@ final List<SidebarItemData> encadrantSidebarItems = [
   ),
   const SidebarItemData(
     icon: Icons.person,
-    label: "My Profile",
+    label: "Evaluations",
     index: 2,
+    roles: ['Encadrant'],
+  ),
+  const SidebarItemData(
+    icon: Icons.person,
+    label: "My Profile",
+    index: 3,
     roles: ['Encadrant'],
   ),
 ];
@@ -88,8 +94,14 @@ final List<SidebarItemData> chefSidebarItems = [
   ),
   const SidebarItemData(
     icon: Icons.person,
-    label: "My Profile",
+    label: "Validate Evaluations",
     index: 2,
+    roles: ['ChefCentreInformatique'],
+  ),
+  const SidebarItemData(
+    icon: Icons.person,
+    label: "My Profile",
+    index: 3,
     roles: ['ChefCentreInformatique'],
   ),
 ];

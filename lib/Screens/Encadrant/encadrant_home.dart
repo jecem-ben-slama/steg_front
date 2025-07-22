@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pfa/Screens/Encadrant/encadrant_dashboard.dart';
 import 'package:pfa/Screens/Encadrant/encadrant_notes.dart';
+import 'package:pfa/Screens/Encadrant/finished_internships.dart';
 import 'package:pfa/Screens/profile_screen.dart'; // Ensure this path is correct
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
@@ -33,8 +34,9 @@ class _EncadrantHomeState extends State<EncadrantHome> {
     // Index 1: Your existing ProfileScreen
     _encadrantContentPages = [
       const EncadrantDashboard(),
-      const EncadrantNotesPage(), // Placeholder for Dashboard
-      const ProfileScreen(), // Your existing ProfileScreen
+      const EncadrantNotesPage(),
+      const EncadrantFinishedInternshipsScreen(),
+      const ProfileScreen(),
     ];
   }
 

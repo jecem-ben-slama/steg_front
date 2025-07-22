@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/Screens/ChefCentreInformatique/evaluation_validation_screen.dart';
 import 'package:pfa/Screens/profile_screen.dart';
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,7 @@ class _ChefHomeState extends State<ChefHome> {
   final List<Widget> _chefContentPages = [
     const ChefDashboardScreen(), // Now contains the internship logic
     const GestionnaireManagementScreen(),
+    const EvaluationValidationScreen(), // Evaluation validation screen
     const ProfileScreen(), // Your other screen
     // Add more screens here as needed for other sidebar items
   ];

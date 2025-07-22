@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Model/note_model.dart';
+import 'package:pfa/Model/finished_internship_model.dart'; // Import finished internship model
 import 'package:pfa/Repositories/encadrant_repo.dart';
 
 // --- States ---
@@ -17,7 +18,7 @@ class EncadrantInitial extends EncadrantState {}
 
 class EncadrantLoading extends EncadrantState {} // For initial page load
 
-// New: State for actions related to notes, keeping the main list visible
+// State for actions related to notes, keeping the main list visible
 class NoteActionLoading extends EncadrantState {
   final int? targetInternshipId; // The ID of the internship being acted upon
   const NoteActionLoading({this.targetInternshipId});
@@ -25,6 +26,9 @@ class NoteActionLoading extends EncadrantState {
   @override
   List<Object?> get props => [targetInternshipId];
 }
+
+// State for loading finished internships
+class FinishedInternshipsLoading extends EncadrantState {}
 
 class EncadrantLoaded extends EncadrantState {
   final List<Internship> internships;
@@ -34,6 +38,15 @@ class EncadrantLoaded extends EncadrantState {
   List<Object?> get props => [internships];
 }
 
+// State for finished internships loaded
+class FinishedInternshipsLoaded extends EncadrantState {
+  final List<FinishedInternship> finishedInternships;
+  const FinishedInternshipsLoaded(this.finishedInternships);
+
+  @override
+  List<Object?> get props => [finishedInternships];
+}
+
 class NotesLoaded extends EncadrantState {
   final List<Note> notes;
   final int internshipId; // To link notes to a specific internship
@@ -41,6 +54,15 @@ class NotesLoaded extends EncadrantState {
 
   @override
   List<Object?> get props => [notes, internshipId];
+}
+
+// State for evaluation action loading, specific to a finished internship
+class EvaluationActionLoading extends EncadrantState {
+  final int targetStageId;
+  const EvaluationActionLoading({required this.targetStageId});
+
+  @override
+  List<Object?> get props => [targetStageId];
 }
 
 class EncadrantActionSuccess extends EncadrantState {
@@ -64,6 +86,8 @@ class EncadrantCubit extends Cubit<EncadrantState> {
   final EncadrantRepository _encadrantRepository;
   // Hold the last successfully loaded internships to keep them visible
   List<Internship> _lastLoadedInternships = [];
+  // Hold the last successfully loaded finished internships
+  List<FinishedInternship> _lastLoadedFinishedInternships = [];
 
   EncadrantCubit(this._encadrantRepository) : super(EncadrantInitial());
 
@@ -75,7 +99,24 @@ class EncadrantCubit extends Cubit<EncadrantState> {
       _lastLoadedInternships = internships; // Store for later
       emit(EncadrantLoaded(internships));
     } catch (e) {
-      emit(EncadrantError('Failed to load internships: ${e.toString()}'));
+      emit(
+        EncadrantError('Failed to load assigned internships: ${e.toString()}'),
+      );
+    }
+  }
+
+  //* Fetch all finished internships for the Encadrant
+  Future<void> fetchFinishedInternships() async {
+    try {
+      emit(FinishedInternshipsLoading()); // Emit loading state
+      final finishedInternships = await _encadrantRepository
+          .getFinishedInternships();
+      _lastLoadedFinishedInternships = finishedInternships; // Store for later
+      emit(FinishedInternshipsLoaded(finishedInternships)); // Emit loaded state
+    } catch (e) {
+      emit(
+        EncadrantError('Failed to load finished internships: ${e.toString()}'),
+      ); // Handle error
     }
   }
 
@@ -123,19 +164,48 @@ class EncadrantCubit extends Cubit<EncadrantState> {
     }
   }
 
-  //* Validate an internship
-  Future<void> validateInternship(int stageID) async {
+  //* Evaluate or Unvalidate an Internship
+  Future<void> evaluateInternship({
+    required int stageID,
+    required String actionType,
+    double? note,
+    String? commentaires,
+  }) async {
     try {
       emit(
-        NoteActionLoading(targetInternshipId: stageID),
-      ); // Use specific loading state
-      await _encadrantRepository.validateInternship(stageID);
-      await fetchAssignedInternships(); // Refetch all internships to get the updated status (this will emit EncadrantLoaded)
-      emit(const EncadrantActionSuccess('Internship validated successfully!'));
+        EvaluationActionLoading(targetStageId: stageID),
+      ); // Emit loading state specific to evaluation
+
+      final result = await _encadrantRepository.evaluateInternship(
+        stageID: stageID,
+        actionType: actionType,
+        note: note,
+        commentaires: commentaires,
+      );
+
+      // After successful evaluation, re-fetch the finished internships to update the UI
+      await fetchFinishedInternships();
+
+      emit(
+        EncadrantActionSuccess(
+          result['message'] ?? 'Internship evaluation updated!',
+        ),
+      ); // Emit success with message
     } catch (e) {
-      // Re-emit EncadrantLoaded with existing data before error
-      emit(EncadrantLoaded(List.from(_lastLoadedInternships)));
-      emit(EncadrantError('Error validating internship: ${e.toString()}'));
+      // If evaluation fails, attempt to re-emit the last loaded finished internships to maintain state
+      if (_lastLoadedFinishedInternships.isNotEmpty) {
+        emit(
+          FinishedInternshipsLoaded(List.from(_lastLoadedFinishedInternships)),
+        );
+      } else {
+        // If no finished internships were loaded, revert to initial or a generic error state
+        emit(
+          EncadrantInitial(),
+        ); // Or emit EncadrantLoading() or a more specific error
+      }
+      emit(
+        EncadrantError('Error evaluating internship: ${e.toString()}'),
+      ); // Emit error state
     }
   }
 }

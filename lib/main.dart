@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pfa/Repositories/encadrant_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
+import 'package:pfa/cubit/chef_cubit.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
 import 'package:provider/provider.dart';
 //* Repositories
@@ -16,6 +16,8 @@ import 'package:pfa/Repositories/internship_repo.dart'; //* */
 import 'package:pfa/repositories/student_repo.dart';
 import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/repositories/subject_repo.dart';
+import 'package:pfa/Repositories/chef_repo.dart';
+import 'package:pfa/Repositories/encadrant_repo.dart';
 
 //* Cubit
 import 'package:pfa/cubit/internship_cubit.dart';
@@ -76,9 +78,9 @@ class _MyAppState extends State<MyApp> {
     userRepository = UserRepository(dio: dio);
     internshipRepository = InternshipRepository(dio: dio);
     subjectRepository = SubjectRepository(dio: dio);
-    //_setDevToken();
+    _setDevToken();
     //* Router
-    //! Move the router initialization to a separate file if it grows too large
+    //! Move the router initialization to a separate file
     router = GoRouter(
       initialLocation: '/login',
       refreshListenable: loginRepository,
@@ -240,6 +242,9 @@ class _MyAppState extends State<MyApp> {
           create: (context) =>
               EncadrantCubit(context.read<EncadrantRepository>()),
         ),
+        RepositoryProvider<ChefCentreRepository>(
+          create: (context) => ChefCentreRepository(dio: dio),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -255,6 +260,11 @@ class _MyAppState extends State<MyApp> {
           BlocProvider<UserCubit>(
             create: (context) =>
                 UserCubit(RepositoryProvider.of<UserRepository>(context)),
+          ),
+          BlocProvider<ChefCentreCubit>(
+            create: (context) => ChefCentreCubit(
+              RepositoryProvider.of<ChefCentreRepository>(context),
+            ),
           ),
         ],
         child: MaterialApp.router(
