@@ -59,12 +59,17 @@ final List<SidebarItemData> encadrantSidebarItems = [
     roles: ['Encadrant'],
   ),
   const SidebarItemData(
-    icon: Icons.person,
-    label: "My Profile",
+    icon: Icons.dashboard,
+    label: "Add Notes",
     index: 1,
     roles: ['Encadrant'],
   ),
-  
+  const SidebarItemData(
+    icon: Icons.person,
+    label: "My Profile",
+    index: 2,
+    roles: ['Encadrant'],
+  ),
 ];
 
 //* Sidebar items for ChefCentreInformatique

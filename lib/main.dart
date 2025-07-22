@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/Repositories/encadrant_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
+import 'package:pfa/cubit/encadrant_cubit.dart';
 import 'package:provider/provider.dart';
 //* Repositories
 import 'package:pfa/BLoc/Login/login_bloc.dart';
@@ -74,9 +76,9 @@ class _MyAppState extends State<MyApp> {
     userRepository = UserRepository(dio: dio);
     internshipRepository = InternshipRepository(dio: dio);
     subjectRepository = SubjectRepository(dio: dio);
-    _setDevToken();
+    //_setDevToken();
     //* Router
-    //! Move the router initialization to a separate file
+    //! Move the router initialization to a separate file if it grows too large
     router = GoRouter(
       initialLocation: '/login',
       refreshListenable: loginRepository,
@@ -205,10 +207,10 @@ class _MyAppState extends State<MyApp> {
       const String devToken2 =
           "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5MTEsImV4cCI6MTc1MzYyOTcxMSwiZGF0YSI6eyJ1c2VySUQiOjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJDaGVmQ2VudHJlSW5mb3JtYXRpcXVlIn19.LKXQ_w6WexprOW8oZqevmZapnHA6JrRlMZlPiwERGyU";
 
-      await prefs.setString('jwt_token', devToken1);
+      await prefs.setString('jwt_token', devToken2);
       debugPrint('Development token set in SharedPreferences.');
 
-      await loginRepository.setToken(devToken1);
+      await loginRepository.setToken(devToken2);
     }
   }
 
@@ -229,6 +231,14 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<InternshipRepository>(
           // Provide InternshipRepository
           create: (context) => InternshipRepository(dio: dio),
+        ),
+        Provider<EncadrantRepository>(
+          create: (context) => EncadrantRepository(dio: dio),
+        ),
+        // EncadrantCubit depends on EncadrantRepository
+        BlocProvider<EncadrantCubit>(
+          create: (context) =>
+              EncadrantCubit(context.read<EncadrantRepository>()),
         ),
       ],
       child: MultiBlocProvider(

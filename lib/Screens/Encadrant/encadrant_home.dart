@@ -1,15 +1,13 @@
 // lib/Screens/Encadrant/encadrant_home.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pfa/Screens/profile_screen.dart';
+import 'package:pfa/Screens/Encadrant/encadrant_dashboard.dart';
+import 'package:pfa/Screens/Encadrant/encadrant_notes.dart';
+import 'package:pfa/Screens/profile_screen.dart'; // Ensure this path is correct
 import 'package:pfa/Utils/Widgets/sidebar_item.dart';
 import 'package:provider/provider.dart';
-import 'package:pfa/Repositories/login_repo.dart';
-import 'package:pfa/utils/sidebar_config.dart';
-
-// Assuming you have Encadrant specific screens:
-// import 'package:pfa/Encadrant/encadrant_dashboard.dart';
-// import 'package:pfa/Encadrant/encadrant_profile.dart';
+import 'package:pfa/Repositories/login_repo.dart'; // Ensure this path is correct
+import 'package:pfa/utils/sidebar_config.dart'; // Ensure this path is correct
 
 class EncadrantHome extends StatefulWidget {
   const EncadrantHome({super.key});
@@ -22,12 +20,22 @@ class _EncadrantHomeState extends State<EncadrantHome> {
   int _selectedIndex = 0;
   String? _currentUserRole;
 
-  final List<Widget> _encadrantContentPages = [const EncadrantHome()];
+  // IMPORTANT: Updated _encadrantContentPages
+  late final List<Widget> _encadrantContentPages;
 
   @override
   void initState() {
     super.initState();
     _fetchUserRole();
+
+    // Initialize the content pages here
+    // Index 0: Placeholder for Encadrant Dashboard
+    // Index 1: Your existing ProfileScreen
+    _encadrantContentPages = [
+      const EncadrantDashboard(),
+      const EncadrantNotesPage(), // Placeholder for Dashboard
+      const ProfileScreen(), // Your existing ProfileScreen
+    ];
   }
 
   Future<void> _fetchUserRole() async {
