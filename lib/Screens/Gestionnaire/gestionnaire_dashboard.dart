@@ -12,11 +12,11 @@ import 'package:pfa/Screens/Gestionnaire/edit_internship.dart';
 import 'package:pfa/Screens/Gestionnaire/add_internship.dart';
 import 'package:pfa/Utils/snackbar.dart';
 import 'package:pfa/Cubit/student_cubit.dart';
-import 'package:pfa/Cubit/subject_cubit.dart';
+import 'package:pfa/cubit/subject_cubit.dart';
 import 'package:pfa/Cubit/user_cubit.dart';
 import 'package:pfa/cubit/stats_cubit.dart';
 import 'package:pfa/repositories/student_repo.dart';
-import 'package:pfa/repositories/subject_repo.dart';
+import 'package:pfa/Repositories/subject_repo.dart';
 import 'package:pfa/repositories/user_repo.dart';
 
 class GestionnaireDashboard extends StatefulWidget {

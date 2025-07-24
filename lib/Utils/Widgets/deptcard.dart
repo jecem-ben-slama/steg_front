@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/user_cubit.dart';
 import 'package:pfa/Cubit/student_cubit.dart';
-import 'package:pfa/Cubit/subject_cubit.dart'; // Import SubjectCubit
+import 'package:pfa/cubit/subject_cubit.dart'; // Import SubjectCubit
 import 'package:pfa/Screens/Gestionnaire/manage_students.dart';
 import 'package:pfa/Screens/Gestionnaire/manage_supervisor.dart';
 import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/repositories/student_repo.dart';
-import 'package:pfa/repositories/subject_repo.dart'; // Import SubjectRepository
+import 'package:pfa/Repositories/subject_repo.dart'; // Import SubjectRepository
 import 'package:pfa/Screens/Gestionnaire/manage_subject.dart'; // New: ManageSubjectsDialog
 
 class DeptCard extends StatefulWidget {

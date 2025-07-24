@@ -14,7 +14,7 @@ import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/Repositories/internship_repo.dart'; //* */
 import 'package:pfa/repositories/student_repo.dart';
 import 'package:pfa/repositories/user_repo.dart';
-import 'package:pfa/repositories/subject_repo.dart';
+import 'package:pfa/Repositories/subject_repo.dart';
 import 'package:pfa/Repositories/chef_repo.dart';
 import 'package:pfa/Repositories/encadrant_repo.dart';
 import 'package:pfa/Repositories/stats_repo.dart';

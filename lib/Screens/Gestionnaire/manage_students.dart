@@ -1,7 +1,13 @@
+// lib/Utils/Widgets/manage_student.dart
+import 'dart:async'; // Import for Timer
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/student_cubit.dart'; // Make sure this path is correct
 import 'package:pfa/Model/student_model.dart'; // Make sure this path is correct
+
+// Enum to define message types for styling (same as for subjects)
+enum MessageType { success, info, error, none }
 
 class ManageStudents extends StatefulWidget {
   const ManageStudents({super.key});
@@ -15,25 +21,25 @@ class _ManageStudentsState extends State<ManageStudents> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController majorController =
-      TextEditingController(); // From Student model
-  final TextEditingController levelController =
-      TextEditingController(); // From Student model
-  final TextEditingController cinController =
-      TextEditingController(); // From Student model
-  final TextEditingController phoneNumberController =
-      TextEditingController(); // From Student model
-  final TextEditingController niveauEtudeController =
-      TextEditingController(); // From Student model
-  final TextEditingController nomFaculteController =
-      TextEditingController(); // From Student model
-  final TextEditingController cycleController =
-      TextEditingController(); // From Student model
-  final TextEditingController specialiteController =
-      TextEditingController(); // From Student model
+  final TextEditingController majorController = TextEditingController();
+  final TextEditingController levelController = TextEditingController();
+  final TextEditingController cinController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
+  final TextEditingController niveauEtudeController = TextEditingController();
+  final TextEditingController nomFaculteController = TextEditingController();
+  final TextEditingController cycleController = TextEditingController();
+  final TextEditingController specialiteController = TextEditingController();
 
   Student? editingStudent;
   bool isFormVisible = false;
+
+  final GlobalKey<FormState> _formKey =
+      GlobalKey<FormState>(); // Added GlobalKey for form validation
+
+  // State variables for displaying messages within the popup
+  String? _displayMessage;
+  MessageType _displayMessageType = MessageType.none;
+  Timer? _messageTimer; // Timer to clear the message automatically
 
   @override
   void initState() {
@@ -56,10 +62,12 @@ class _ManageStudentsState extends State<ManageStudents> {
     nomFaculteController.dispose();
     cycleController.dispose();
     specialiteController.dispose();
+    _messageTimer?.cancel(); // Cancel timer to prevent memory leaks
     super.dispose();
   }
 
-  void clearForm() {
+  void _clearForm() {
+    // Renamed to _clearForm for consistency
     usernameController.clear();
     lastnameController.clear();
     emailController.clear();
@@ -73,10 +81,13 @@ class _ManageStudentsState extends State<ManageStudents> {
     specialiteController.clear();
     setState(() {
       editingStudent = null;
+      isFormVisible = false; // Hide form after clearing for new entry
     });
+    _clearMessage(); // Clear any displayed message when form is cleared
   }
 
-  void populateForm(Student student) {
+  void _populateForm(Student student) {
+    // Renamed to _populateForm for consistency
     // Populate controllers with student data
     usernameController.text = student.username;
     lastnameController.text = student.lastname;
@@ -93,10 +104,20 @@ class _ManageStudentsState extends State<ManageStudents> {
       editingStudent = student;
       isFormVisible = true; // Show the form when populating for editing
     });
+    _clearMessage(); // Clear any displayed message when populating form
   }
 
-  Future<void> submitForm() async {
-    // Create new Student object with all database fields
+  Future<void> _submitForm() async {
+    // Renamed to _submitForm for consistency
+    if (!_formKey.currentState!.validate()) {
+      // Validate the form
+      _displayMessageInPopup(
+        'Please fill in all required fields.',
+        MessageType.error,
+      );
+      return;
+    }
+
     final newStudent = Student(
       studentID: editingStudent?.studentID, // Use studentID for updates
       userID: editingStudent?.userID, // Preserve userID if editing
@@ -124,24 +145,18 @@ class _ManageStudentsState extends State<ManageStudents> {
     try {
       if (editingStudent == null) {
         await context.read<StudentCubit>().addStudent(newStudent);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Student added successfully!')),
-        );
       } else {
         await context.read<StudentCubit>().updateStudent(newStudent);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Student updated successfully!')),
-        );
       }
-      clearForm();
-      toggleFormVisibility(); // Hide the form after submission
+      _clearForm(); // Clear form fields and hide form after submission
     } catch (e) {
-      // The Cubit will emit StudentError, which the BlocConsumer listener will catch.
-      // So no need for an extra SnackBar here, but you could add more specific handling if desired.
+      // The Cubit will emit StudentError, which the BlocConsumer listener will catch
+      // and display the message in the popup. No need for extra handling here.
     }
   }
 
-  void deleteStudent(int studentId) {
+  void _deleteStudent(int studentId) {
+    // Renamed to _deleteStudent for consistency
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -154,17 +169,11 @@ class _ManageStudentsState extends State<ManageStudents> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(ctx).pop(); // Close the dialog first
+              Navigator.of(ctx).pop(); // Close the confirmation dialog
               try {
                 await context.read<StudentCubit>().deleteStudent(studentId);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Student deleted successfully!'),
-                  ),
-                );
               } catch (e) {
                 // The Cubit will emit StudentError, which the BlocConsumer listener will catch.
-                // You might want to display a more specific error message here if needed.
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -175,38 +184,128 @@ class _ManageStudentsState extends State<ManageStudents> {
     );
   }
 
-  void toggleFormVisibility() {
+  void _toggleFormVisibility() {
+    // Renamed to _toggleFormVisibility for consistency
     setState(() {
       isFormVisible = !isFormVisible;
+      if (!isFormVisible) {
+        _clearForm(); // Clear form if hiding and not editing
+      }
+    });
+  }
+
+  // Helper to display message within the popup
+  void _displayMessageInPopup(String message, MessageType type) {
+    setState(() {
+      _displayMessage = message;
+      _displayMessageType = type;
+    });
+
+    // Cancel any existing timer
+    _messageTimer?.cancel();
+    // Start a new timer to clear the message after 3 seconds
+    _messageTimer = Timer(const Duration(seconds: 7), () {
+      _clearMessage();
+    });
+  }
+
+  // Helper to clear the displayed message
+  void _clearMessage() {
+    setState(() {
+      _displayMessage = null;
+      _displayMessageType = MessageType.none;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(
-        'Manage Students',
-      ), // Changed from Supervisors to Students
+      title: const Text('Manage Students'),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.7,
         height: MediaQuery.of(context).size.height * 0.8,
         child: Column(
           children: [
+            // Message display area
+            AnimatedOpacity(
+              opacity: _displayMessage != null ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: _displayMessage != null
+                  ? Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.only(bottom: 10.0),
+                      decoration: BoxDecoration(
+                        color: _displayMessageType == MessageType.success
+                            ? Colors.green.withOpacity(0.1)
+                            : _displayMessageType ==
+                                  MessageType
+                                      .info // This case might be unused if Cubit doesn't emit info
+                            ? Colors.blue.withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.0),
+                        border: Border.all(
+                          color: _displayMessageType == MessageType.success
+                              ? Colors.green
+                              : _displayMessageType ==
+                                    MessageType
+                                        .info // This case might be unused
+                              ? Colors.blue
+                              : Colors.red,
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _displayMessageType == MessageType.success
+                                ? Icons.check_circle_outline
+                                : _displayMessageType ==
+                                      MessageType
+                                          .info // This case might be unused
+                                ? Icons.info_outline
+                                : Icons.error_outline,
+                            color: _displayMessageType == MessageType.success
+                                ? Colors.green
+                                : _displayMessageType ==
+                                      MessageType
+                                          .info // This case might be unused
+                                ? Colors.blue
+                                : Colors.red,
+                          ),
+                          const SizedBox(width: 8.0),
+                          Expanded(
+                            child: Text(
+                              _displayMessage!,
+                              style: TextStyle(
+                                color:
+                                    _displayMessageType == MessageType.success
+                                    ? Colors.green.shade800
+                                    : _displayMessageType ==
+                                          MessageType
+                                              .info // This case might be unused
+                                    ? Colors.blue.shade800
+                                    : Colors.red.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  editingStudent == null
-                      ? 'Add New Student'
-                      : 'Edit Student', // Changed text
+                  editingStudent == null ? 'Add New Student' : 'Edit Student',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 IconButton(
                   onPressed: () {
                     if (isFormVisible && editingStudent != null) {
-                      clearForm(); // Clear form if hiding and in edit mode
+                      _clearForm(); // Clear form if hiding and in edit mode
                     }
-                    toggleFormVisibility();
+                    _toggleFormVisibility(); // Use the renamed method
                   },
                   icon: Icon(
                     isFormVisible
@@ -226,201 +325,245 @@ class _ManageStudentsState extends State<ManageStudents> {
                   ? Padding(
                       key: const ValueKey('UserForm'),
                       padding: const EdgeInsets.all(8.0),
-                      //* Form for adding/editing students
                       child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            // Row 1: First Name and Last Name
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: usernameController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'First Name',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.person),
+                        child: Form(
+                          // Added Form widget
+                          key: _formKey, // Assigned GlobalKey
+                          child: Column(
+                            children: [
+                              // Row 1: First Name and Last Name
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: usernameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'First Name',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.person),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'First Name cannot be empty.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller: lastnameController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Last Name',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.person_outline),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: lastnameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Last Name',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.person_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Last Name cannot be empty.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Row 2: Email and Major
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: emailController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Email',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.email),
-                                    ),
-                                    keyboardType: TextInputType.emailAddress,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller: majorController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Major',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.science),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Row 3: Level and CIN
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: levelController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Level',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.trending_up),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller: cinController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'CIN',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.credit_card),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Row 4: Phone Number and Niveau d'étude
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: phoneNumberController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Phone Number',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.phone),
-                                    ),
-                                    keyboardType: TextInputType.phone,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller: niveauEtudeController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Niveau d\'étude',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.school),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Row 5: Nom de la Faculté and Cycle
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: nomFaculteController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nom de la Faculté',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.apartment),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller: cycleController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Cycle',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.repeat),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Row 6: Spécialité (can be a single field if no pair)
-                            TextField(
-                              controller: specialiteController,
-                              decoration: const InputDecoration(
-                                labelText: 'Spécialité',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.category),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 20),
+                              const SizedBox(height: 10),
 
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: clearForm,
-                                  icon: const Icon(Icons.clear),
-                                  label: const Text('Clear'),
-                                ),
-                                const SizedBox(width: 10),
-                                ElevatedButton.icon(
-                                  onPressed: submitForm,
-                                  icon: Icon(
-                                    editingStudent == null
-                                        ? Icons.add
-                                        : Icons.save,
-                                  ),
-                                  label: Text(
-                                    editingStudent == null
-                                        ? 'Add Student' // Changed text
-                                        : 'Update Student', // Changed text
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).primaryColor,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                              // Row 2: Email and Major
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: emailController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Email',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.email),
+                                      ),
+                                      keyboardType: TextInputType.emailAddress,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Email cannot be empty.';
+                                        }
+                                        if (!value.contains('@')) {
+                                          return 'Please enter a valid email.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: majorController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Major',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.science),
+                                      ),
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Row 3: Level and CIN
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: levelController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Level',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.trending_up),
+                                      ),
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: cinController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'CIN',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.credit_card),
+                                      ),
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Row 4: Phone Number and Niveau d'étude
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: phoneNumberController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Phone Number',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.phone),
+                                      ),
+                                      keyboardType: TextInputType.phone,
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: niveauEtudeController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Niveau d\'étude',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.school),
+                                      ),
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Row 5: Nom de la Faculté and Cycle
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: nomFaculteController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Nom de la Faculté',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.apartment),
+                                      ),
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextFormField(
+                                      // Changed to TextFormField for validation
+                                      controller: cycleController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Cycle',
+                                        border: OutlineInputBorder(),
+                                        prefixIcon: Icon(Icons.repeat),
+                                      ),
+                                      // No validator if optional
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Row 6: Spécialité (can be a single field if no pair)
+                              TextFormField(
+                                // Changed to TextFormField for validation
+                                controller: specialiteController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Spécialité',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.category),
                                 ),
-                              ],
-                            ),
-                          ],
+                                // No validator if optional
+                              ),
+                              const SizedBox(height: 20),
+
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: _clearForm, // Use renamed method
+                                    icon: const Icon(Icons.clear),
+                                    label: const Text('Clear'),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  ElevatedButton.icon(
+                                    onPressed:
+                                        _submitForm, // Use renamed method
+                                    icon: Icon(
+                                      editingStudent == null
+                                          ? Icons.add
+                                          : Icons.save,
+                                    ),
+                                    label: Text(
+                                      editingStudent == null
+                                          ? 'Add Student'
+                                          : 'Update Student',
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(
+                                        context,
+                                      ).primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     )
@@ -430,7 +573,7 @@ class _ManageStudentsState extends State<ManageStudents> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Existing Students', // Changed from Supervisors to Students
+                'Existing Students',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
@@ -438,14 +581,13 @@ class _ManageStudentsState extends State<ManageStudents> {
             Expanded(
               child: BlocConsumer<StudentCubit, StudentState>(
                 listener: (context, state) {
-                  if (state is StudentError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.message),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                  // Listen for action-specific success/error messages
+                  if (state is StudentActionSuccess) {
+                    _displayMessageInPopup(state.message, MessageType.success);
+                  } else if (state is StudentError) {
+                    _displayMessageInPopup(state.message, MessageType.error);
                   }
+                  // StudentActionInfo state handling would go here if it existed
                 },
                 builder: (context, state) {
                   if (state is StudentLoading) {
@@ -454,7 +596,7 @@ class _ManageStudentsState extends State<ManageStudents> {
                     if (state.students.isEmpty) {
                       return const Center(
                         child: Text(
-                          'No students found. Add one using the form above!', // Changed text
+                          'No students found. Add one using the form above!',
                         ),
                       );
                     }
@@ -473,12 +615,9 @@ class _ManageStudentsState extends State<ManageStudents> {
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              child: Text(
-                                student.username[0].toUpperCase(),
-                              ), // Changed to username initial
+                              child: Text(student.username[0].toUpperCase()),
                             ),
                             title: Text(
-                              // Display username and lastname
                               '${student.username} ${student.lastname}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -524,7 +663,9 @@ class _ManageStudentsState extends State<ManageStudents> {
                                     Icons.edit,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => populateForm(student),
+                                  onPressed: () => _populateForm(
+                                    student,
+                                  ), // Use renamed method
                                   tooltip: 'Edit Student',
                                 ),
                                 IconButton(
@@ -533,9 +674,10 @@ class _ManageStudentsState extends State<ManageStudents> {
                                     color: Colors.red,
                                   ),
                                   onPressed: () {
-                                    // Ensure studentID is not null before deleting
                                     if (student.studentID != null) {
-                                      deleteStudent(student.studentID!);
+                                      _deleteStudent(
+                                        student.studentID!,
+                                      ); // Use renamed method
                                     }
                                   },
                                   tooltip: 'Delete Student',
@@ -559,7 +701,7 @@ class _ManageStudentsState extends State<ManageStudents> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(); // Close the dialog
           },
           child: const Text('Close'),
         ),

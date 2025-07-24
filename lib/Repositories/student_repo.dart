@@ -38,18 +38,19 @@ class StudentRepository {
   }
 
   //* Add Student
-  Future<Student> addStudent(Student student) async {
+  Future<String> addStudent(Student student) async {
+    // Return type is now String
     try {
       final response = await _dio.post(
         '$studentsPath/add_student.php',
         data: student.toJson(),
       );
-      if (response.statusCode == 200 &&
-          response.data != null &&
-          response.data['status'] == 'success') {
-        // Assuming add_student.php returns the newly created student data
-        if (response.data['data'] != null) {
-          return Student.fromJson(response.data['data']);
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['status'] == 'success') {
+          // It now just returns the message from the backend.
+          // It doesn't attempt to parse a full Student object from a 'data' field.
+          return response.data['message'] ?? 'Student added successfully.';
         } else {
           // If server doesn't return data for add, but indicates success,
           // you might return the original student object or refetch.

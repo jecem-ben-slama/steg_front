@@ -34,6 +34,7 @@ class UserLoading extends UserState {}
 // State indicating that a list of users has been successfully loaded.
 class UserLoaded extends UserState {
   final List<User> users; // The list of loaded users
+  // Removed 'message' field as action-specific states will handle messages
   const UserLoaded(this.users);
 
   @override
@@ -43,18 +44,25 @@ class UserLoaded extends UserState {
 // State indicating that a user action (add, update, delete) was successful.
 class UserActionSuccess extends UserState {
   final String message; // Success message to display
+  final String actionType; // Added actionType for more specific UI feedback
   final List<User>?
   lastLoadedUsers; // Optional: last loaded list of users (for list views)
   final User?
   updatedUser; // Optional: the user object that was just updated/added (for single profile view)
   const UserActionSuccess(
     this.message, {
+    required this.actionType, // actionType is now required
     this.lastLoadedUsers,
     this.updatedUser,
   });
 
   @override
-  List<Object?> get props => [message, lastLoadedUsers, updatedUser];
+  List<Object?> get props => [
+    message,
+    actionType,
+    lastLoadedUsers,
+    updatedUser,
+  ];
 }
 
 // State indicating that a user action or fetch operation resulted in an error.
@@ -101,10 +109,41 @@ class UserCubit extends Cubit<UserState> {
     return null;
   }
 
+  // Helper to refetch all users and emit UserLoaded
+  Future<void> _refetchAllUsersAndEmitLoaded() async {
+    try {
+      final users = await _repository.fetchAllUsers();
+      emit(UserLoaded(users));
+    } catch (e) {
+      emit(
+        UserError(
+          'Failed to refresh user list: ${e.toString()}',
+          lastLoadedUsers: _getCurrentUsers(),
+        ),
+      );
+    }
+  }
+
+  // Helper to refetch current user profile and emit UserProfileLoaded
+  Future<void> _refetchCurrentUserProfileAndEmitLoaded(int userID) async {
+    try {
+      final user = await _repository.fetchUserById(userID);
+      emit(UserProfileLoaded(user));
+    } catch (e) {
+      emit(
+        UserError(
+          'Failed to refresh user profile: ${e.toString()}',
+          lastLoadedUser: _getCurrentUserProfile(),
+        ),
+      );
+    }
+  }
+
   //* Fetch Current User Profile
   /// Fetches a single user's profile data by their ID.
   /// Emits UserProfileLoading, then UserProfileLoaded or UserError.
   Future<void> fetchCurrentUserProfile(int userID) async {
+    final currentUser = _getCurrentUserProfile(); // Capture for error fallback
     emit(UserProfileLoading()); // Indicate loading for the profile screen
     try {
       final user = await _repository.fetchUserById(
@@ -116,7 +155,7 @@ class UserCubit extends Cubit<UserState> {
       emit(
         UserError(
           'Failed to load profile: ${e.toString()}',
-          lastLoadedUser: _getCurrentUserProfile(),
+          lastLoadedUser: currentUser, // Provide original user on error
         ),
       );
     }
@@ -140,7 +179,7 @@ class UserCubit extends Cubit<UserState> {
       emit(
         UserError(
           'Failed to load users: ${e.toString()}',
-          lastLoadedUsers: currentUsers,
+          lastLoadedUsers: currentUsers, // Provide original list on error
         ),
       );
     }
@@ -150,22 +189,22 @@ class UserCubit extends Cubit<UserState> {
   /// Adds a new user to the system.
   /// Emits UserLoading, then UserActionSuccess and UserLoaded, or UserError.
   Future<void> addUser(User user) async {
-    List<User> currentUsers = List.from(
-      _getCurrentUsers() ?? [],
-    ); // Get current list for optimistic update/revert
+    final currentUsers =
+        _getCurrentUsers(); // Get current list for error revert
     emit(UserLoading()); // Indicate loading
     try {
       final newUser = await _repository.addUser(
         user,
       ); // Add user via repository
-      currentUsers.add(newUser); // Optimistically add to local list
+
       emit(
         UserActionSuccess(
-          'User added successfully!',
-          lastLoadedUsers: currentUsers, // Provide updated list for list views
+          'User "${newUser.username} ${newUser.lastname}" added successfully!',
+          actionType: 'add',
+          // No need to pass lastLoadedUsers or updatedUser here, as _refetchAllUsersAndEmitLoaded will handle the list update.
         ),
       );
-      emit(UserLoaded(currentUsers)); // Emit new loaded state with updated list
+      await _refetchAllUsersAndEmitLoaded(); // Refetch and update the entire list
     } catch (e) {
       // Emit error if adding fails
       emit(
@@ -174,6 +213,7 @@ class UserCubit extends Cubit<UserState> {
           lastLoadedUsers: currentUsers, // Provide original list on error
         ),
       );
+      await _refetchAllUsersAndEmitLoaded(); // Revert to previous list if possible on error
     }
   }
 
@@ -181,11 +221,12 @@ class UserCubit extends Cubit<UserState> {
   /// Updates an existing user's information.
   /// Handles updates for both a single user profile and users within a list.
   /// Emits UserProfileLoading/UserLoading, then UserActionSuccess and UserProfileLoaded/UserLoaded, or UserError.
-  @override // Use @override if this method signature matches a method from a base class (e.g., if you have a common base Cubit)
   Future<void> updateUser(User user) async {
-    // Determine if the update is for the currently displayed single profile
     final isUpdatingCurrentProfile =
         _getCurrentUserProfile()?.userID == user.userID;
+    final currentUsers = _getCurrentUsers(); // For list view error fallback
+    final currentUserProfile =
+        _getCurrentUserProfile(); // For profile view error fallback
 
     // Emit appropriate loading state based on context
     if (isUpdatingCurrentProfile) {
@@ -199,34 +240,22 @@ class UserCubit extends Cubit<UserState> {
         user,
       ); // Perform the update via repository
 
+      // Emit success with the updated user, then update the state.
+      emit(
+        UserActionSuccess(
+          'User "${updatedUser.username} ${updatedUser.lastname}" updated successfully!',
+          actionType: 'update',
+          updatedUser:
+              updatedUser, // Provide updated user for single profile view
+        ),
+      );
+
       if (isUpdatingCurrentProfile) {
-        // If updating the current profile, emit success with the updated user,
-        // then update the single profile state.
-        emit(
-          UserActionSuccess(
-            'Profile updated successfully!',
-            updatedUser: updatedUser,
-          ),
-        );
-        emit(UserProfileLoaded(updatedUser));
+        await _refetchCurrentUserProfileAndEmitLoaded(
+          updatedUser.userID!,
+        ); // Refetch and update single profile
       } else {
-        // If updating a user from a list (e.g., GestionnaireManagementScreen),
-        // update the user in the local list and emit the new list state.
-        List<User> currentUsers = List.from(_getCurrentUsers() ?? []);
-        final index = currentUsers.indexWhere(
-          (u) => u.userID == updatedUser.userID,
-        );
-        if (index != -1) {
-          currentUsers[index] =
-              updatedUser; // Replace old user with updated one
-        }
-        emit(
-          UserActionSuccess(
-            'User updated successfully!',
-            lastLoadedUsers: currentUsers,
-          ),
-        );
-        emit(UserLoaded(currentUsers));
+        await _refetchAllUsersAndEmitLoaded(); // Refetch and update the entire list
       }
     } catch (e) {
       // Handle errors based on whether it was a single profile update or list update
@@ -234,28 +263,21 @@ class UserCubit extends Cubit<UserState> {
         emit(
           UserError(
             'Failed to update profile: ${e.toString()}',
-            lastLoadedUser: _getCurrentUserProfile(),
+            lastLoadedUser:
+                currentUserProfile, // Provide original profile on error
           ),
         );
-        // Revert to the last good profile state on error
-        if (_getCurrentUserProfile() != null) {
-          emit(UserProfileLoaded(_getCurrentUserProfile()!));
-        } else {
-          emit(UserInitial()); // Fallback if no last good profile
-        }
+        await _refetchCurrentUserProfileAndEmitLoaded(
+          user.userID!,
+        ); // Revert to the last good profile state on error
       } else {
         emit(
           UserError(
             'Failed to update user: ${e.toString()}',
-            lastLoadedUsers: _getCurrentUsers(),
+            lastLoadedUsers: currentUsers, // Provide original list on error
           ),
         );
-        // Revert to the last good list state on error
-        if (_getCurrentUsers() != null) {
-          emit(UserLoaded(_getCurrentUsers()!));
-        } else {
-          emit(UserInitial()); // Fallback if no last good list
-        }
+        await _refetchAllUsersAndEmitLoaded(); // Revert to the last good list state on error
       }
     }
   }
@@ -264,22 +286,20 @@ class UserCubit extends Cubit<UserState> {
   /// Deletes a user from the system.
   /// Emits UserLoading, then UserActionSuccess and UserLoaded, or UserError.
   Future<void> deleteUser(int userID) async {
-    List<User> currentUsers = List.from(
-      _getCurrentUsers() ?? [],
-    ); // Get current list for optimistic update
+    final currentUsers =
+        _getCurrentUsers(); // Get current list for error revert
     emit(UserLoading()); // Indicate loading
     try {
       await _repository.deleteUser(userID); // Delete user via repository
-      currentUsers.removeWhere(
-        (u) => u.userID == userID,
-      ); // Optimistically remove from local list
+
       emit(
         UserActionSuccess(
           'User deleted successfully!',
-          lastLoadedUsers: currentUsers, // Provide updated list
+          actionType: 'delete',
+          // No need to pass lastLoadedUsers here, as _refetchAllUsersAndEmitLoaded will handle the list update.
         ),
       );
-      emit(UserLoaded(currentUsers)); // Emit new loaded state with updated list
+      await _refetchAllUsersAndEmitLoaded(); // Refetch and update the entire list
     } catch (e) {
       // Emit error if deletion fails
       emit(
@@ -288,6 +308,7 @@ class UserCubit extends Cubit<UserState> {
           lastLoadedUsers: currentUsers, // Provide original list on error
         ),
       );
+      await _refetchAllUsersAndEmitLoaded(); // Revert to previous list if possible on error
     }
   }
 }

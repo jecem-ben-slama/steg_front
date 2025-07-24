@@ -1,15 +1,17 @@
 // lib/Utils/Widgets/manage_internships.dart
+import 'dart:async'; // Import for Timer
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Cubit/student_cubit.dart';
 import 'package:pfa/Model/student_model.dart';
-import 'package:pfa/Cubit/subject_cubit.dart';
-import 'package:pfa/Model/subject_model.dart';
+// import 'package:pfa/Model/subject_model.dart'; // REMOVED: Subject model no longer directly used here
 import 'package:pfa/Cubit/user_cubit.dart';
 import 'package:pfa/Model/user_model.dart';
 import 'package:pfa/cubit/internship_cubit.dart';
-import 'package:pfa/Utils/snackbar.dart'; // Assuming you have this for snackbar
+import 'package:pfa/Utils/snackbar.dart';
+// import 'package:pfa/cubit/subject_cubit.dart'; // REMOVED: SubjectCubit no longer needed
 
 class AddInternshipPopup extends StatefulWidget {
   const AddInternshipPopup({super.key});
@@ -29,20 +31,20 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
 
   bool _estRemunere = false;
   Student? _selectedStudent;
-  Subject? _selectedSubject; // NEW: Variable for selected subject
+  // Subject? _selectedSubject; // REMOVED: Variable for selected subject
   User? _selectedSupervisor;
 
   // Define internship type options
   final List<String> _internshipTypeOptions = ['PFA', 'PFE', 'Stage Ouvrier'];
   List<Student> _students = [];
-  List<Subject> _subjects = []; // NEW: List to hold subjects
+  // List<Subject> _subjects = []; // REMOVED: List to hold subjects
   List<User> _supervisors = [];
 
   @override
   void initState() {
     super.initState();
     context.read<StudentCubit>().fetchStudents();
-    context.read<SubjectCubit>().fetchSubjects(); // NEW: Fetch subjects
+    // context.read<SubjectCubit>().fetchSubjects(); // REMOVED: Fetch subjects
     context.read<UserCubit>().fetchUsers();
   }
 
@@ -62,7 +64,7 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
       _selectedInternshipType = null; // Clear selected type
       _estRemunere = false;
       _selectedStudent = null;
-      _selectedSubject = null; // NEW: Clear selected subject
+      // _selectedSubject = null; // REMOVED: Clear selected subject
       _selectedSupervisor = null;
     });
   }
@@ -75,11 +77,11 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
     // Basic validation for dropdowns and remuneration amount
     if (_selectedInternshipType == null ||
         _selectedStudent == null ||
-        _selectedSubject == null || // NEW: Validate subject
+        // _selectedSubject == null || // REMOVED: Validate subject
         _selectedSupervisor == null) {
       showFailureSnackBar(
         context,
-        'Please select Internship Type, Student, Subject, and Supervisor.',
+        'Please select Internship Type, Student, and Supervisor.', // Adjusted message
       );
       return;
     }
@@ -108,7 +110,7 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
           ? double.tryParse(_montantRemunerationController.text)
           : null,
       etudiantID: _selectedStudent!.studentID,
-      sujetID: _selectedSubject!.subjectID, // NEW: Add subjectID
+      // sujetID: _selectedSubject!.subjectID, // REMOVED: Subject ID is no longer selected
       encadrantProID: _selectedSupervisor!.userID,
     );
 
@@ -298,51 +300,51 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
                           },
                         ),
                         const SizedBox(height: 10),
-                        //* Subject Dropdown (NEW ADDITION)
-                        BlocBuilder<SubjectCubit, SubjectState>(
-                          builder: (context, state) {
-                            if (state is SubjectLoaded) {
-                              _subjects = state.subjects; // Update local list
-                              return DropdownButtonFormField<Subject>(
-                                value: _selectedSubject,
-                                decoration: const InputDecoration(
-                                  labelText: 'Subject',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(
-                                    Icons.menu_book,
-                                  ), // Appropriate icon
-                                ),
-                                items: _subjects.map((subject) {
-                                  return DropdownMenuItem<Subject>(
-                                    value: subject,
-                                    child: Text(
-                                      subject.subjectName,
-                                    ), // Assuming Subject has a title field
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedSubject = value;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null) {
-                                    return 'Please select a subject.';
-                                  }
-                                  return null;
-                                },
-                              );
-                            } else if (state is SubjectLoading) {
-                              return const LinearProgressIndicator();
-                            } else if (state is SubjectError) {
-                              return Text(
-                                'Error loading subjects: ${state.message}',
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                        const SizedBox(height: 10),
+                        // Removed Subject Dropdown (as per request)
+                        // BlocBuilder<SubjectCubit, SubjectState>(
+                        //   builder: (context, state) {
+                        //     if (state is SubjectLoaded) {
+                        //       _subjects = state.subjects; // Update local list
+                        //       return DropdownButtonFormField<Subject>(
+                        //         value: _selectedSubject,
+                        //         decoration: const InputDecoration(
+                        //           labelText: 'Subject',
+                        //           border: OutlineInputBorder(),
+                        //           prefixIcon: Icon(
+                        //             Icons.menu_book,
+                        //           ), // Appropriate icon
+                        //         ),
+                        //         items: _subjects.map((subject) {
+                        //           return DropdownMenuItem<Subject>(
+                        //             value: subject,
+                        //             child: Text(
+                        //               subject.subjectName,
+                        //             ), // Assuming Subject has a title field
+                        //           );
+                        //         }).toList(),
+                        //         onChanged: (value) {
+                        //           setState(() {
+                        //             _selectedSubject = value;
+                        //           });
+                        //         },
+                        //         validator: (value) {
+                        //           if (value == null) {
+                        //             return 'Please select a subject.';
+                        //           }
+                        //           return null;
+                        //         },
+                        //       );
+                        //     } else if (state is SubjectLoading) {
+                        //       return const LinearProgressIndicator();
+                        //     } else if (state is SubjectError) {
+                        //       return Text(
+                        //         'Error loading subjects: ${state.message}',
+                        //       );
+                        //     }
+                        //     return const SizedBox.shrink();
+                        //   },
+                        // ),
+                        // const SizedBox(height: 10),
                         //* Supervisor Dropdown
                         BlocBuilder<UserCubit, UserState>(
                           builder: (context, state) {
