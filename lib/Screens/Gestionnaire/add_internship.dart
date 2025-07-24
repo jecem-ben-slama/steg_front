@@ -2,66 +2,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Model/internship_model.dart';
-import 'package:pfa/Cubit/student_cubit.dart'; // To fetch students for dropdown
-import 'package:pfa/Model/student_model.dart'; // Student model
-import 'package:pfa/Cubit/subject_cubit.dart'; // To fetch subjects for dropdown
-import 'package:pfa/Model/subject_model.dart'; // Subject model
-import 'package:pfa/Cubit/user_cubit.dart'; // To fetch supervisors for dropdown
+import 'package:pfa/Cubit/student_cubit.dart';
+import 'package:pfa/Model/student_model.dart';
+import 'package:pfa/Cubit/subject_cubit.dart';
+import 'package:pfa/Model/subject_model.dart';
+import 'package:pfa/Cubit/user_cubit.dart';
 import 'package:pfa/Model/user_model.dart';
-import 'package:pfa/cubit/internship_cubit.dart'; // User model (for supervisors)
+import 'package:pfa/cubit/internship_cubit.dart';
+import 'package:pfa/Utils/snackbar.dart'; // Assuming you have this for snackbar
 
-class ManageInternshipsDialog extends StatefulWidget {
-  const ManageInternshipsDialog({super.key});
+class AddInternshipPopup extends StatefulWidget {
+  const AddInternshipPopup({super.key});
 
   @override
-  State<ManageInternshipsDialog> createState() =>
-      _ManageInternshipsDialogState();
+  State<AddInternshipPopup> createState() => _AddInternshipPopupState();
 }
 
-class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
+class _AddInternshipPopupState extends State<AddInternshipPopup> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for text fields
-  final TextEditingController _typeStageController = TextEditingController();
+  String? _selectedInternshipType; // Changed to String? for dropdown value
   final TextEditingController _dateDebutController = TextEditingController();
   final TextEditingController _dateFinController = TextEditingController();
   final TextEditingController _montantRemunerationController =
       TextEditingController();
 
-  // Selected dropdown values
-  String? _selectedStatut;
   bool _estRemunere = false;
   Student? _selectedStudent;
-  Subject? _selectedSubject;
-  User? _selectedSupervisor; // Assuming supervisor is a User type
+  Subject? _selectedSubject; // NEW: Variable for selected subject
+  User? _selectedSupervisor;
 
-  // Dropdown options
-  final List<String> _statutOptions = [
-    'Proposé',
-    'Validé',
-    'Refusé',
-    'Annulé',
-    'En Cours',
-    'Terminé',
-  ];
+  // Define internship type options
+  final List<String> _internshipTypeOptions = ['PFA', 'PFE', 'Stage Ouvrier'];
   List<Student> _students = [];
-  List<Subject> _subjects = [];
+  List<Subject> _subjects = []; // NEW: List to hold subjects
   List<User> _supervisors = [];
 
   @override
   void initState() {
     super.initState();
-    // Fetch all necessary data when dialog initializes
     context.read<StudentCubit>().fetchStudents();
-    context.read<SubjectCubit>().fetchSubjects();
-    context
-        .read<UserCubit>()
-        .fetchUsers(); // Assuming supervisors are fetched as users
+    context.read<SubjectCubit>().fetchSubjects(); // NEW: Fetch subjects
+    context.read<UserCubit>().fetchUsers();
   }
 
   @override
   void dispose() {
-    _typeStageController.dispose();
     _dateDebutController.dispose();
     _dateFinController.dispose();
     _montantRemunerationController.dispose();
@@ -69,15 +55,14 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
   }
 
   void _clearForm() {
-    _typeStageController.clear();
     _dateDebutController.clear();
     _dateFinController.clear();
     _montantRemunerationController.clear();
     setState(() {
-      _selectedStatut = null;
+      _selectedInternshipType = null; // Clear selected type
       _estRemunere = false;
       _selectedStudent = null;
-      _selectedSubject = null;
+      _selectedSubject = null; // NEW: Clear selected subject
       _selectedSupervisor = null;
     });
   }
@@ -87,46 +72,49 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
       return;
     }
 
-    // Basic validation for dropdowns
-    if (_selectedStudent == null ||
-        _selectedSubject == null ||
-        _selectedSupervisor == null ||
-        _selectedStatut == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please select Student, Subject, Supervisor, and Status.',
-          ),
-          backgroundColor: Colors.red,
-        ),
+    // Basic validation for dropdowns and remuneration amount
+    if (_selectedInternshipType == null ||
+        _selectedStudent == null ||
+        _selectedSubject == null || // NEW: Validate subject
+        _selectedSupervisor == null) {
+      showFailureSnackBar(
+        context,
+        'Please select Internship Type, Student, Subject, and Supervisor.',
       );
       return;
     }
 
+    if (_estRemunere && _montantRemunerationController.text.isEmpty) {
+      showFailureSnackBar(context, 'Please enter remuneration amount.');
+      return;
+    }
+
+    // Date validation: ensure dateFin is not before dateDebut
+    final DateTime? debutDate = DateTime.tryParse(_dateDebutController.text);
+    final DateTime? finDate = DateTime.tryParse(_dateFinController.text);
+
+    if (debutDate != null && finDate != null && finDate.isBefore(debutDate)) {
+      showFailureSnackBar(context, 'End Date cannot be before Start Date.');
+      return;
+    }
+
     final newInternship = Internship(
-      typeStage: _typeStageController.text,
+      typeStage: _selectedInternshipType, // Use selected value from dropdown
       dateDebut: _dateDebutController.text,
       dateFin: _dateFinController.text,
-      statut: _selectedStatut,
+      statut: "Proposé", // Default status for new internships
       estRemunere: _estRemunere,
       montantRemuneration: _estRemunere
           ? double.tryParse(_montantRemunerationController.text)
           : null,
       etudiantID: _selectedStudent!.studentID,
-      sujetID: _selectedSubject!.subjectID,
+      sujetID: _selectedSubject!.subjectID, // NEW: Add subjectID
       encadrantProID: _selectedSupervisor!.userID,
     );
 
     context.read<InternshipCubit>().addInternship(newInternship);
-    Navigator.of(context).pop(); // Close the dialog after submission
+    Navigator.of(context).pop();
     _clearForm();
-    // Show success message or handle navigation after adding
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Internship added successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   Future<void> _selectDate(
@@ -141,9 +129,7 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
     );
     if (picked != null) {
       setState(() {
-        controller.text = picked.toIso8601String().split(
-          'T',
-        )[0]; // Format YYYY-MM-DD
+        controller.text = picked.toIso8601String().split('T')[0];
       });
     }
   }
@@ -165,16 +151,28 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        TextFormField(
-                          controller: _typeStageController,
+                        //* Internship Type Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedInternshipType,
                           decoration: const InputDecoration(
                             labelText: 'Internship Type',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.category),
                           ),
+                          items: _internshipTypeOptions.map((type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedInternshipType = value;
+                            });
+                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter internship type.';
+                              return 'Please select an internship type.';
                             }
                             return null;
                           },
@@ -222,32 +220,6 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                           },
                         ),
                         const SizedBox(height: 10),
-                        DropdownButtonFormField<String>(
-                          value: _selectedStatut,
-                          decoration: const InputDecoration(
-                            labelText: 'Status',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.info),
-                          ),
-                          items: _statutOptions.map((statut) {
-                            return DropdownMenuItem(
-                              value: statut,
-                              child: Text(statut),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedStatut = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Please select a status.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 10),
                         Row(
                           children: [
                             Checkbox(
@@ -283,7 +255,7 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                             },
                           ),
                         const SizedBox(height: 10),
-                        // Student Dropdown
+                        //* Student Dropdown
                         BlocBuilder<StudentCubit, StudentState>(
                           builder: (context, state) {
                             if (state is StudentLoaded) {
@@ -299,7 +271,7 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                                   return DropdownMenuItem<Student>(
                                     value: student,
                                     child: Text(
-                                      '${student.firstName} ${student.lastName}',
+                                      '${student.username} ${student.lastname}',
                                     ), // Display full name
                                   );
                                 }).toList(),
@@ -317,12 +289,16 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                               );
                             } else if (state is StudentLoading) {
                               return const LinearProgressIndicator();
+                            } else if (state is StudentError) {
+                              return Text(
+                                'Error loading students: ${state.message}',
+                              );
                             }
                             return const SizedBox.shrink(); // Or an error message
                           },
                         ),
                         const SizedBox(height: 10),
-                        // Subject Dropdown
+                        //* Subject Dropdown (NEW ADDITION)
                         BlocBuilder<SubjectCubit, SubjectState>(
                           builder: (context, state) {
                             if (state is SubjectLoaded) {
@@ -332,12 +308,16 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                                 decoration: const InputDecoration(
                                   labelText: 'Subject',
                                   border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.menu_book),
+                                  prefixIcon: Icon(
+                                    Icons.menu_book,
+                                  ), // Appropriate icon
                                 ),
                                 items: _subjects.map((subject) {
                                   return DropdownMenuItem<Subject>(
                                     value: subject,
-                                    child: Text(subject.subjectName),
+                                    child: Text(
+                                      subject.subjectName,
+                                    ), // Assuming Subject has a title field
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -354,12 +334,16 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                               );
                             } else if (state is SubjectLoading) {
                               return const LinearProgressIndicator();
+                            } else if (state is SubjectError) {
+                              return Text(
+                                'Error loading subjects: ${state.message}',
+                              );
                             }
                             return const SizedBox.shrink();
                           },
                         ),
                         const SizedBox(height: 10),
-                        // Supervisor Dropdown (Users with 'Encadrant' role)
+                        //* Supervisor Dropdown
                         BlocBuilder<UserCubit, UserState>(
                           builder: (context, state) {
                             if (state is UserLoaded) {
@@ -396,6 +380,10 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
                               );
                             } else if (state is UserLoading) {
                               return const LinearProgressIndicator();
+                            } else if (state is UserError) {
+                              return Text(
+                                'Error loading supervisors: ${state.message}',
+                              );
                             }
                             return const SizedBox.shrink();
                           },
@@ -446,17 +434,5 @@ class _ManageInternshipsDialogState extends State<ManageInternshipsDialog> {
         ),
       ],
     );
-  }
-}
-
-// Extension to help with firstWhereOrNull, which is not built-in for List
-extension IterableExt<T> on Iterable<T> {
-  T? firstWhereOrNull(bool Function(T element) test) {
-    for (var element in this) {
-      if (test(element)) {
-        return element;
-      }
-    }
-    return null;
   }
 }

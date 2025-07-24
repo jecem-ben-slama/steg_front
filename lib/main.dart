@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
-import 'package:pfa/cubit/chef_cubit.dart';
-import 'package:pfa/cubit/encadrant_cubit.dart';
+
 import 'package:provider/provider.dart';
 //* Repositories
 import 'package:pfa/BLoc/Login/login_bloc.dart';
@@ -18,10 +17,14 @@ import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/repositories/subject_repo.dart';
 import 'package:pfa/Repositories/chef_repo.dart';
 import 'package:pfa/Repositories/encadrant_repo.dart';
+import 'package:pfa/Repositories/stats_repo.dart';
 
 //* Cubit
 import 'package:pfa/cubit/internship_cubit.dart';
 import 'package:pfa/cubit/user_cubit.dart';
+import 'package:pfa/cubit/chef_cubit.dart';
+import 'package:pfa/cubit/encadrant_cubit.dart';
+import 'package:pfa/cubit/stats_cubit.dart';
 
 //* Screens
 import 'package:pfa/Screens/login.dart';
@@ -78,7 +81,7 @@ class _MyAppState extends State<MyApp> {
     userRepository = UserRepository(dio: dio);
     internshipRepository = InternshipRepository(dio: dio);
     subjectRepository = SubjectRepository(dio: dio);
-    _setDevToken();
+    //_setDevToken();
     //* Router
     //! Move the router initialization to a separate file
     router = GoRouter(
@@ -209,10 +212,10 @@ class _MyAppState extends State<MyApp> {
       const String devToken2 =
           "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5MTEsImV4cCI6MTc1MzYyOTcxMSwiZGF0YSI6eyJ1c2VySUQiOjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJDaGVmQ2VudHJlSW5mb3JtYXRpcXVlIn19.LKXQ_w6WexprOW8oZqevmZapnHA6JrRlMZlPiwERGyU";
 
-      await prefs.setString('jwt_token', devToken2);
+      await prefs.setString('jwt_token', devToken);
       debugPrint('Development token set in SharedPreferences.');
 
-      await loginRepository.setToken(devToken2);
+      await loginRepository.setToken(devToken);
     }
   }
 
@@ -220,9 +223,6 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<UserRepository>(
-          create: (context) => UserRepository(dio: dio),
-        ),
         RepositoryProvider<StudentRepository>(
           create: (context) => StudentRepository(dio: dio),
         ),
@@ -245,6 +245,12 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<ChefCentreRepository>(
           create: (context) => ChefCentreRepository(dio: dio),
         ),
+        RepositoryProvider<StatsRepository>(
+          create: (context) => StatsRepository(dio: dio),
+        ),
+        RepositoryProvider<UserRepository>(
+          create: (context) => UserRepository(dio: dio),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -264,6 +270,11 @@ class _MyAppState extends State<MyApp> {
           BlocProvider<ChefCentreCubit>(
             create: (context) => ChefCentreCubit(
               RepositoryProvider.of<ChefCentreRepository>(context),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => GestionnaireStatsCubit(
+              RepositoryProvider.of<StatsRepository>(context),
             ),
           ),
         ],

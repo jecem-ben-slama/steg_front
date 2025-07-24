@@ -6,7 +6,7 @@ class SubjectRepository {
   final Dio _dio;
 
   SubjectRepository({required Dio dio}) : _dio = dio;
-
+  //* Fetch All Subjects
   Future<List<Subject>> fetchSubjects() async {
     try {
       final response = await _dio.get('$subjectsPath/list_sujet.php');
@@ -36,45 +36,54 @@ class SubjectRepository {
     }
   }
 
+  //* Add Subject
   Future<Subject> addSubject(Subject subject) async {
     try {
       final response = await _dio.post(
         '$subjectsPath/add_sujet.php',
-        data: subject.toJson(),
+        data: subject.toJson(), // Send the subject object as JSON body
       );
 
+      // Check for successful response from the PHP script
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['status'] == 'success') {
+        // Parse the 'data' part of the response into a Subject object
         return Subject.fromJson(response.data['data']);
       } else {
+        // If status is not 'success' or data is malformed
         throw Exception(
           'Failed to add subject: ${response.data?['message'] ?? response.statusMessage}',
         );
       }
     } on DioException catch (e) {
+      // Dio specific error handling (network issues, server errors)
       String errorMessage = 'Failed to add subject.';
       if (e.response != null) {
+        // Server responded with an error status code
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
       } else {
+        // Network error (e.g., no internet, server unreachable)
         errorMessage = 'Network error: ${e.message}';
       }
       print('Dio Error adding subject: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
+      // General unexpected errors
       print('General Error adding subject: $e');
-      rethrow;
+      rethrow; // Re-throw to be caught by BLoC/Cubit
     }
   }
 
+  //* Update Subject
   Future<Subject> updateSubject(Subject subject) async {
     try {
       if (subject.subjectID == null) {
         throw Exception('Subject ID is required for updating a subject.');
       }
       final response = await _dio.post(
-        '$subjectsPath/edit_subject.php',
+        '$subjectsPath/edit_sujet.php',
         data: subject.toJson(),
       );
 
@@ -103,11 +112,11 @@ class SubjectRepository {
     }
   }
 
+  //* Delete Subject
   Future<void> deleteSubject(int subjectID) async {
     try {
       final response = await _dio.post(
-        '$subjectsPath/delete_subject.php',
-        data: {'sujetID': subjectID},
+        '$subjectsPath/delete_sujet.php?sujetID=$subjectID',
       );
       if (response.statusCode == 200 &&
           response.data != null &&

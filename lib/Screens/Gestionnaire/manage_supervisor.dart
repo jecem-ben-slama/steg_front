@@ -14,10 +14,9 @@ class _ManageUsersState extends State<ManageUsers> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController roleController =
-      TextEditingController(); 
+  final TextEditingController passwordController = TextEditingController();
   User? editingUser;
-  bool isFormVisible = false; 
+  bool isFormVisible = false;
 
   @override
   void initState() {
@@ -29,7 +28,7 @@ class _ManageUsersState extends State<ManageUsers> {
     firstNameController.clear();
     lastNameController.clear();
     emailController.clear();
-    roleController.clear();
+    passwordController.clear();
     setState(() {
       editingUser = null;
     });
@@ -39,10 +38,11 @@ class _ManageUsersState extends State<ManageUsers> {
     firstNameController.text = user.username;
     lastNameController.text = user.lastname;
     emailController.text = user.email;
-    roleController.text = user.role;
+    passwordController.clear(); // Clear for security when editing
+
     setState(() {
       editingUser = user;
-      isFormVisible = true; 
+      isFormVisible = true; // Ensure the form becomes visible
     });
   }
 
@@ -52,7 +52,13 @@ class _ManageUsersState extends State<ManageUsers> {
       username: firstNameController.text,
       lastname: lastNameController.text,
       email: emailController.text,
-      role: roleController.text,
+      password: editingUser == null
+          ? passwordController
+                .text // Only include password if adding
+          : (passwordController.text.isNotEmpty
+                ? passwordController.text
+                : null), // Only send for update if not empty
+      role: "Encadrant", // Assuming role is always 'Encadrant' for these users
     );
 
     if (editingUser == null) {
@@ -60,8 +66,6 @@ class _ManageUsersState extends State<ManageUsers> {
     } else {
       context.read<UserCubit>().updateUser(newUser);
     }
-    clearForm();
-    toggleFormVisibility(); 
   }
 
   void deleteUser(int userId) {
@@ -78,7 +82,8 @@ class _ManageUsersState extends State<ManageUsers> {
           ElevatedButton(
             onPressed: () {
               context.read<UserCubit>().deleteUser(userId);
-              Navigator.of(ctx).pop();
+              Navigator.of(ctx).pop(); // Close the confirmation dialog
+              // The main AlertDialog will be closed by the listener
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
@@ -91,6 +96,9 @@ class _ManageUsersState extends State<ManageUsers> {
   void toggleFormVisibility() {
     setState(() {
       isFormVisible = !isFormVisible;
+      if (!isFormVisible) {
+        clearForm();
+      }
     });
   }
 
@@ -112,7 +120,12 @@ class _ManageUsersState extends State<ManageUsers> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 IconButton(
-                  onPressed: toggleFormVisibility,
+                  onPressed: () {
+                    if (editingUser != null) {
+                      clearForm();
+                    }
+                    toggleFormVisibility();
+                  },
                   icon: Icon(
                     isFormVisible
                         ? Icons.arrow_circle_up
@@ -129,9 +142,7 @@ class _ManageUsersState extends State<ManageUsers> {
               },
               child: isFormVisible
                   ? Padding(
-                      key: const ValueKey(
-                        'userForm',
-                      ), 
+                      key: const ValueKey('userForm'),
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Column(
@@ -164,14 +175,17 @@ class _ManageUsersState extends State<ManageUsers> {
                               keyboardType: TextInputType.emailAddress,
                             ),
                             const SizedBox(height: 10),
-                            TextField(
-                              controller: roleController,
-                              decoration: const InputDecoration(
-                                labelText: 'Role (e.g., Supervisor, Admin)',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.badge),
-                              ),
-                            ),
+                            editingUser == null
+                                ? TextField(
+                                    controller: passwordController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Password',
+                                      border: OutlineInputBorder(),
+                                      prefixIcon: Icon(Icons.lock),
+                                    ),
+                                    obscureText: true,
+                                  )
+                                : const SizedBox.shrink(),
                             const SizedBox(height: 20),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -214,9 +228,9 @@ class _ManageUsersState extends State<ManageUsers> {
                         ),
                       ),
                     )
-                  : const SizedBox.shrink(), 
+                  : const SizedBox.shrink(),
             ),
-            const Divider(height: 30, thickness: 1), 
+            const Divider(height: 30, thickness: 1),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -228,6 +242,7 @@ class _ManageUsersState extends State<ManageUsers> {
             Expanded(
               child: BlocConsumer<UserCubit, UserState>(
                 listener: (context, state) {
+                  // Display SnackBar for success or error
                   if (state is UserActionSuccess) {
                     ScaffoldMessenger.of(
                       context,
@@ -239,6 +254,15 @@ class _ManageUsersState extends State<ManageUsers> {
                         backgroundColor: Colors.red,
                       ),
                     );
+                  }
+
+                  // Close the AlertDialog after any action (success or error)
+                  if (state is UserActionSuccess || state is UserError) {
+                    // It's good practice to clear the form and hide it
+                    // after an action, especially if the dialog closes.
+                    clearForm();
+                    // No need to call toggleFormVisibility if dialog closes.
+                    Navigator.of(context).pop(); // <--- MOVED THIS LINE
                   }
                 },
                 builder: (context, state) {
@@ -261,15 +285,13 @@ class _ManageUsersState extends State<ManageUsers> {
                             vertical: 6,
                             horizontal: 4,
                           ),
-                          elevation: 3, // Add some shadow
+                          elevation: 3,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              child: Text(
-                                user.username[0].toUpperCase(),
-                              ), 
+                              child: Text(user.username[0].toUpperCase()),
                             ),
                             title: Text(
                               '${user.username} ${user.lastname}',
@@ -279,10 +301,7 @@ class _ManageUsersState extends State<ManageUsers> {
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Email: ${user.email}'),
-                                Text('Role: ${user.role}'),
-                              ],
+                              children: [Text('Email: ${user.email}')],
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -324,7 +343,7 @@ class _ManageUsersState extends State<ManageUsers> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(); 
+            Navigator.of(context).pop(); // Close the dialog
           },
           child: const Text('Close'),
         ),

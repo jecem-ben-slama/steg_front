@@ -3,8 +3,8 @@ import 'package:equatable/equatable.dart';
 class Student extends Equatable {
   final int? studentID;
   final int? userID;
-  final String firstName;
-  final String lastName;
+  final String username;
+  final String lastname;
   final String email;
   final String? major;
   final String? level;
@@ -19,8 +19,8 @@ class Student extends Equatable {
   const Student({
     this.studentID,
     this.userID,
-    required this.firstName,
-    required this.lastName,
+    required this.username,
+    required this.lastname,
     required this.email,
     this.major,
     this.level,
@@ -36,8 +36,8 @@ class Student extends Equatable {
     return Student(
       studentID: int.tryParse(json['etudiantID']?.toString() ?? ''),
       userID: int.tryParse(json['userID']?.toString() ?? ''),
-      firstName: json['username'] as String,
-      lastName: json['lastname'] as String,
+      username: json['username'] as String,
+      lastname: json['lastname'] as String,
       email: json['email'] as String,
       major: json['specialite'] as String?,
       level: json['niveauEtude'] as String?,
@@ -51,8 +51,8 @@ class Student extends Equatable {
   }
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
-      'username': firstName,
-      'lastName': lastName,
+      'username': username,
+      'lastname': lastname,
       'email': email,
       if (major != null) 'specialite': major,
       if (level != null) 'niveauEtude': level,
@@ -69,8 +69,8 @@ class Student extends Equatable {
   Student copyWith({
     int? studentID,
     int? userID,
-    String? firstName,
-    String? lastName,
+    String? username,
+    String? lastname,
     String? email,
     String? major,
     String? level,
@@ -84,8 +84,8 @@ class Student extends Equatable {
     return Student(
       studentID: studentID ?? this.studentID,
       userID: userID ?? this.userID,
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
+      username: username ?? this.username,
+      lastname: lastname ?? this.lastname,
       email: email ?? this.email,
       major: major ?? this.major,
       level: level ?? this.level,
@@ -102,8 +102,8 @@ class Student extends Equatable {
   List<Object?> get props => [
     studentID,
     userID,
-    firstName,
-    lastName,
+    username,
+    lastname,
     email,
     major,
     level,
