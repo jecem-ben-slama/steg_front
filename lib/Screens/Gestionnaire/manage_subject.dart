@@ -18,6 +18,12 @@ class ManageSubjects extends StatefulWidget {
 class _ManageSubjectsState extends State<ManageSubjects> {
   final TextEditingController _subjectNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+
+  // New: Controller for the search bar
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery =
+      ''; // New: State variable to hold the current search query
+
   Subject? _editingSubject;
   bool _isFormVisible = false;
 
@@ -32,14 +38,26 @@ class _ManageSubjectsState extends State<ManageSubjects> {
   void initState() {
     super.initState();
     context.read<SubjectCubit>().fetchSubjects();
+
+    // New: Add listener to search controller to update search query
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _subjectNameController.dispose();
     _descriptionController.dispose();
+    _searchController.removeListener(_onSearchChanged); // New: Remove listener
+    _searchController.dispose(); // New: Dispose search controller
     _messageTimer?.cancel(); // Cancel timer to prevent memory leaks
     super.dispose();
+  }
+
+  // New: Method to update search query and trigger rebuild
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+    });
   }
 
   void _clearForm() {
@@ -165,19 +183,14 @@ class _ManageSubjectsState extends State<ManageSubjects> {
                       decoration: BoxDecoration(
                         color: _displayMessageType == MessageType.success
                             ? Colors.green.withOpacity(0.1)
-                            // Removed SubjectActionInfo case, now info is treated as success visually
-                            : _displayMessageType ==
-                                  MessageType
-                                      .info // This case will now be unreachable if SubjectActionInfo is removed from Cubit
+                            : _displayMessageType == MessageType.info
                             ? Colors.blue.withOpacity(0.1)
                             : Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8.0),
                         border: Border.all(
                           color: _displayMessageType == MessageType.success
                               ? Colors.green
-                              : _displayMessageType ==
-                                    MessageType
-                                        .info // This case will now be unreachable
+                              : _displayMessageType == MessageType.info
                               ? Colors.blue
                               : Colors.red,
                           width: 1.0,
@@ -188,16 +201,12 @@ class _ManageSubjectsState extends State<ManageSubjects> {
                           Icon(
                             _displayMessageType == MessageType.success
                                 ? Icons.check_circle_outline
-                                : _displayMessageType ==
-                                      MessageType
-                                          .info // This case will now be unreachable
+                                : _displayMessageType == MessageType.info
                                 ? Icons.info_outline
                                 : Icons.error_outline,
                             color: _displayMessageType == MessageType.success
                                 ? Colors.green
-                                : _displayMessageType ==
-                                      MessageType
-                                          .info // This case will now be unreachable
+                                : _displayMessageType == MessageType.info
                                 ? Colors.blue
                                 : Colors.red,
                           ),
@@ -209,9 +218,7 @@ class _ManageSubjectsState extends State<ManageSubjects> {
                                 color:
                                     _displayMessageType == MessageType.success
                                     ? Colors.green.shade800
-                                    : _displayMessageType ==
-                                          MessageType
-                                              .info // This case will now be unreachable
+                                    : _displayMessageType == MessageType.info
                                     ? Colors.blue.shade800
                                     : Colors.red.shade800,
                               ),
@@ -324,11 +331,36 @@ class _ManageSubjectsState extends State<ManageSubjects> {
                   : const SizedBox.shrink(),
             ),
             const Divider(height: 30, thickness: 1),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Existing Subjects',
-                style: Theme.of(context).textTheme.headlineSmall,
+            // New: Row for "Existing Subjects" and Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Existing Subjects',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2, // Give more space to the search bar
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search subjects by name or description...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10.0,
+                          horizontal: 12.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 10),
@@ -347,7 +379,25 @@ class _ManageSubjectsState extends State<ManageSubjects> {
                   if (state is SubjectLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is SubjectLoaded) {
-                    if (state.subjects.isEmpty) {
+                    // Filter subjects based on search query
+                    final filteredSubjects = state.subjects.where((subject) {
+                      final subjectNameLower = subject.subjectName
+                          .toLowerCase();
+                      final descriptionLower =
+                          subject.description?.toLowerCase() ?? '';
+                      final searchQueryLower = _searchQuery.toLowerCase();
+
+                      return subjectNameLower.contains(searchQueryLower) ||
+                          descriptionLower.contains(searchQueryLower);
+                    }).toList();
+
+                    if (filteredSubjects.isEmpty && _searchQuery.isNotEmpty) {
+                      return Center(
+                        child: Text(
+                          'No subjects found matching "${_searchQuery}".',
+                        ),
+                      );
+                    } else if (filteredSubjects.isEmpty) {
                       return const Center(
                         child: Text(
                           'No subjects found. Add one using the form above!',
@@ -355,9 +405,10 @@ class _ManageSubjectsState extends State<ManageSubjects> {
                       );
                     }
                     return ListView.builder(
-                      itemCount: state.subjects.length,
+                      itemCount: filteredSubjects.length,
                       itemBuilder: (context, index) {
-                        final subject = state.subjects[index];
+                        final subject =
+                            filteredSubjects[index]; // Use filtered list
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             vertical: 6,

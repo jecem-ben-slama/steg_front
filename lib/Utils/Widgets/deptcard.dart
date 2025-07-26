@@ -44,7 +44,7 @@ class _DeptCardState extends State<DeptCard> {
             create: (_) =>
                 StudentCubit(RepositoryProvider.of<StudentRepository>(context)),
             child:
-                const ManageStudents(), // Ensure this matches your class name
+                const ManageStudentsPopup(), // Ensure this matches your class name
           );
         },
       );

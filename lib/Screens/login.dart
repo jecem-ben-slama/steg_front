@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/BLoc/Login/login_bloc.dart';
 import 'package:pfa/BLoc/Login/login_event.dart';
 import 'package:pfa/BLoc/Login/login_state.dart';
-import 'package:pfa/Screens/Encadrant/encadrant_home.dart';
-import 'package:pfa/Screens/Gestionnaire/gestionnaire_home.dart';
 import 'package:pfa/Utils/Consts/style.dart';
 import 'package:pfa/Utils/Widgets/input_field.dart';
 import '../Utils/Consts/validator.dart';
@@ -62,26 +60,6 @@ class LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             );
-
-            if (state.role == 'Gestionnaire') {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const GestionnaireHome(),
-                ),
-              );
-            }
-
-            if (state.role == 'Encadrant') {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const EncadrantHome()),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Role not recognized')),
-              );
-            }
           }
         },
         child: Center(
@@ -90,7 +68,7 @@ class LoginScreenState extends State<LoginScreen> {
             width: loginBoxWidth,
             height: loginBoxHeight,
             decoration: BoxDecoration(
-              color: MyColors.black,
+              color: MyColors.darkBlack,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -116,8 +94,9 @@ class LoginScreenState extends State<LoginScreen> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
-                          //* Email Field - Using your InputField widget
-                          InputField(
+                          //* Email Field
+                          CustomInputField(
+                            isPassword: false,
                             labelText: 'Email',
                             hintText: 'foulen@steg.com',
                             controller: emailController,
@@ -125,13 +104,13 @@ class LoginScreenState extends State<LoginScreen> {
                             validator: Validators.validateEmail,
                           ),
                           const SizedBox(height: 16),
-                          //* Password Field - Using your InputField widget
-                          InputField(
+                          //* Password Field
+                          CustomInputField(
                             labelText: "Password",
                             hintText: "*********",
                             controller: passwordController,
-                            obscure: true,
                             icon: Icons.lock,
+                            isPassword: true,
                             validator: Validators.validatePassword,
                           ),
                           const SizedBox(height: 24),
@@ -201,7 +180,7 @@ class LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Center(
                       child: Image.asset(
-                        'assets/STEG.png', 
+                        'assets/STEG.png',
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,

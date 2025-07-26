@@ -74,9 +74,7 @@ class _EvaluationValidationScreenState
                 context.read<ChefCentreCubit>().validateOrRejectEvaluation(
                   evaluationID: evaluationID,
                   actionType: 'reject',
-                  rejectionReason: _reasonController.text.trim().isEmpty
-                      ? null
-                      : _reasonController.text.trim(),
+                  
                 );
               },
               child: const Text(

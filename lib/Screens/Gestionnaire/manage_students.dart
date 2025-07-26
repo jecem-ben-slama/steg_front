@@ -4,20 +4,22 @@ import 'dart:async'; // Import for Timer
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/student_cubit.dart'; // Make sure this path is correct
-import 'package:pfa/Model/student_model.dart'; // Make sure this path is correct
+import 'package:pfa/Model/student_model.dart';
+import 'package:pfa/Utils/Consts/style.dart';
+import 'package:pfa/Utils/Consts/validator.dart';
+import 'package:pfa/Utils/Widgets/input_field.dart'; // Make sure this path is correct
 
 // Enum to define message types for styling (same as for subjects)
 enum MessageType { success, info, error, none }
 
-class ManageStudents extends StatefulWidget {
-  const ManageStudents({super.key});
+class ManageStudentsPopup extends StatefulWidget {
+  const ManageStudentsPopup({super.key});
 
   @override
-  State<ManageStudents> createState() => _ManageStudentsState();
+  State<ManageStudentsPopup> createState() => _ManageStudentsPopupState();
 }
 
-class _ManageStudentsState extends State<ManageStudents> {
-  // Update controllers to match database columns
+class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -30,27 +32,29 @@ class _ManageStudentsState extends State<ManageStudents> {
   final TextEditingController cycleController = TextEditingController();
   final TextEditingController specialiteController = TextEditingController();
 
+  // New: Controller for the search bar
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery =
+      ''; // New: State variable to hold the current search query
+
   Student? editingStudent;
   bool isFormVisible = false;
-
-  final GlobalKey<FormState> _formKey =
-      GlobalKey<FormState>(); // Added GlobalKey for form validation
-
-  // State variables for displaying messages within the popup
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? _displayMessage;
   MessageType _displayMessageType = MessageType.none;
-  Timer? _messageTimer; // Timer to clear the message automatically
+  Timer? _messageTimer;
 
   @override
   void initState() {
     super.initState();
-    // Ensure data is fetched when the dialog opens
     context.read<StudentCubit>().fetchStudents();
+
+    // New: Add listener to search controller
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    // Dispose all controllers to prevent memory leaks
     usernameController.dispose();
     lastnameController.dispose();
     emailController.dispose();
@@ -62,12 +66,20 @@ class _ManageStudentsState extends State<ManageStudents> {
     nomFaculteController.dispose();
     cycleController.dispose();
     specialiteController.dispose();
-    _messageTimer?.cancel(); // Cancel timer to prevent memory leaks
+    _messageTimer?.cancel();
+    _searchController.removeListener(_onSearchChanged); // New: Remove listener
+    _searchController.dispose(); // New: Dispose search controller
     super.dispose();
   }
 
+  // New: Method to update search query and trigger rebuild
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+    });
+  }
+
   void _clearForm() {
-    // Renamed to _clearForm for consistency
     usernameController.clear();
     lastnameController.clear();
     emailController.clear();
@@ -81,14 +93,12 @@ class _ManageStudentsState extends State<ManageStudents> {
     specialiteController.clear();
     setState(() {
       editingStudent = null;
-      isFormVisible = false; // Hide form after clearing for new entry
+      isFormVisible = false;
     });
-    _clearMessage(); // Clear any displayed message when form is cleared
+    _clearMessage();
   }
 
   void _populateForm(Student student) {
-    // Renamed to _populateForm for consistency
-    // Populate controllers with student data
     usernameController.text = student.username;
     lastnameController.text = student.lastname;
     emailController.text = student.email;
@@ -102,15 +112,13 @@ class _ManageStudentsState extends State<ManageStudents> {
     specialiteController.text = student.specialite ?? '';
     setState(() {
       editingStudent = student;
-      isFormVisible = true; // Show the form when populating for editing
+      isFormVisible = true;
     });
-    _clearMessage(); // Clear any displayed message when populating form
+    _clearMessage();
   }
 
   Future<void> _submitForm() async {
-    // Renamed to _submitForm for consistency
     if (!_formKey.currentState!.validate()) {
-      // Validate the form
       _displayMessageInPopup(
         'Please fill in all required fields.',
         MessageType.error,
@@ -156,7 +164,6 @@ class _ManageStudentsState extends State<ManageStudents> {
   }
 
   void _deleteStudent(int studentId) {
-    // Renamed to _deleteStudent for consistency
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -185,16 +192,14 @@ class _ManageStudentsState extends State<ManageStudents> {
   }
 
   void _toggleFormVisibility() {
-    // Renamed to _toggleFormVisibility for consistency
     setState(() {
       isFormVisible = !isFormVisible;
       if (!isFormVisible) {
-        _clearForm(); // Clear form if hiding and not editing
+        _clearForm();
       }
     });
   }
 
-  // Helper to display message within the popup
   void _displayMessageInPopup(String message, MessageType type) {
     setState(() {
       _displayMessage = message;
@@ -209,7 +214,6 @@ class _ManageStudentsState extends State<ManageStudents> {
     });
   }
 
-  // Helper to clear the displayed message
   void _clearMessage() {
     setState(() {
       _displayMessage = null;
@@ -220,13 +224,14 @@ class _ManageStudentsState extends State<ManageStudents> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Manage Students'),
+      backgroundColor: MyColors.white,
+      title: const Center(child: Text('Manage Students')),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.7,
         height: MediaQuery.of(context).size.height * 0.8,
         child: Column(
           children: [
-            // Message display area
+            //* Display a message in case of success, info, or error
             AnimatedOpacity(
               opacity: _displayMessage != null ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
@@ -236,19 +241,15 @@ class _ManageStudentsState extends State<ManageStudents> {
                       margin: const EdgeInsets.only(bottom: 10.0),
                       decoration: BoxDecoration(
                         color: _displayMessageType == MessageType.success
-                            ? Colors.green.withOpacity(0.1)
-                            : _displayMessageType ==
-                                  MessageType
-                                      .info // This case might be unused if Cubit doesn't emit info
-                            ? Colors.blue.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
+                            ? Colors.green
+                            : _displayMessageType == MessageType.info
+                            ? Colors.blue
+                            : Colors.red,
                         borderRadius: BorderRadius.circular(8.0),
                         border: Border.all(
                           color: _displayMessageType == MessageType.success
                               ? Colors.green
-                              : _displayMessageType ==
-                                    MessageType
-                                        .info // This case might be unused
+                              : _displayMessageType == MessageType.info
                               ? Colors.blue
                               : Colors.red,
                           width: 1.0,
@@ -259,16 +260,12 @@ class _ManageStudentsState extends State<ManageStudents> {
                           Icon(
                             _displayMessageType == MessageType.success
                                 ? Icons.check_circle_outline
-                                : _displayMessageType ==
-                                      MessageType
-                                          .info // This case might be unused
+                                : _displayMessageType == MessageType.info
                                 ? Icons.info_outline
                                 : Icons.error_outline,
                             color: _displayMessageType == MessageType.success
                                 ? Colors.green
-                                : _displayMessageType ==
-                                      MessageType
-                                          .info // This case might be unused
+                                : _displayMessageType == MessageType.info
                                 ? Colors.blue
                                 : Colors.red,
                           ),
@@ -280,9 +277,7 @@ class _ManageStudentsState extends State<ManageStudents> {
                                 color:
                                     _displayMessageType == MessageType.success
                                     ? Colors.green.shade800
-                                    : _displayMessageType ==
-                                          MessageType
-                                              .info // This case might be unused
+                                    : _displayMessageType == MessageType.info
                                     ? Colors.blue.shade800
                                     : Colors.red.shade800,
                               ),
@@ -303,15 +298,11 @@ class _ManageStudentsState extends State<ManageStudents> {
                 IconButton(
                   onPressed: () {
                     if (isFormVisible && editingStudent != null) {
-                      _clearForm(); // Clear form if hiding and in edit mode
+                      _clearForm();
                     }
-                    _toggleFormVisibility(); // Use the renamed method
+                    _toggleFormVisibility();
                   },
-                  icon: Icon(
-                    isFormVisible
-                        ? Icons.arrow_circle_up
-                        : Icons.arrow_circle_down,
-                  ),
+                  icon: Icon(isFormVisible ? Icons.arrow_circle_up : Icons.add),
                   tooltip: isFormVisible ? 'Hide Form' : 'Show Form',
                 ),
               ],
@@ -327,34 +318,23 @@ class _ManageStudentsState extends State<ManageStudents> {
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Form(
-                          // Added Form widget
-                          key: _formKey, // Assigned GlobalKey
+                          key: _formKey,
                           child: Column(
                             children: [
-                              // Row 1: First Name and Last Name
                               Row(
                                 children: [
                                   Expanded(
-                                    child: TextFormField(
-                                      // Changed to TextFormField for validation
+                                    child: CustomInputField(
+                                      icon: Icons.person,
+                                      labelText: "First Name",
+                                      hintText: "",
                                       controller: usernameController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'First Name',
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(Icons.person),
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'First Name cannot be empty.';
-                                        }
-                                        return null;
-                                      },
+                                      validator: Validators.validateName,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: TextFormField(
-                                      // Changed to TextFormField for validation
                                       controller: lastnameController,
                                       decoration: const InputDecoration(
                                         labelText: 'Last Name',
@@ -570,11 +550,37 @@ class _ManageStudentsState extends State<ManageStudents> {
                   : const SizedBox.shrink(),
             ),
             const Divider(height: 30, thickness: 1),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Existing Students',
-                style: Theme.of(context).textTheme.headlineSmall,
+            // Modified Row for "Existing Students" and Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Existing Students',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2, // Give more space to the search bar
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        labelText: 'Search Students',
+                        hintText: 'Search by name, email, CIN...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10.0,
+                          horizontal: 12.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 10),
@@ -587,24 +593,39 @@ class _ManageStudentsState extends State<ManageStudents> {
                   } else if (state is StudentError) {
                     _displayMessageInPopup(state.message, MessageType.error);
                   }
-                  // StudentActionInfo state handling would go here if it existed
                 },
                 builder: (context, state) {
                   if (state is StudentLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is StudentLoaded) {
-                    if (state.students.isEmpty) {
-                      return const Center(
+                    // Filter students based on search query
+                    final filteredStudents = state.students.where((student) {
+                      final query = _searchQuery;
+                      return student.username.toLowerCase().contains(query) ||
+                          student.lastname.toLowerCase().contains(query) ||
+                          student.email.toLowerCase().contains(query) ||
+                          (student.cin?.toLowerCase().contains(query) ??
+                              false) ||
+                          (student.major?.toLowerCase().contains(query) ??
+                              false);
+                    }).toList();
+
+                    if (filteredStudents.isEmpty) {
+                      return Center(
                         child: Text(
-                          'No students found. Add one using the form above!',
+                          _searchQuery.isEmpty
+                              ? 'No students found. Add one using the form above!'
+                              : 'No students found matching "${_searchController.text}".',
                         ),
                       );
                     }
                     return ListView.builder(
-                      itemCount: state.students.length,
+                      itemCount: filteredStudents.length,
                       itemBuilder: (context, index) {
-                        final student = state.students[index];
+                        final student =
+                            filteredStudents[index]; // Use filtered list
                         return Card(
+                          color: MyColors.lightBlue,
                           margin: const EdgeInsets.symmetric(
                             vertical: 6,
                             horizontal: 4,

@@ -58,7 +58,7 @@ class ChefCentreCubit extends Cubit<ChefCentreState> {
   final ChefCentreRepository _chefCentreRepository; // Use the repository now
 
   ChefCentreCubit(this._chefCentreRepository) : super(ChefCentreInitial());
-
+//* Fetch All Evaluations Pending Validation for Chef Centre
   Future<void> fetchEvaluationsToValidate() async {
     emit(EvaluationsLoading());
     try {
@@ -75,10 +75,11 @@ class ChefCentreCubit extends Cubit<ChefCentreState> {
     }
   }
 
+//* Validate or Reject an Evaluation
   Future<void> validateOrRejectEvaluation({
     required int evaluationID,
     required String actionType,
-    String? rejectionReason,
+    
   }) async {
     final currentState = state;
     emit(EvaluationActionLoading(evaluationID));

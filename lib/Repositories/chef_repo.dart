@@ -69,11 +69,11 @@ class ChefCentreRepository {
         return response.data; // This will contain status and message
       } else {
         throw Exception(
-          'Failed to ${actionType} evaluation: ${response.data?['message'] ?? response.statusMessage}',
+          'Failed to $actionType evaluation: ${response.data?['message'] ?? response.statusMessage}',
         );
       }
     } on DioException catch (e) {
-      String errorMessage = 'Failed to ${actionType} evaluation.';
+      String errorMessage = 'Failed to $actionType evaluation.';
       if (e.response != null) {
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';

@@ -20,6 +20,12 @@ class _ManageUsersState extends State<ManageUsers> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  // New: Controller for the search bar
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery =
+      ''; // New: State variable to hold the current search query
+
   User? _editingUser; // Renamed for consistency
   bool _isFormVisible = false; // Renamed for consistency
 
@@ -35,6 +41,9 @@ class _ManageUsersState extends State<ManageUsers> {
   void initState() {
     super.initState();
     context.read<UserCubit>().fetchUsers();
+
+    // New: Add listener to search controller
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -43,8 +52,17 @@ class _ManageUsersState extends State<ManageUsers> {
     _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _searchController.removeListener(_onSearchChanged); // New: Remove listener
+    _searchController.dispose(); // New: Dispose search controller
     _messageTimer?.cancel(); // Cancel timer to prevent memory leaks
     super.dispose();
+  }
+
+  // New: Method to update search query and trigger rebuild
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+    });
   }
 
   void _clearForm() {
@@ -391,11 +409,36 @@ class _ManageUsersState extends State<ManageUsers> {
                   : const SizedBox.shrink(),
             ),
             const Divider(height: 30, thickness: 1),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Existing Supervisors',
-                style: Theme.of(context).textTheme.headlineSmall,
+            // New: Row for "Existing Supervisors" and Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Existing Supervisors',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2, // Give more space to the search bar
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search supervisors by name or email...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10.0,
+                          horizontal: 12.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 10),
@@ -417,7 +460,30 @@ class _ManageUsersState extends State<ManageUsers> {
                   if (state is UserLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is UserLoaded) {
-                    if (state.users.isEmpty) {
+                    // Filter users based on search query
+                    final filteredUsers = state.users.where((user) {
+                      final usernameLower = user.username.toLowerCase();
+                      final lastnameLower = user.lastname.toLowerCase();
+                      final emailLower = user.email.toLowerCase();
+                      final searchQueryLower = _searchQuery.toLowerCase();
+
+                      // Only show users with role 'Encadrant' or 'Admin'
+                      final isSupervisor =
+                          user.role == 'Encadrant' || user.role == 'Admin';
+
+                      return isSupervisor &&
+                          (usernameLower.contains(searchQueryLower) ||
+                              lastnameLower.contains(searchQueryLower) ||
+                              emailLower.contains(searchQueryLower));
+                    }).toList();
+
+                    if (filteredUsers.isEmpty && _searchQuery.isNotEmpty) {
+                      return Center(
+                        child: Text(
+                          'No supervisors found matching "${_searchQuery}".',
+                        ),
+                      );
+                    } else if (filteredUsers.isEmpty) {
                       return const Center(
                         child: Text(
                           'No supervisors found. Add one using the form above!',
@@ -425,9 +491,9 @@ class _ManageUsersState extends State<ManageUsers> {
                       );
                     }
                     return ListView.builder(
-                      itemCount: state.users.length,
+                      itemCount: filteredUsers.length,
                       itemBuilder: (context, index) {
-                        final user = state.users[index];
+                        final user = filteredUsers[index]; // Use filtered list
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             vertical: 6,

@@ -11,7 +11,7 @@ import 'package:pfa/BLoc/Login/login_bloc.dart';
 import 'package:pfa/Services/login_service.dart';
 // ↑↑ was coded using the BLoC pattern, which was later changed to Cubit for the rest of the app
 import 'package:pfa/Repositories/login_repo.dart';
-import 'package:pfa/Repositories/internship_repo.dart'; //* */
+import 'package:pfa/Repositories/internship_repo.dart';
 import 'package:pfa/repositories/student_repo.dart';
 import 'package:pfa/repositories/user_repo.dart';
 import 'package:pfa/Repositories/subject_repo.dart';

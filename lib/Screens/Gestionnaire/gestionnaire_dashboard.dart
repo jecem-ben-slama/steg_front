@@ -2,8 +2,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Model/Stats/internships_distribution.dart';
-import 'package:pfa/Model/Stats/kpi_model.dart';
 import 'package:pfa/Utils/Widgets/statcard.dart';
 import 'package:pfa/cubit/internship_cubit.dart';
 import 'package:pfa/Model/internship_model.dart';

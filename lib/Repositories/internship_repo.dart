@@ -1,17 +1,25 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart'; // For debugPrint
 import 'package:pfa/Model/internship_model.dart';
+// You might need to import EvaluationToValidate if you're consolidating
+// ChefCentreRepository methods into this file, as discussed previously.
+// import 'package:pfa/Model/evaluation_validation.dart';
 
 class InternshipRepository {
   static const String gestionnairePath = '/Gestionnaire/Stage';
+  static const String _chefCentrePath =
+      '/ChefCentre'; // Added for Chef Centre specific paths
   final Dio _dio;
 
   InternshipRepository({required Dio dio}) : _dio = dio;
 
-  //* Fetch all internships
+  //* Fetch all internships (General list, accessible by Gestionnaire)
   Future<List<Internship>> fetchAllInternships() async {
     try {
       final response = await _dio.get('$gestionnairePath/list_stage.php');
+      debugPrint(
+        'fetchAllInternships response: ${response.data}',
+      ); // Added debug print
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
@@ -22,7 +30,7 @@ class InternshipRepository {
               .toList();
         } else {
           throw Exception(
-            'Failed to fetch internships: ${responseData['message']}',
+            'Failed to fetch internships: ${responseData['message'] ?? 'Unknown error.'}',
           );
         }
       } else {
@@ -38,10 +46,10 @@ class InternshipRepository {
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error fetching internships: $errorMessage');
+      debugPrint('Dio Error fetching internships: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error fetching internships: $e');
+      debugPrint('General Error fetching internships: $e');
       rethrow;
     }
   }
@@ -49,11 +57,13 @@ class InternshipRepository {
   //* Add an internship
   Future<Internship> addInternship(Internship internship) async {
     try {
-      // The backend screenshot (image_0b9f03.png) shows a POST request to add_stage.php
       final response = await _dio.post(
         '$gestionnairePath/add_stage.php',
         data: internship.toJson(), // Send the internship object as JSON
       );
+      debugPrint(
+        'addInternship response: ${response.data}',
+      ); // Added debug print
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> responseData = response.data;
@@ -62,8 +72,6 @@ class InternshipRepository {
             responseData['stageID']?.toString() ?? '',
           );
           if (newStageId != null) {
-            // Create a new Internship instance with the returned ID
-            // and the original data, as other fields are not returned by the backend.
             return internship.copyWith(internshipID: newStageId);
           } else {
             throw Exception(
@@ -85,14 +93,14 @@ class InternshipRepository {
       if (e.response != null) {
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
-        print('Dio response data for add error: ${e.response?.data}');
+        debugPrint('Dio response data for add error: ${e.response?.data}');
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error adding internship: $errorMessage');
+      debugPrint('Dio Error adding internship: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error adding internship: $e');
+      debugPrint('General Error adding internship: $e');
       rethrow;
     }
   }
@@ -104,6 +112,9 @@ class InternshipRepository {
         '$gestionnairePath/delete_stage.php',
         queryParameters: {'stageID': internshipId},
       );
+      debugPrint(
+        'deleteInternship response: ${response.data}',
+      ); // Added debug print
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
@@ -127,21 +138,24 @@ class InternshipRepository {
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error deleting internship: $errorMessage');
+      debugPrint('Dio Error deleting internship: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error deleting internship: $e');
+      debugPrint('General Error deleting internship: $e');
       rethrow;
     }
   }
 
-  //* Edit an internship
+  //* Edit an internship (general update)
   Future<bool> updateInternship(Internship internship) async {
     try {
       final response = await _dio.put(
         '$gestionnairePath/edit_stage.php',
         data: internship.toJson(),
       );
+      debugPrint(
+        'updateInternship response: ${response.data}',
+      ); // Added debug print
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
@@ -163,44 +177,96 @@ class InternshipRepository {
       if (e.response != null) {
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
-        print('Dio response data for update error: ${e.response?.data}');
+        debugPrint('Dio response data for update error: ${e.response?.data}');
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error updating internship: $errorMessage');
+      debugPrint('Dio Error updating internship: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error updating internship: $e');
+      debugPrint('General Error updating internship: $e');
       rethrow;
     }
   }
 
-  //* Fetch internships by status, used by chefCentre
-  Future<List<Internship>> fetchInternshipsByStatus(String status) async {
+  // OLD: fetchInternshipsByStatus - Replaced by fetchProposedInternshipsForChef() for Chef-specific use
+  // If other parts of your app *do* need to filter by any status, you might keep
+  // a general method, but for the Chef's dashboard, the dedicated one is cleaner.
+  //
+  // Future<List<Internship>> fetchInternshipsByStatus(String status) async {
+  //   try {
+  //     final response = await _dio.get(
+  //       '$gestionnairePath/list_stage.php',
+  //       queryParameters: {'statut': status},
+  //     );
+  //     if (response.statusCode == 200) {
+  //       final Map<String, dynamic> responseData = response.data;
+  //       if (responseData['status'] == 'success') {
+  //         final List<dynamic> internshipJsonList = responseData['data'];
+  //         return internshipJsonList
+  //             .map((json) => Internship.fromJson(json))
+  //             .toList();
+  //       } else {
+  //         throw Exception(
+  //           'Failed to fetch internships: ${responseData['message']}',
+  //         );
+  //       }
+  //     } else {
+  //       debugPrint(
+  //         'Failed to fetch internships by status $status: ${response.statusCode}: ${response.data}',
+  //       );
+  //       throw Exception('Failed to fetch internships by status');
+  //     }
+  //   } on DioException catch (e) {
+  //     debugPrint('DioException fetching internships by status: ${e.message}');
+  //     debugPrint('Error Response: ${e.response?.data}');
+  //     throw Exception('Failed to fetch internships by status: ${e.message}');
+  //   } catch (e) {
+  //     debugPrint('Error fetching internships by status: $e');
+  //     throw Exception('An unexpected error occurred: $e');
+  //   }
+  // }
+
+  //*Fetch "Proposé" internships specifically for ChefCentre
+  Future<List<Internship>> fetchProposedInternships() async {
     try {
       final response = await _dio.get(
-        '$gestionnairePath/list_stage.php',
-        queryParameters: {'statut': status},
+        '$_chefCentrePath/list_stages_proposes.php',
       );
+      debugPrint('fetchProposedInternshipsForChef response: ${response.data}');
+
       if (response.statusCode == 200) {
-        // FIX HERE: Access the 'data' key of the response.data map
-        final List<dynamic> internshipJsonList =
-            response.data['data']; // <--- Change is here
-        return internshipJsonList
-            .map((json) => Internship.fromJson(json))
-            .toList();
+        final Map<String, dynamic> responseData = response.data;
+        // The backend might return 'info' status if no proposed stages are found,
+        // which is still a successful request from a communication standpoint.
+        if (responseData['status'] == 'success' ||
+            responseData['status'] == 'info') {
+          final List<dynamic> internshipJsonList =
+              responseData['data'] ?? []; // Ensure it's not null
+          return internshipJsonList
+              .map((json) => Internship.fromJson(json))
+              .toList();
+        } else {
+          throw Exception(
+            'Failed to fetch proposed internships: ${responseData['message'] ?? 'Unknown error.'}',
+          );
+        }
       } else {
-        debugPrint(
-          'Failed to fetch internships by status $status: ${response.statusCode}: ${response.data}',
+        throw Exception(
+          'Failed to fetch proposed internships. Status code: ${response.statusCode}',
         );
-        throw Exception('Failed to fetch internships by status');
       }
     } on DioException catch (e) {
-      debugPrint('DioException fetching internships by status: ${e.message}');
+      debugPrint('DioException fetching proposed internships: ${e.message}');
       debugPrint('Error Response: ${e.response?.data}');
-      throw Exception('Failed to fetch internships by status: ${e.message}');
+      String errorMessage =
+          'Failed to fetch proposed internships: ${e.message}';
+      if (e.response?.data is Map && e.response?.data['message'] != null) {
+        errorMessage = e.response!.data['message'];
+      }
+      throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('Error fetching internships by status: $e');
+      debugPrint('General Error fetching proposed internships: $e');
       throw Exception('An unexpected error occurred: $e');
     }
   }
@@ -215,16 +281,31 @@ class InternshipRepository {
     }
     try {
       final response = await _dio.put(
-        // Ensure this path matches your Postman URL (e.g., '/ChefCentre/update_internship_status.php')
-        '/ChefCentre/update_internship_status.php',
+        '$_chefCentrePath/update_internship_status.php', // Use the Chef Centre path
         data: {
-          'stageID': internshipId, // <--- Make sure this line is here
-          'statut': newStatus,
+          'stageID':
+              internshipId, // Ensure this key matches backend expectation
+          'statut': newStatus, // Ensure this key matches backend expectation
         },
       );
+      debugPrint(
+        'updateInternshipStatus response for ID $internshipId to $newStatus: ${response.data}',
+      );
+
       if (response.statusCode == 200) {
-        debugPrint('Internship status updated successfully: ${response.data}');
-        return Internship.fromJson(response.data);
+        final Map<String, dynamic> responseData = response.data;
+        if (responseData['status'] == 'success') {
+          debugPrint(
+            'Internship status updated successfully: ${responseData['message']}',
+          );
+          return Internship.fromJson(
+            responseData['data'] ?? {},
+          ); // Assuming updated data is in 'data' key
+        } else {
+          throw Exception(
+            'Failed to update internship status: ${responseData['message'] ?? 'Unknown error.'}',
+          );
+        }
       } else {
         debugPrint(
           'Failed to update internship status ${response.statusCode}: ${response.data}',
@@ -234,10 +315,95 @@ class InternshipRepository {
     } on DioException catch (e) {
       debugPrint('DioException updating internship status: ${e.message}');
       debugPrint('Error Response: ${e.response?.data}');
-      throw Exception('Failed to update internship status: ${e.message}');
+      String errorMessage = 'Failed to update internship status: ${e.message}';
+      if (e.response?.data is Map && e.response?.data['message'] != null) {
+        errorMessage = e.response!.data['message'];
+      }
+      throw Exception(errorMessage);
     } catch (e) {
       debugPrint('Error updating internship status: $e');
       throw Exception('An unexpected error occurred: $e');
     }
   }
+
+  // If you also want to include the Evaluation validation methods here,
+  // ensure EvaluationToValidate model is imported and add them below:
+
+  // //* Fetch All Evaluations Pending Validation for Chef Centre
+  // Future<List<EvaluationToValidate>> getEvaluationsToValidate() async {
+  //   try {
+  //     final response = await _dio.get(
+  //       '$_chefCentrePath/get_evaluations.php',
+  //     );
+  //     debugPrint('getEvaluationsToValidate response: ${response.data}');
+  //
+  //     if (response.statusCode == 200 &&
+  //         response.data != null &&
+  //         response.data['status'] == 'success') {
+  //       final List<dynamic> evaluationJsonList = response.data['data'];
+  //       return evaluationJsonList
+  //           .map((json) => EvaluationToValidate.fromJson(json))
+  //           .toList();
+  //     } else {
+  //       throw Exception(
+  //         'Failed to fetch evaluations: ${response.data?['message'] ?? response.statusMessage}',
+  //       );
+  //     }
+  //   } on DioException catch (e) {
+  //     String errorMessage = 'Failed to fetch evaluations.';
+  //     if (e.response != null) {
+  //       errorMessage =
+  //           'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+  //     } else {
+  //       errorMessage = 'Network error: ${e.message}';
+  //     }
+  //     debugPrint('Dio Error fetching evaluations for validation: $errorMessage');
+  //     throw Exception(errorMessage);
+  //   } catch (e) {
+  //     debugPrint('General Error fetching evaluations for validation: $e');
+  //     rethrow;
+  //   }
+  // }
+  //
+  // //* Validate or Reject an Evaluation
+  // Future<Map<String, dynamic>> validateOrRejectEvaluation({
+  //   required int evaluationID,
+  //   required String actionType, // 'validate' or 'reject'
+  // }) async {
+  //   try {
+  //     final Map<String, dynamic> data = {
+  //       'evaluationID': evaluationID,
+  //       'actionType': actionType,
+  //     };
+  //
+  //     final response = await _dio.post(
+  //       '$_chefCentrePath/validate_evaluation.php',
+  //       data: data,
+  //     );
+  //     debugPrint('validateOrRejectEvaluation response: ${response.data}');
+  //
+  //     if (response.statusCode == 200 &&
+  //         response.data != null &&
+  //         response.data['status'] == 'success') {
+  //       return response.data; // This will contain status and message
+  //     } else {
+  //       throw Exception(
+  //         'Failed to $actionType evaluation: ${response.data?['message'] ?? response.statusMessage}',
+  //       );
+  //     }
+  //   } on DioException catch (e) {
+  //     String errorMessage = 'Failed to $actionType evaluation.';
+  //     if (e.response != null) {
+  //       errorMessage =
+  //           'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+  //     } else {
+  //       errorMessage = 'Network error: ${e.message}';
+  //     }
+  //     debugPrint('Dio Error ${actionType}ing evaluation: $errorMessage');
+  //     throw Exception(errorMessage);
+  //   } catch (e) {
+  //     debugPrint('General Error ${actionType}ing evaluation: $e');
+  //     rethrow;
+  //   }
+  // }
 }

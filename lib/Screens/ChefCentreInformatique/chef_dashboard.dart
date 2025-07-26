@@ -10,16 +10,12 @@ class ChefDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Provide the InternshipCubit and immediately trigger fetching pending internships
     return BlocProvider(
-      create: (context) =>
-          InternshipCubit(
-            RepositoryProvider.of(
-              context,
-            ), // Ensure InternshipRepository is provided higher up
-          )..fetchInternshipsByStatus(
-            'Proposé',
-          ), // Fetch only PENDING internships for the dashboard
+      create: (context) => InternshipCubit(
+        RepositoryProvider.of(
+          context,
+        ), // Ensure InternshipRepository is provided higher up
+      )..fetchInternshipsByStatus(), // Fetch only PENDING internships for the dashboard
 
       child: BlocConsumer<InternshipCubit, InternshipState>(
         listener: (context, state) {
@@ -31,6 +27,8 @@ class ChefDashboardScreen extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
+            // IMPORTANT: Re-fetch the internships after a successful action
+            context.read<InternshipCubit>().fetchInternshipsByStatus();
           }
         },
         builder: (context, state) {

@@ -43,7 +43,8 @@ class InternshipCubit extends Cubit<InternshipState> {
   InternshipCubit(this._internshipRepository) : super(InternshipInitial());
 
   List<Internship> _currentInternships = []; // Internal list to manage state
-  String _currentStatusFilter = ''; // To keep track of the last status fetched
+  String _currentStatusFilter =
+      'Proposé'; // To keep track of the last status fetched
 
   //* Fetch all internships
   Future<void> fetchInternships() async {
@@ -62,15 +63,15 @@ class InternshipCubit extends Cubit<InternshipState> {
     }
   }
 
-  //* Fetch internships by status (e.g., for Chef - 'PENDING')
-  Future<void> fetchInternshipsByStatus(String status) async {
-    _currentStatusFilter = status; // Set the current filter
+  //* Fetch internships by status (for Chef )
+  Future<void> fetchInternshipsByStatus() async {
+    // Set the current filter
     emit(InternshipLoading());
     try {
       _currentInternships = await _internshipRepository
-          .fetchInternshipsByStatus(status);
+          .fetchProposedInternships();
       debugPrint(
-        'Cubit: fetchInternshipsByStatus - Data fetched successfully for status "$status". Count: ${_currentInternships.length}',
+        'Cubit: fetchInternshipsByStatus - Data fetched successfully for status "WHAT". Count: ${_currentInternships.length}',
       );
       emit(InternshipLoaded(List.from(_currentInternships)));
       debugPrint(
@@ -80,13 +81,13 @@ class InternshipCubit extends Cubit<InternshipState> {
       debugPrint('Error in fetchInternshipsByStatus: ${e.toString()}');
       emit(
         InternshipError(
-          'Failed to fetch internships with status "$status": ${e.toString()}',
+          'Failed to fetch internships with status "WHAT": ${e.toString()}',
         ),
       );
     }
   }
 
-  //* Update an internship's status (with optimistic update)
+  //* Update an internship's status ()
   Future<void> updateInternshipStatus(
     int? internshipId,
     String newStatus,
@@ -101,44 +102,17 @@ class InternshipCubit extends Cubit<InternshipState> {
       _currentInternships,
     );
 
-    final int index = _currentInternships.indexWhere(
-      (i) => i.internshipID == internshipId,
+    // Emit a state indicating a specific item is updating (for granular UI feedback like a spinner)
+    // This should happen *before* any optimistic local list modification
+    emit(
+      InternshipUpdatingSingle(internshipId, List.from(_currentInternships)),
     );
-    Internship?
-    originalInternship; // To hold the internship being updated for revert
-
-    if (index != -1) {
-      originalInternship =
-          _currentInternships[index]; // Store original for revert if needed
-
-      // 1. Emit a state indicating a specific item is updating (for granular UI feedback)
-      emit(
-        InternshipUpdatingSingle(internshipId, List.from(_currentInternships)),
-      );
-
-      // 2. Perform optimistic removal/update from the local list
-      // If changing status means the item should no longer be in the *current filtered view*, remove it.
-      _currentInternships.removeAt(index);
-
-      // 3. Emit the updated (optimistic) list to refresh UI immediately
-      debugPrint(
-        'Cubit: updateInternshipStatus - Optimistically removed ID $internshipId. New local count: ${_currentInternships.length}',
-      );
-      emit(InternshipLoaded(List.from(_currentInternships)));
-      debugPrint(
-        'Cubit: updateInternshipStatus - Optimistic InternshipLoaded state emitted.',
-      );
-    } else {
-      // If the internship is not found locally, proceed with backend call but no optimistic UI changes
-      debugPrint(
-        "Cubit: updateInternshipStatus - Internship with ID $internshipId not found in local list. Proceeding without optimistic update.",
-      );
-      // You could emit a loading state here if you want to indicate an operation is happening
-      // emit(InternshipLoading()); // Or a more specific 'InternshipUpdatingSingle(null, ...)'
-    }
+    debugPrint(
+      'Cubit: updateInternshipStatus - Emitted InternshipUpdatingSingle for ID $internshipId.',
+    );
 
     try {
-      // 4. Call the backend API to update the status
+      // 1. Call the backend API to update the status
       await _internshipRepository.updateInternshipStatus(
         internshipId,
         newStatus,
@@ -147,14 +121,16 @@ class InternshipCubit extends Cubit<InternshipState> {
         'Cubit: updateInternshipStatus - Backend update successful for ID $internshipId.',
       );
 
-      // 5. If backend call is successful, re-fetch the internships based on the active filter.
+      // 2. If backend call is successful, re-fetch the internships based on the active filter.
       // This ensures the displayed list is consistent with the backend state.
+      // The `fetchInternshipsByStatus` or `fetchInternships` methods will handle emitting
+      // the `InternshipLoaded` state with the new data.
       if (_currentStatusFilter.isNotEmpty) {
         debugPrint(
           'Cubit: updateInternshipStatus - Re-fetching by status: $_currentStatusFilter',
         );
         await fetchInternshipsByStatus(
-          _currentStatusFilter,
+          
         ); // Re-fetch with the same status filter
       } else {
         debugPrint(
@@ -163,7 +139,7 @@ class InternshipCubit extends Cubit<InternshipState> {
         await fetchInternships(); // Re-fetch all if no specific filter was active
       }
 
-      // 6. Emit a success message (optional, but good for user feedback)
+      // 3. Emit a success message (optional, but good for user feedback)
       emit(InternshipActionSuccess('Internship status updated to $newStatus!'));
       debugPrint(
         'Cubit: updateInternshipStatus - Action success state emitted.',
@@ -171,26 +147,21 @@ class InternshipCubit extends Cubit<InternshipState> {
     } catch (e) {
       debugPrint('Error in updateInternshipStatus: ${e.toString()}');
       // On failure:
-      // 1. Emit an error message to the UI
+      // 1. Revert the local list state to what it was before the optimistic update
+      _currentInternships = List.from(listBeforeOptimisticUpdate);
+      debugPrint(
+        'Cubit: updateInternshipStatus - Error path: Reverted local list. Count: ${_currentInternships.length}',
+      );
+      // 2. Emit an error message to the UI
       emit(
         InternshipError(
           'Failed to update status for internship $internshipId: ${e.toString()}',
           lastLoadedInternships:
-              listBeforeOptimisticUpdate, // Provide the list before the failed action
+              _currentInternships, // Provide the list for potential UI revert
         ),
       );
-      // 2. Revert the local list state to what it was before the optimistic update
-      // This brings the optimistically removed item back into the list.
-      if (originalInternship != null && index != -1) {
-        // Only revert if we actually performed an optimistic removal
-        _currentInternships = List.from(listBeforeOptimisticUpdate);
-      }
-      debugPrint(
-        'Cubit: updateInternshipStatus - Error path: Reverted local list. Count: ${_currentInternships.length}',
-      );
-      emit(
-        InternshipLoaded(List.from(_currentInternships)),
-      ); // Re-emit the reverted list
+      // 3. Re-emit the InternshipLoaded state with the reverted list to update the UI
+      emit(InternshipLoaded(List.from(_currentInternships)));
       debugPrint(
         'Cubit: updateInternshipStatus - Error path: InternshipLoaded state emitted after revert.',
       );
@@ -207,7 +178,7 @@ class InternshipCubit extends Cubit<InternshipState> {
       debugPrint('Cubit: addInternship - Backend add successful.');
       // After adding, re-fetch to get the new list from the backend (including generated ID)
       if (_currentStatusFilter.isNotEmpty) {
-        await fetchInternshipsByStatus(_currentStatusFilter);
+        await fetchInternshipsByStatus();
       } else {
         await fetchInternships();
       }
@@ -224,7 +195,7 @@ class InternshipCubit extends Cubit<InternshipState> {
     }
   }
 
-  //* Delete Internship (with optimistic update)
+  //* Delete Internship ()
   Future<void> deleteInternship(int internshipId) async {
     final List<Internship> listBeforeOptimisticUpdate = List.from(
       _currentInternships,
@@ -263,7 +234,7 @@ class InternshipCubit extends Cubit<InternshipState> {
         debugPrint(
           'Cubit: deleteInternship - Re-fetching by status: $_currentStatusFilter',
         );
-        await fetchInternshipsByStatus(_currentStatusFilter);
+        await fetchInternshipsByStatus();
       } else {
         debugPrint('Cubit: deleteInternship - Re-fetching all internships.');
         await fetchInternships();
@@ -292,7 +263,7 @@ class InternshipCubit extends Cubit<InternshipState> {
     }
   }
 
-  //* Edit Internship (general update)
+  //* Edit Internship ()
   Future<void> editInternship(Internship updatedInternship) async {
     emit(InternshipLoading()); // Indicate loading while editing
     try {
@@ -302,7 +273,7 @@ class InternshipCubit extends Cubit<InternshipState> {
       debugPrint('Cubit: editInternship - Backend update successful.');
       // After editing, re-fetch all internships to ensure UI is consistent
       if (_currentStatusFilter.isNotEmpty) {
-        await fetchInternshipsByStatus(_currentStatusFilter);
+        await fetchInternshipsByStatus();
       } else {
         await fetchInternships();
       }
