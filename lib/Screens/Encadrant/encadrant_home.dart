@@ -33,7 +33,7 @@ class _EncadrantHomeState extends State<EncadrantHome> {
     // Index 0: Placeholder for Encadrant Dashboard
     // Index 1: Your existing ProfileScreen
     _encadrantContentPages = [
-      const EncadrantDashboard(),
+      const EncadrantDashboardScreen(),
       const EncadrantNotesPage(),
       const EncadrantFinishedInternshipsScreen(),
       const ProfileScreen(),

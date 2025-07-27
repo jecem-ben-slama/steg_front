@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart'; // For debugPrint
+import 'package:pfa/Model/attestation_model.dart';
 import 'package:pfa/Model/internship_model.dart';
 // You might need to import EvaluationToValidate if you're consolidating
 // ChefCentreRepository methods into this file, as discussed previously.
@@ -189,44 +190,6 @@ class InternshipRepository {
     }
   }
 
-  // OLD: fetchInternshipsByStatus - Replaced by fetchProposedInternshipsForChef() for Chef-specific use
-  // If other parts of your app *do* need to filter by any status, you might keep
-  // a general method, but for the Chef's dashboard, the dedicated one is cleaner.
-  //
-  // Future<List<Internship>> fetchInternshipsByStatus(String status) async {
-  //   try {
-  //     final response = await _dio.get(
-  //       '$gestionnairePath/list_stage.php',
-  //       queryParameters: {'statut': status},
-  //     );
-  //     if (response.statusCode == 200) {
-  //       final Map<String, dynamic> responseData = response.data;
-  //       if (responseData['status'] == 'success') {
-  //         final List<dynamic> internshipJsonList = responseData['data'];
-  //         return internshipJsonList
-  //             .map((json) => Internship.fromJson(json))
-  //             .toList();
-  //       } else {
-  //         throw Exception(
-  //           'Failed to fetch internships: ${responseData['message']}',
-  //         );
-  //       }
-  //     } else {
-  //       debugPrint(
-  //         'Failed to fetch internships by status $status: ${response.statusCode}: ${response.data}',
-  //       );
-  //       throw Exception('Failed to fetch internships by status');
-  //     }
-  //   } on DioException catch (e) {
-  //     debugPrint('DioException fetching internships by status: ${e.message}');
-  //     debugPrint('Error Response: ${e.response?.data}');
-  //     throw Exception('Failed to fetch internships by status: ${e.message}');
-  //   } catch (e) {
-  //     debugPrint('Error fetching internships by status: $e');
-  //     throw Exception('An unexpected error occurred: $e');
-  //   }
-  // }
-
   //*Fetch "Proposé" internships specifically for ChefCentre
   Future<List<Internship>> fetchProposedInternships() async {
     try {
@@ -237,8 +200,6 @@ class InternshipRepository {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
-        // The backend might return 'info' status if no proposed stages are found,
-        // which is still a successful request from a communication standpoint.
         if (responseData['status'] == 'success' ||
             responseData['status'] == 'info') {
           final List<dynamic> internshipJsonList =
@@ -326,84 +287,63 @@ class InternshipRepository {
     }
   }
 
-  // If you also want to include the Evaluation validation methods here,
-  // ensure EvaluationToValidate model is imported and add them below:
+  // NEW METHOD: Fetch internships that are Terminated and Evaluated
+  Future<List<Internship>> fetchTerminatedAndEvaluatedInternships() async {
+    try {
+      final response = await _dio.get(
+        '/Gestionnaire/get_validated_internships.php', // Correct path
+      );
+      debugPrint(
+        'fetchTerminatedAndEvaluatedInternships response: ${response.data}',
+      );
 
-  // //* Fetch All Evaluations Pending Validation for Chef Centre
-  // Future<List<EvaluationToValidate>> getEvaluationsToValidate() async {
-  //   try {
-  //     final response = await _dio.get(
-  //       '$_chefCentrePath/get_evaluations.php',
-  //     );
-  //     debugPrint('getEvaluationsToValidate response: ${response.data}');
-  //
-  //     if (response.statusCode == 200 &&
-  //         response.data != null &&
-  //         response.data['status'] == 'success') {
-  //       final List<dynamic> evaluationJsonList = response.data['data'];
-  //       return evaluationJsonList
-  //           .map((json) => EvaluationToValidate.fromJson(json))
-  //           .toList();
-  //     } else {
-  //       throw Exception(
-  //         'Failed to fetch evaluations: ${response.data?['message'] ?? response.statusMessage}',
-  //       );
-  //     }
-  //   } on DioException catch (e) {
-  //     String errorMessage = 'Failed to fetch evaluations.';
-  //     if (e.response != null) {
-  //       errorMessage =
-  //           'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
-  //     } else {
-  //       errorMessage = 'Network error: ${e.message}';
-  //     }
-  //     debugPrint('Dio Error fetching evaluations for validation: $errorMessage');
-  //     throw Exception(errorMessage);
-  //   } catch (e) {
-  //     debugPrint('General Error fetching evaluations for validation: $e');
-  //     rethrow;
-  //   }
-  // }
-  //
-  // //* Validate or Reject an Evaluation
-  // Future<Map<String, dynamic>> validateOrRejectEvaluation({
-  //   required int evaluationID,
-  //   required String actionType, // 'validate' or 'reject'
-  // }) async {
-  //   try {
-  //     final Map<String, dynamic> data = {
-  //       'evaluationID': evaluationID,
-  //       'actionType': actionType,
-  //     };
-  //
-  //     final response = await _dio.post(
-  //       '$_chefCentrePath/validate_evaluation.php',
-  //       data: data,
-  //     );
-  //     debugPrint('validateOrRejectEvaluation response: ${response.data}');
-  //
-  //     if (response.statusCode == 200 &&
-  //         response.data != null &&
-  //         response.data['status'] == 'success') {
-  //       return response.data; // This will contain status and message
-  //     } else {
-  //       throw Exception(
-  //         'Failed to $actionType evaluation: ${response.data?['message'] ?? response.statusMessage}',
-  //       );
-  //     }
-  //   } on DioException catch (e) {
-  //     String errorMessage = 'Failed to $actionType evaluation.';
-  //     if (e.response != null) {
-  //       errorMessage =
-  //           'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
-  //     } else {
-  //       errorMessage = 'Network error: ${e.message}';
-  //     }
-  //     debugPrint('Dio Error ${actionType}ing evaluation: $errorMessage');
-  //     throw Exception(errorMessage);
-  //   } catch (e) {
-  //     debugPrint('General Error ${actionType}ing evaluation: $e');
-  //     rethrow;
-  //   }
-  // }
+      if (response.statusCode == 200 && response.data['status'] == 'success') {
+        final List<dynamic> internshipsJson = response.data['data'];
+        return internshipsJson
+            .map((json) => Internship.fromJson(json))
+            .toList();
+      } else {
+        throw Exception(
+          'Failed to fetch terminated and evaluated internships: ${response.data['message'] ?? 'Unknown error'}',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error occurred.';
+      if (e.response != null) {
+        errorMessage =
+            'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  Future<AttestationData> getAttestationData(int stageID) async {
+    try {
+      final response = await _dio.post(
+        'Gestionnaire/get_attestation_data.php',
+        data: {'stageID': stageID},
+      );
+
+      if (response.statusCode == 200 && response.data['status'] == 'success') {
+        return AttestationData.fromJson(
+          response.data['data'] as Map<String, dynamic>,
+        );
+      } else {
+        throw Exception(
+          'Failed to fetch attestation data: ${response.data['message'] ?? 'Unknown error'}',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Network error occurred.';
+      if (e.response != null) {
+        errorMessage =
+            'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('An unexpected error occurred: ${e.toString()}');
+    }
+  }
 }

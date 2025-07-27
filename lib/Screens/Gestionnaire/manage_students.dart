@@ -72,7 +72,6 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
     super.dispose();
   }
 
-  // New: Method to update search query and trigger rebuild
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text.toLowerCase();
@@ -224,11 +223,11 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: MyColors.white,
+      backgroundColor: Color.fromARGB(255, 202, 218, 236),
       title: const Center(child: Text('Manage Students')),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.7,
-        height: MediaQuery.of(context).size.height * 0.8,
+        width: MediaQuery.of(context).size.width * 0.55,
+        height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
           children: [
             //* Display a message in case of success, info, or error
@@ -307,6 +306,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                 ),
               ],
             ),
+            //* Form for adding/editing a student
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (Widget child, Animation<double> animation) {
@@ -624,15 +624,23 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                       itemBuilder: (context, index) {
                         final student =
                             filteredStudents[index]; // Use filtered list
-                        return Card(
-                          color: MyColors.lightBlue,
+                        return Container(
+                          width: MediaQuery.of(context).size.width * 0.3,
                           margin: const EdgeInsets.symmetric(
                             vertical: 6,
                             horizontal: 4,
                           ),
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          decoration: BoxDecoration(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey,
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: ListTile(
                             leading: CircleAvatar(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:pfa/Utils/text_strokes.dart';
+import 'package:pfa/Utils/text_strokes.dart'; // Assuming this file exists and provides TextStroke
 import 'dart:math';
 
 // New, softer, more professional color palette
@@ -50,7 +50,7 @@ class _CustomPieChartState extends State<CustomPieChart> {
           padding: const EdgeInsets.all(10.0), // Reduced padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // mainAxisAlignment: MainAxisAlignment.spaceBetween, // Removed as content is centered
             children: [
               Text(
                 widget.title,
@@ -60,19 +60,32 @@ class _CustomPieChartState extends State<CustomPieChart> {
                   color: Colors.black87, // Darker for contrast
                 ),
               ),
-              const Expanded(
+              // Updated: Removed Expanded and added icon
+              Expanded(
+                // Keep Expanded here to fill the Card's height, as the Card itself will be constrained by the outer SizedBox in Statistics
                 child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(12.0), // Reduced padding
-                    child: Text(
-                      'No data available for this chart.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13, // Smaller message
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
                         color: Colors.grey,
-                        fontStyle: FontStyle.italic,
+                        size: 40,
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0), // Reduced padding
+                        child: Text(
+                          'No data available for this chart.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13, // Smaller message
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -237,7 +250,6 @@ class _CustomPieChartState extends State<CustomPieChart> {
   }
 }
 
-// ... (CustomBarChart and KpiCard code remains the same as previous response)
 class CustomBarChart extends StatelessWidget {
   final String title;
   final Map<String, int> data;
@@ -255,7 +267,7 @@ class CustomBarChart extends StatelessWidget {
           padding: const EdgeInsets.all(10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // mainAxisAlignment: MainAxisAlignment.spaceBetween, // Removed as content is centered
             children: [
               Text(
                 title,
@@ -265,19 +277,32 @@ class CustomBarChart extends StatelessWidget {
                   color: Colors.black87,
                 ),
               ),
-              const Expanded(
+              // Updated: Removed Expanded and added icon
+              Expanded(
+                // Keep Expanded here to fill the Card's height, as the Card itself will be constrained by the outer SizedBox in Statistics
                 child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(12.0),
-                    child: Text(
-                      'No data available for this chart.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
                         color: Colors.grey,
-                        fontStyle: FontStyle.italic,
+                        size: 40,
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text(
+                          'No data available for this chart.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

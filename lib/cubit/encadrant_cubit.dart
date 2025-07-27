@@ -65,6 +65,15 @@ class EvaluationActionLoading extends EncadrantState {
   List<Object?> get props => [targetStageId];
 }
 
+// New: State for subject assignment action loading
+class SubjectAssignmentLoading extends EncadrantState {
+  final int targetStageId;
+  const SubjectAssignmentLoading({required this.targetStageId});
+
+  @override
+  List<Object?> get props => [targetStageId];
+}
+
 class EncadrantActionSuccess extends EncadrantState {
   final String message;
   const EncadrantActionSuccess(this.message);
@@ -206,6 +215,32 @@ class EncadrantCubit extends Cubit<EncadrantState> {
       emit(
         EncadrantError('Error evaluating internship: ${e.toString()}'),
       ); // Emit error state
+    }
+  }
+
+  // * Assign Subject to Internship (NEW FUNCTION INTEGRATED HERE)
+  Future<void> assignSubjectToInternship(int stageID, int sujetID) async {
+    try {
+      emit(
+        SubjectAssignmentLoading(targetStageId: stageID),
+      ); // Emit loading state for this specific action
+
+      final message = await _encadrantRepository.assignSubjectToInternship(
+        stageID,
+        sujetID,
+      );
+
+      emit(EncadrantActionSuccess(message)); // Emit success message
+
+      // After successfully assigning the subject, refresh the list of assigned internships
+      // to reflect the change (e.g., subject title updated, status changed to 'en cours')
+      await fetchAssignedInternships();
+    } catch (e) {
+      // If an error occurs, emit an error state
+      emit(EncadrantError('Failed to assign subject: ${e.toString()}'));
+      // Attempt to re-fetch assigned internships to ensure the list is up-to-date
+      // even if the assignment failed (e.g., due to server error, not invalid input)
+      await fetchAssignedInternships();
     }
   }
 }

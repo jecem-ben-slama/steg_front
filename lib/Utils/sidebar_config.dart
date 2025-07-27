@@ -36,16 +36,11 @@ final List<SidebarItemData> gestionnaireSidebarItems = [
     index: 2,
     roles: ['Gestionnaire'],
   ),
-  const SidebarItemData(
-    icon: Icons.people,
-    label: "Supervisors",
-    index: 3,
-    roles: ['Gestionnaire'],
-  ),
+  
   const SidebarItemData(
     icon: Icons.access_time,
     label: "My Profile",
-    index: 4,
+    index: 3,
     roles: ['Gestionnaire'],
   ),
 ];

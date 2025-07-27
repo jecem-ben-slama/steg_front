@@ -23,7 +23,6 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
     const GestionnaireDashboard(),
     const Certificates(),
     const Statistics(),
-    const Text('Supervisors Screen Placeholder'),
     const ProfileScreen(),
   ];
 

@@ -116,8 +116,40 @@ class EncadrantRepository {
     }
   }
 
- 
- //** Fetch Finished Internships
+  //* Assign Subject to Internship (NEW FUNCTION)
+  Future<String> assignSubjectToInternship(int stageID, int sujetID) async {
+    try {
+      final response = await _dio.post(
+        '$_encadrantPath/assign_sujet.php', // Your new PHP endpoint
+        data: {'stageID': stageID, 'sujetID': sujetID},
+      );
+
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['status'] == 'success') {
+        return response.data['message'] ?? 'Subject assigned successfully.';
+      } else {
+        throw Exception(
+          'Failed to assign subject: ${response.data?['message'] ?? response.statusMessage}',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Failed to assign subject.';
+      if (e.response != null) {
+        errorMessage =
+            'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+      } else {
+        errorMessage = 'Network error: ${e.message}';
+      }
+      print('Dio Error assigning subject: $errorMessage');
+      throw Exception(errorMessage);
+    } catch (e) {
+      print('General Error assigning subject: $e');
+      rethrow;
+    }
+  }
+
+  //** Fetch Finished Internships
   Future<List<FinishedInternship>> getFinishedInternships() async {
     try {
       final response = await _dio.get(
@@ -152,7 +184,7 @@ class EncadrantRepository {
     }
   }
 
-  //** Evaluate Internship 
+  //** Evaluate Internship
   Future<Map<String, dynamic>> evaluateInternship({
     required int stageID,
     required String actionType,
@@ -200,6 +232,4 @@ class EncadrantRepository {
       rethrow;
     }
   }
- 
- 
-  }
+}

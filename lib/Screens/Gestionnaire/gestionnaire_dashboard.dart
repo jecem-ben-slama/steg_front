@@ -1,4 +1,3 @@
-// [Unchanged imports...]
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,8 +43,8 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     switch (status?.toLowerCase()) {
       case 'validé':
         return Colors.green;
-      case 'en attente':
-        return Colors.orange;
+      case 'En cours':
+        return const Color.fromARGB(255, 19, 82, 145);
       case 'refusé':
         return Colors.red;
       case 'proposé':
@@ -55,7 +54,8 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     }
   }
 
-  Future<bool?> _showDeleteConfirmationDialog(BuildContext context) async {
+  //* Popup for delete confirmation
+  Future<bool?> _showDeleteConfirmationPopup(BuildContext context) async {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -79,6 +79,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     );
   }
 
+  //* Filters the internships
   List<Internship> _applyFilters(List<Internship> internships) {
     List<Internship> filteredList = List.from(internships);
 
@@ -112,7 +113,8 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     return filteredList;
   }
 
-  void _showAddInternshipDialog(BuildContext context) {
+  //* Add internship Popup
+  void _showAddInternshipPopup(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -143,7 +145,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     );
   }
 
-  // New method for showing the edit internship dialog
+  //* edit internship Popup
   void _showEditInternshipDialog(
     BuildContext parentContext,
     Internship internship,
@@ -193,301 +195,306 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
       listener: (context, state) {
         if (state is InternshipActionSuccess) {
           showSuccessSnackBar(context, state.message);
-          context
-              .read<InternshipCubit>()
-              .fetchInternships(); // ✅ Auto-refresh list
+          context.read<InternshipCubit>().fetchInternships();
         } else if (state is InternshipError) {
           showFailureSnackBar(context, 'Error: ${state.message}');
         }
       },
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(
-                    width: screenWidth * 0.3,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText:
-                            "Search by student, subject, supervisor, status...",
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 0,
-                          horizontal: 16,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: screenWidth * 0.1,
-                    child: DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                      value: _selectedStatusFilter ?? 'All',
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedStatusFilter = newValue == 'All'
-                              ? null
-                              : newValue;
-                        });
-                      },
-                      items: _statusOptions.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: screenWidth * 0.2,
-                    child: DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'Type',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                      value: _selectedTypeFilter ?? 'All',
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedTypeFilter = newValue == 'All'
-                              ? null
-                              : newValue;
-                        });
-                      },
-                      items: _typeOptions.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const CircleAvatar(
-                    backgroundImage: NetworkImage(
-                      "https://randomuser.me/api/portraits/men/1.jpg",
-                    ),
-                    radius: 24,
-                  ),
-                ],
-              ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
             ),
-            const SizedBox(height: 24),
-
-            //? Stats
-            BlocBuilder<GestionnaireStatsCubit, GestionnaireStatsState>(
-              builder: (context, statsState) {
-                if (statsState is GestionnaireStatsLoading) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                } else if (statsState is GestionnaireStatsLoaded) {
-                  final kpi = statsState.kpiData;
-                  return Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          StatCard(
-                            title: 'Active Internships',
-                            value: kpi.activeInternshipsCount.toString(),
-                            icon: Icons.work,
-                            color: Colors.blueAccent,
-                          ),
-                          StatCard(
-                            title: 'Total Encadrants',
-                            value: kpi.encadrantsCount.toString(),
-                            icon: Icons.people,
-                            color: Colors.green,
-                          ),
-                          StatCard(
-                            title: 'Pending Evaluations',
-                            value: kpi.pendingEvaluationsCount.toString(),
-                            icon: Icons.pending_actions,
-                            color: Colors.orange,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                    ],
-                  );
-                } else if (statsState is GestionnaireStatsError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 48,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Error loading statistics: ${statsState.message}',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () => context
-                                .read<GestionnaireStatsCubit>()
-                                .fetchAllGestionnaireStats(),
-                            child: const Text('Retry Stats'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-
-            const SizedBox(height: 24),
-            const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                DeptCard(title: "Manage Student"),
-                DeptCard(title: "Manage Subject"),
-                DeptCard(title: "Manage Supervisor"),
+                SizedBox(
+                  width: screenWidth * 0.3,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText:
+                          "Search by student, subject, supervisor, status...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 16,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: screenWidth * 0.1,
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Status',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedStatusFilter ?? 'All',
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedStatusFilter = newValue == 'All'
+                            ? null
+                            : newValue;
+                      });
+                    },
+                    items: _statusOptions.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: screenWidth * 0.2,
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Type',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedTypeFilter ?? 'All',
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedTypeFilter = newValue == 'All'
+                            ? null
+                            : newValue;
+                      });
+                    },
+                    items: _typeOptions.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const CircleAvatar(
+                  backgroundImage: NetworkImage(
+                    "https://randomuser.me/api/portraits/men/1.jpg",
+                  ),
+                  radius: 24,
+                ),
               ],
             ),
-            const SizedBox(height: 24),
+          ),
+          const SizedBox(height: 24),
 
-            Container(
+          //? Stats
+          BlocBuilder<GestionnaireStatsCubit, GestionnaireStatsState>(
+            builder: (context, statsState) {
+              if (statsState is GestionnaireStatsLoading) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              } else if (statsState is GestionnaireStatsLoaded) {
+                final kpi = statsState.kpiData;
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        StatCard(
+                          title: 'Active Internships',
+                          value: kpi.activeInternshipsCount.toString(),
+                          icon: Icons.work,
+                          color: Colors.blueAccent,
+                        ),
+                        StatCard(
+                          title: 'Total Encadrants',
+                          value: kpi.encadrantsCount.toString(),
+                          icon: Icons.people,
+                          color: Colors.green,
+                        ),
+                        StatCard(
+                          title: 'Pending Evaluations',
+                          value: kpi.pendingEvaluationsCount.toString(),
+                          icon: Icons.pending_actions,
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                );
+              } else if (statsState is GestionnaireStatsError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Error loading statistics: ${statsState.message}',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: () => context
+                              .read<GestionnaireStatsCubit>()
+                              .fetchAllGestionnaireStats(),
+                          child: const Text('Retry Stats'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+
+          const SizedBox(height: 24),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              DeptCard(title: "Manage Student"),
+              DeptCard(title: "Manage Subject"),
+              DeptCard(title: "Manage Supervisor"),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // THIS IS THE KEY CHANGE: Wrap the Container in Expanded
+          Expanded(
+            child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Internships",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () => _showAddInternshipDialog(context),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Internship'),
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
+                // This Column now needs to be scrollable if its content (the table)
+                // exceeds the height given by Expanded.
+                child: SingleChildScrollView(
+                  // <--- Added for vertical scrolling of the table section
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Internships",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    BlocBuilder<InternshipCubit, InternshipState>(
-                      builder: (context, state) {
-                        List<Internship>? internshipsRaw;
-                        if (state is InternshipLoaded) {
-                          internshipsRaw = state.internships;
-                        } else if (state is InternshipError) {
-                          internshipsRaw = state.lastLoadedInternships;
-                        } else if (state is InternshipLoading &&
-                            context.read<InternshipCubit>().state
-                                is InternshipLoaded) {
-                          internshipsRaw =
-                              (context.read<InternshipCubit>().state
-                                      as InternshipLoaded)
-                                  .internships;
-                        } else if (state is InternshipLoading &&
-                            context.read<InternshipCubit>().state
-                                is InternshipError &&
-                            (context.read<InternshipCubit>().state
-                                        as InternshipError)
-                                    .lastLoadedInternships !=
-                                null) {
-                          internshipsRaw =
-                              (context.read<InternshipCubit>().state
-                                      as InternshipError)
-                                  .lastLoadedInternships;
-                        }
-
-                        List<Internship>? internshipsToDisplay;
-                        if (internshipsRaw != null) {
-                          internshipsToDisplay = _applyFilters(internshipsRaw);
-                        }
-
-                        if (internshipsToDisplay == null ||
-                            internshipsToDisplay.isEmpty) {
-                          if (state is InternshipLoading) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
+                          ElevatedButton.icon(
+                            onPressed: () => _showAddInternshipPopup(context),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Internship'),
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // The BlocBuilder containing the DataTable
+                      BlocBuilder<InternshipCubit, InternshipState>(
+                        builder: (context, state) {
+                          List<Internship>? internshipsRaw;
+                          if (state is InternshipLoaded) {
+                            internshipsRaw = state.internships;
                           } else if (state is InternshipError) {
-                            return Center(
-                              child: Text(
-                                'Error loading internships: ${state.message}',
-                              ),
-                            );
-                          } else {
-                            return Center(
-                              child: Text(
-                                _searchQuery.isNotEmpty ||
-                                        _selectedStatusFilter != null ||
-                                        _selectedTypeFilter != null
-                                    ? 'No matching internships found for current filters.'
-                                    : 'No internships found.',
-                              ),
+                            internshipsRaw = state.lastLoadedInternships;
+                          } else if (state is InternshipLoading &&
+                              context.read<InternshipCubit>().state
+                                  is InternshipLoaded) {
+                            internshipsRaw =
+                                (context.read<InternshipCubit>().state
+                                        as InternshipLoaded)
+                                    .internships;
+                          } else if (state is InternshipLoading &&
+                              context.read<InternshipCubit>().state
+                                  is InternshipError &&
+                              (context.read<InternshipCubit>().state
+                                          as InternshipError)
+                                      .lastLoadedInternships !=
+                                  null) {
+                            internshipsRaw =
+                                (context.read<InternshipCubit>().state
+                                        as InternshipError)
+                                    .lastLoadedInternships;
+                          }
+
+                          List<Internship>? internshipsToDisplay;
+                          if (internshipsRaw != null) {
+                            internshipsToDisplay = _applyFilters(
+                              internshipsRaw,
                             );
                           }
-                        }
 
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
+                          if (internshipsToDisplay == null ||
+                              internshipsToDisplay.isEmpty) {
+                            if (state is InternshipLoading) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            } else if (state is InternshipError) {
+                              return Center(
+                                child: Text(
+                                  'Error loading internships: ${state.message}',
+                                ),
+                              );
+                            } else {
+                              return Center(
+                                child: Text(
+                                  _searchQuery.isNotEmpty ||
+                                          _selectedStatusFilter != null ||
+                                          _selectedTypeFilter != null
+                                      ? 'No matching internships found for current filters.'
+                                      : 'No internships found.',
+                                ),
+                              );
+                            }
+                          }
+
+                          // This SingleChildScrollView is for horizontal scrolling of the DataTable
+                          return DataTable(
                             columns: const [
                               DataColumn(label: Text("Student Name")),
                               DataColumn(label: Text("Subject")),
@@ -533,7 +540,6 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                             size: 20,
                                           ),
                                           onPressed: () {
-                                            // Use the new method to show the edit dialog
                                             _showEditInternshipDialog(
                                               context,
                                               internship,
@@ -548,7 +554,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                           ),
                                           onPressed: () async {
                                             final confirmed =
-                                                await _showDeleteConfirmationDialog(
+                                                await _showDeleteConfirmationPopup(
                                                   context,
                                                 );
                                             if (confirmed == true &&
@@ -573,16 +579,16 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                 ],
                               );
                             }).toList(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

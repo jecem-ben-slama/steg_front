@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pfa/Model/attestation_model.dart'; // Corrected import for AttestationData
 import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Repositories/internship_repo.dart';
 import 'package:flutter/material.dart'; // Added for debugPrint
@@ -13,6 +14,14 @@ class InternshipLoading extends InternshipState {}
 class InternshipLoaded extends InternshipState {
   final List<Internship> internships;
   InternshipLoaded(this.internships);
+}
+
+// NEW: States for fetching a list of attestable internships
+class AttestableInternshipsLoading extends InternshipState {}
+
+class AttestableInternshipsLoaded extends InternshipState {
+  final List<Internship> internships;
+  AttestableInternshipsLoaded(this.internships);
 }
 
 class InternshipError extends InternshipState {
@@ -35,6 +44,21 @@ class InternshipUpdatingSingle extends InternshipState {
 
   InternshipUpdatingSingle(this.updatingInternshipId, this.currentInternships);
 }
+
+// --- ATTESTATION STATES (integrated into InternshipState hierarchy) ---
+class AttestationLoading extends InternshipState {}
+
+class AttestationLoaded extends InternshipState {
+  final AttestationData attestationData;
+  AttestationLoaded(this.attestationData);
+}
+
+class AttestationErrorState extends InternshipState {
+  // Renamed to avoid conflict with main InternshipError
+  final String message;
+  AttestationErrorState(this.message);
+}
+// --- END NEW ATTESTATION STATES ---
 
 // --- Internship Cubit ---
 class InternshipCubit extends Cubit<InternshipState> {
@@ -69,7 +93,7 @@ class InternshipCubit extends Cubit<InternshipState> {
     emit(InternshipLoading());
     try {
       _currentInternships = await _internshipRepository
-          .fetchProposedInternships();
+          .fetchProposedInternships(); // Assuming this fetches for a specific status
       debugPrint(
         'Cubit: fetchInternshipsByStatus - Data fetched successfully for status "WHAT". Count: ${_currentInternships.length}',
       );
@@ -82,6 +106,27 @@ class InternshipCubit extends Cubit<InternshipState> {
       emit(
         InternshipError(
           'Failed to fetch internships with status "WHAT": ${e.toString()}',
+        ),
+      );
+    }
+  }
+
+  // NEW METHOD: Fetch internships eligible for attestation
+  Future<void> fetchAttestableInternships() async {
+    emit(AttestableInternshipsLoading()); // Emit new loading state
+    try {
+      final internships = await _internshipRepository
+          .fetchTerminatedAndEvaluatedInternships();
+      debugPrint(
+        'Cubit: fetchAttestableInternships - Data fetched successfully. Count: ${internships.length}',
+      );
+      emit(AttestableInternshipsLoaded(internships)); // Emit new loaded state
+    } catch (e) {
+      debugPrint('Error in fetchAttestableInternships: ${e.toString()}');
+      // Using the general InternshipError for this list fetch for simplicity
+      emit(
+        InternshipError(
+          'Failed to fetch attestable internships: ${e.toString()}',
         ),
       );
     }
@@ -122,21 +167,16 @@ class InternshipCubit extends Cubit<InternshipState> {
       );
 
       // 2. If backend call is successful, re-fetch the internships based on the active filter.
-      // This ensures the displayed list is consistent with the backend state.
-      // The `fetchInternshipsByStatus` or `fetchInternships` methods will handle emitting
-      // the `InternshipLoaded` state with the new data.
       if (_currentStatusFilter.isNotEmpty) {
         debugPrint(
           'Cubit: updateInternshipStatus - Re-fetching by status: $_currentStatusFilter',
         );
-        await fetchInternshipsByStatus(
-          
-        ); // Re-fetch with the same status filter
+        await fetchInternshipsByStatus();
       } else {
         debugPrint(
           'Cubit: updateInternshipStatus - Re-fetching all internships.',
         );
-        await fetchInternships(); // Re-fetch all if no specific filter was active
+        await fetchInternships();
       }
 
       // 3. Emit a success message (optional, but good for user feedback)
@@ -214,12 +254,9 @@ class InternshipCubit extends Cubit<InternshipState> {
         'Cubit: deleteInternship - Optimistically removed ID $internshipId.',
       );
     } else {
-      // If not found locally, proceed with backend call but no optimistic update
       debugPrint(
         'Cubit: deleteInternship - Internship ID $internshipId not found locally for optimistic removal.',
       );
-      // You might want to emit a loading state here if no optimistic update happened
-      // emit(InternshipLoading());
     }
 
     try {
@@ -287,6 +324,25 @@ class InternshipCubit extends Cubit<InternshipState> {
           lastLoadedInternships: _currentInternships,
         ),
       );
+    }
+  }
+
+  // NEW METHOD: Fetch Attestation Data
+  Future<void> fetchAttestationData(int stageID) async {
+    emit(AttestationLoading()); // Indicate loading for attestation
+    try {
+      final attestationData = await _internshipRepository.getAttestationData(
+        stageID,
+      );
+      debugPrint(
+        'Cubit: fetchAttestationData - Attestation data fetched successfully.',
+      );
+      emit(AttestationLoaded(attestationData)); // Emit loaded attestation data
+    } catch (e) {
+      debugPrint('Error in fetchAttestationData: ${e.toString()}');
+      emit(
+        AttestationErrorState('Failed to load attestation: ${e.toString()}'),
+      ); // Emit attestation-specific error
     }
   }
 }

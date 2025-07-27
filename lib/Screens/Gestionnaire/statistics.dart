@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Model/Stats/internships_distribution.dart';
-import 'package:pfa/Screens/Gestionnaire/dashboard_charts.dart';
+import 'package:pfa/Screens/Gestionnaire/dashboard_charts.dart'; // Assuming CustomPieChart and CustomBarChart are here
 import 'package:pfa/cubit/stats_cubit.dart';
 
 class Statistics extends StatefulWidget {
@@ -16,7 +16,6 @@ class _StatisticsState extends State<Statistics> {
   void initState() {
     super.initState();
     // Trigger the data fetch when the screen initializes
-    // This will fetch both KPI and distribution data, but we only use distributions here.
     context.read<GestionnaireStatsCubit>().fetchAllGestionnaireStats();
   }
 
@@ -34,8 +33,6 @@ class _StatisticsState extends State<Statistics> {
           if (state is GestionnaireStatsLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is GestionnaireStatsLoaded) {
-            // Data is successfully loaded, display it
-            // final KpiData kpiData = state.kpiData; // KPIs are not displayed here
             final Data allDistributions = state.allDistributions;
 
             return SingleChildScrollView(
@@ -43,7 +40,7 @@ class _StatisticsState extends State<Statistics> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Internship Distributions Section
+                  // Internship Distributions Section Title
                   const Text(
                     'Internship Distributions',
                     style: TextStyle(
@@ -55,63 +52,90 @@ class _StatisticsState extends State<Statistics> {
                   const SizedBox(height: 16),
 
                   // Internship Status Distribution (Pie Chart)
-                  CustomPieChart(
-                    title: 'Internship Status Distribution',
-                    data: {
-                      for (var d in allDistributions.statusDistribution ?? [])
-                        d.status!: d.count!,
-                    },
+                  // Wrapped in SizedBox to provide a fixed height
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomPieChart(
+                      title: 'Internship Status Distribution',
+                      data: {
+                        for (var d in allDistributions.statusDistribution ?? [])
+                          d.status!: d.count!,
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Internship Type Distribution (Pie Chart)
-                  CustomPieChart(
-                    title: 'Internship Type Distribution',
-                    data: {
-                      for (var d in allDistributions.typeDistribution ?? [])
-                        d.type!: d.count!,
-                    },
+                  // Wrapped in SizedBox to provide a fixed height
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomPieChart(
+                      title: 'Internship Type Distribution',
+                      data: {
+                        for (var d in allDistributions.typeDistribution ?? [])
+                          d.type!: d.count!,
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Internship Duration Distribution (Bar Chart)
-                  CustomBarChart(
-                    title: 'Internship Duration Distribution',
-                    data: {
-                      for (var d in allDistributions.durationDistribution ?? [])
-                        d.range!: d.count!,
-                    },
+                  // Wrapped in SizedBox to provide a fixed height
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomBarChart(
+                      title: 'Internship Duration Distribution',
+                      data: {
+                        for (var d
+                            in allDistributions.durationDistribution ?? [])
+                          d.range!: d.count!,
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Encadrant Workload Distribution (Bar Chart)
-                  CustomBarChart(
-                    title: 'Encadrant Workload Distribution',
-                    data: {
-                      for (var d
-                          in allDistributions.encadrantDistribution ?? [])
-                        d.encadrantName!: d.internshipCount!,
-                    },
+                  // Wrapped in SizedBox to provide a fixed height
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomBarChart(
+                      title: 'Encadrant Workload Distribution',
+                      data: {
+                        for (var d
+                            in allDistributions.encadrantDistribution ?? [])
+                          d.encadrantName!: d.internshipCount!,
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Faculty Distribution (Pie Chart)
-                  CustomPieChart(
-                    title: 'Faculty Distribution',
-                    data: {
-                      for (var d in allDistributions.facultyDistribution ?? [])
-                        d.facultyName!: d.count!,
-                    },
+                  // Wrapped in SizedBox to provide a fixed height
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomPieChart(
+                      title: 'Faculty Distribution',
+                      data: {
+                        for (var d
+                            in allDistributions.facultyDistribution ?? [])
+                          d.facultyName!: d.count!,
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Subject Distribution (Pie Chart)
-                  CustomPieChart(
-                    title: 'Subject Distribution',
-                    data: {
-                      for (var d in allDistributions.subjectDistribution ?? [])
-                        d.subjectTitle!: d.count!,
-                    },
+                  // Wrapped in SizedBox to provide a fixed height
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomPieChart(
+                      title: 'Subject Distribution',
+                      data: {
+                        for (var d
+                            in allDistributions.subjectDistribution ?? [])
+                          d.subjectTitle!: d.count!,
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -160,6 +184,3 @@ class _StatisticsState extends State<Statistics> {
     );
   }
 }
-
-// REMOVE KpiCard definition here if you moved it to a shared file like deptcard.dart
-// (It should NOT be duplicated if it's already defined elsewhere and imported)

@@ -25,6 +25,7 @@ import 'package:pfa/cubit/user_cubit.dart';
 import 'package:pfa/cubit/chef_cubit.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
 import 'package:pfa/cubit/stats_cubit.dart';
+import 'package:pfa/cubit/subject_cubit.dart'; // <--- Ensure this import is present
 
 //* Screens
 import 'package:pfa/Screens/login.dart';
@@ -53,6 +54,10 @@ class _MyAppState extends State<MyApp> {
   late final InternshipRepository internshipRepository;
   late final UserRepository userRepository;
   late final SubjectRepository subjectRepository;
+  late final EncadrantRepository encadrantRepository; // <--- Declare here
+  late final ChefCentreRepository chefCentreRepository; // <--- Declare here
+  late final StatsRepository statsRepository; // <--- Declare here
+  late final StudentRepository studentRepository; // <--- Declare here
 
   @override
   //* Configuration of Dio and Repositories
@@ -81,7 +86,15 @@ class _MyAppState extends State<MyApp> {
     userRepository = UserRepository(dio: dio);
     internshipRepository = InternshipRepository(dio: dio);
     subjectRepository = SubjectRepository(dio: dio);
-    //_setDevToken();
+    encadrantRepository = EncadrantRepository(dio: dio); // <--- Initialize here
+    chefCentreRepository = ChefCentreRepository(
+      dio: dio,
+    ); // <--- Initialize here
+    statsRepository = StatsRepository(dio: dio); // <--- Initialize here
+    studentRepository = StudentRepository(dio: dio); // <--- Initialize here
+
+    //_setDevToken(); // Uncomment if you use this for development tokens
+
     //* Router
     //! Move the router initialization to a separate file
     router = GoRouter(
@@ -183,10 +196,25 @@ class _MyAppState extends State<MyApp> {
             child: const GestionnaireHome(),
           ),
         ),
+        
         GoRoute(
           path: '/encadrant/home',
           builder: (BuildContext context, GoRouterState state) =>
-              const EncadrantHome(),
+              // EncadrantHome needs both EncadrantCubit and SubjectCubit
+              MultiBlocProvider(
+                providers: [
+                  BlocProvider<EncadrantCubit>(
+                    create: (context) =>
+                        EncadrantCubit(context.read<EncadrantRepository>()),
+                  ),
+                  BlocProvider<SubjectCubit>(
+                    // <--- ADDED THIS BlocProvider
+                    create: (context) =>
+                        SubjectCubit(context.read<SubjectRepository>()),
+                  ),
+                ],
+                child: const EncadrantHome(),
+              ),
         ),
         GoRoute(
           path: '/ChefCentreInformatique/home',
@@ -234,13 +262,9 @@ class _MyAppState extends State<MyApp> {
           // Provide InternshipRepository
           create: (context) => InternshipRepository(dio: dio),
         ),
-        Provider<EncadrantRepository>(
+        // Changed to RepositoryProvider for EncadrantRepository
+        RepositoryProvider<EncadrantRepository>(
           create: (context) => EncadrantRepository(dio: dio),
-        ),
-        // EncadrantCubit depends on EncadrantRepository
-        BlocProvider<EncadrantCubit>(
-          create: (context) =>
-              EncadrantCubit(context.read<EncadrantRepository>()),
         ),
         RepositoryProvider<ChefCentreRepository>(
           create: (context) => ChefCentreRepository(dio: dio),
@@ -275,6 +299,16 @@ class _MyAppState extends State<MyApp> {
           BlocProvider(
             create: (context) => GestionnaireStatsCubit(
               RepositoryProvider.of<StatsRepository>(context),
+            ),
+          ),
+          BlocProvider<EncadrantCubit>(
+            create: (context) => EncadrantCubit(
+              RepositoryProvider.of<EncadrantRepository>(context),
+            ),
+          ),
+          BlocProvider<SubjectCubit>(
+            create: (context) => SubjectCubit(
+              RepositoryProvider.of<SubjectRepository>(context),
             ),
           ),
         ],

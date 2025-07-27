@@ -124,7 +124,7 @@ class ChefDashboardScreen extends StatelessWidget {
                                                 .read<InternshipCubit>()
                                                 .updateInternshipStatus(
                                                   internship.internshipID,
-                                                  'ACCEPTED',
+                                                  'Accepté',
                                                 );
                                           }
                                         : null,
@@ -142,7 +142,7 @@ class ChefDashboardScreen extends StatelessWidget {
                                                 .read<InternshipCubit>()
                                                 .updateInternshipStatus(
                                                   internship.internshipID,
-                                                  'REJECTED',
+                                                  'refusé',
                                                 );
                                           }
                                         : null,
