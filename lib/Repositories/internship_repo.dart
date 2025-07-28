@@ -1,15 +1,12 @@
+// lib/Repositories/internship_repo.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart'; // For debugPrint
-import 'package:pfa/Model/attestation_model.dart';
-import 'package:pfa/Model/internship_model.dart';
-// You might need to import EvaluationToValidate if you're consolidating
-// ChefCentreRepository methods into this file, as discussed previously.
-// import 'package:pfa/Model/evaluation_validation.dart';
+import 'package:pfa/Model/attestation_model.dart'; // Import the updated AttestationData model
+import 'package:pfa/Model/internship_model.dart'; // Assuming you have this model
 
 class InternshipRepository {
   static const String gestionnairePath = '/Gestionnaire/Stage';
-  static const String _chefCentrePath =
-      '/ChefCentre'; // Added for Chef Centre specific paths
+  static const String _chefCentrePath = '/ChefCentre';
   final Dio _dio;
 
   InternshipRepository({required Dio dio}) : _dio = dio;
@@ -18,9 +15,7 @@ class InternshipRepository {
   Future<List<Internship>> fetchAllInternships() async {
     try {
       final response = await _dio.get('$gestionnairePath/list_stage.php');
-      debugPrint(
-        'fetchAllInternships response: ${response.data}',
-      ); // Added debug print
+      debugPrint('fetchAllInternships response: ${response.data}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
@@ -60,11 +55,9 @@ class InternshipRepository {
     try {
       final response = await _dio.post(
         '$gestionnairePath/add_stage.php',
-        data: internship.toJson(), // Send the internship object as JSON
+        data: internship.toJson(),
       );
-      debugPrint(
-        'addInternship response: ${response.data}',
-      ); // Added debug print
+      debugPrint('addInternship response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> responseData = response.data;
@@ -113,14 +106,12 @@ class InternshipRepository {
         '$gestionnairePath/delete_stage.php',
         queryParameters: {'stageID': internshipId},
       );
-      debugPrint(
-        'deleteInternship response: ${response.data}',
-      ); // Added debug print
+      debugPrint('deleteInternship response: ${response.data}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] == 'success') {
-          return true; // Deletion was successful
+          return true;
         } else {
           throw Exception(
             'Failed to delete internship: ${responseData['message'] ?? 'Unknown error.'}',
@@ -154,9 +145,7 @@ class InternshipRepository {
         '$gestionnairePath/edit_stage.php',
         data: internship.toJson(),
       );
-      debugPrint(
-        'updateInternship response: ${response.data}',
-      ); // Added debug print
+      debugPrint('updateInternship response: ${response.data}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
@@ -202,8 +191,7 @@ class InternshipRepository {
         final Map<String, dynamic> responseData = response.data;
         if (responseData['status'] == 'success' ||
             responseData['status'] == 'info') {
-          final List<dynamic> internshipJsonList =
-              responseData['data'] ?? []; // Ensure it's not null
+          final List<dynamic> internshipJsonList = responseData['data'] ?? [];
           return internshipJsonList
               .map((json) => Internship.fromJson(json))
               .toList();
@@ -242,12 +230,8 @@ class InternshipRepository {
     }
     try {
       final response = await _dio.put(
-        '$_chefCentrePath/update_internship_status.php', // Use the Chef Centre path
-        data: {
-          'stageID':
-              internshipId, // Ensure this key matches backend expectation
-          'statut': newStatus, // Ensure this key matches backend expectation
-        },
+        '$_chefCentrePath/update_internship_status.php',
+        data: {'stageID': internshipId, 'statut': newStatus},
       );
       debugPrint(
         'updateInternshipStatus response for ID $internshipId to $newStatus: ${response.data}',
@@ -259,9 +243,7 @@ class InternshipRepository {
           debugPrint(
             'Internship status updated successfully: ${responseData['message']}',
           );
-          return Internship.fromJson(
-            responseData['data'] ?? {},
-          ); // Assuming updated data is in 'data' key
+          return Internship.fromJson(responseData['data'] ?? {});
         } else {
           throw Exception(
             'Failed to update internship status: ${responseData['message'] ?? 'Unknown error.'}',
@@ -287,11 +269,11 @@ class InternshipRepository {
     }
   }
 
-  // NEW METHOD: Fetch internships that are Terminated and Evaluated
+  //* Fetch internships that are Terminated and Evaluated (for attestation list)
   Future<List<Internship>> fetchTerminatedAndEvaluatedInternships() async {
     try {
       final response = await _dio.get(
-        '/Gestionnaire/get_validated_internships.php', // Correct path
+        'Gestionnaire/get_validated_internships.php',
       );
       debugPrint(
         'fetchTerminatedAndEvaluatedInternships response: ${response.data}',
@@ -319,20 +301,25 @@ class InternshipRepository {
     }
   }
 
+  //* Fetch a single attestation data (for Gestionnaire to view existing)
   Future<AttestationData> getAttestationData(int stageID) async {
     try {
       final response = await _dio.post(
         'Gestionnaire/get_attestation_data.php',
         data: {'stageID': stageID},
       );
+      debugPrint(
+        'getAttestationData (Gestionnaire) response: ${response.data}',
+      );
 
       if (response.statusCode == 200 && response.data['status'] == 'success') {
+        // The PHP get_attestation_data.php returns the data nested under 'data' key
         return AttestationData.fromJson(
           response.data['data'] as Map<String, dynamic>,
         );
       } else {
         throw Exception(
-          'Failed to fetch attestation data: ${response.data['message'] ?? 'Unknown error'}',
+          'Failed to fetch attestation data (Gestionnaire): ${response.data['message'] ?? 'Unknown error'}',
         );
       }
     } on DioException catch (e) {
@@ -346,4 +333,5 @@ class InternshipRepository {
       throw Exception('An unexpected error occurred: ${e.toString()}');
     }
   }
+
 }

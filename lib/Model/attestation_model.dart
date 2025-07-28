@@ -3,6 +3,11 @@ import 'package:equatable/equatable.dart';
 
 // Main model to hold all attestation data
 class AttestationData extends Equatable {
+  final int? attestationID; // Nullable
+  final String
+  dateGeneration; // Still required, but will be set to current date if not in JSON
+  final String? qrCodeData; // Nullable
+
   final InternshipAttestationData internship;
   final StudentAttestationData student;
   final SubjectAttestationData subject;
@@ -10,6 +15,9 @@ class AttestationData extends Equatable {
   final EvaluationAttestationData evaluation;
 
   const AttestationData({
+    this.attestationID, // No longer required in constructor
+    required this.dateGeneration,
+    this.qrCodeData, // No longer required in constructor
     required this.internship,
     required this.student,
     required this.subject,
@@ -19,6 +27,14 @@ class AttestationData extends Equatable {
 
   factory AttestationData.fromJson(Map<String, dynamic> json) {
     return AttestationData(
+      // Safely access and cast, providing null if key is missing
+      attestationID: json['attestationID'] as int?,
+      // Use current date as dateGeneration if not provided by backend
+      dateGeneration:
+          json['dateGeneration'] as String? ??
+          DateTime.now().toIso8601String().split('T')[0],
+      // Safely access and cast, providing null if key is missing
+      qrCodeData: json['qrCodeData'] as String?,
       internship: InternshipAttestationData.fromJson(
         json['internship'] as Map<String, dynamic>,
       ),
@@ -39,6 +55,9 @@ class AttestationData extends Equatable {
 
   @override
   List<Object?> get props => [
+    attestationID,
+    dateGeneration,
+    qrCodeData,
     internship,
     student,
     subject,
@@ -47,7 +66,7 @@ class AttestationData extends Equatable {
   ];
 }
 
-// Sub-model for Internship details
+// Sub-model for Internship details - Ensure estRemunere and montantRemuneration are correct
 class InternshipAttestationData extends Equatable {
   final int stageID;
   final String typeStage;
@@ -74,7 +93,8 @@ class InternshipAttestationData extends Equatable {
       dateDebut: json['dateDebut'] as String,
       dateFin: json['dateFin'] as String,
       statut: json['statut'] as String,
-      estRemunere: json['estRemunere'] == 1, // PHP returns 0/1 for bool
+      // This should be correct if PHP sends true/false booleans
+      estRemunere: json['estRemunere'] as bool,
       montantRemuneration: json['montantRemuneration'] != null
           ? (json['montantRemuneration'] as num).toDouble()
           : null,
@@ -133,8 +153,11 @@ class SubjectAttestationData extends Equatable {
       subjectID: json['subjectID'] != null
           ? int.tryParse(json['subjectID'].toString())
           : null,
-      title: json['title'] as String?,
-      description: json['description'] as String?,
+      title:
+          json['subjectTitle']
+              as String?, // Use 'subjectTitle' as per your PHP response
+      description:
+          json['subjectDescription'] as String?, // Use 'subjectDescription'
     );
   }
 
@@ -161,9 +184,10 @@ class SupervisorAttestationData extends Equatable {
       supervisorID: json['supervisorID'] != null
           ? int.tryParse(json['supervisorID'].toString())
           : null,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
-      email: json['email'] as String?,
+      firstName:
+          json['encadrantFirstName'] as String?, // Use 'encadrantFirstName'
+      lastName: json['encadrantLastName'] as String?, // Use 'encadrantLastName'
+      email: json['encadrantEmail'] as String?, // Use 'encadrantEmail'
     );
   }
 

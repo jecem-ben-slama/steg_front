@@ -24,7 +24,8 @@ class Data {
   List<TypeDistribution>? typeDistribution;
   List<DurationDistribution>? durationDistribution;
   List<EncadrantDistribution>? encadrantDistribution;
-  List<FacultyDistribution>? facultyDistribution;
+  List<FacultyInternshipSummary>?
+  facultyInternshipSummary; // RENAMED AND UPDATED
   List<SubjectDistribution>? subjectDistribution;
 
   Data({
@@ -32,7 +33,7 @@ class Data {
     this.typeDistribution,
     this.durationDistribution,
     this.encadrantDistribution,
-    this.facultyDistribution,
+    this.facultyInternshipSummary, // RENAMED AND UPDATED
     this.subjectDistribution,
   });
 
@@ -57,10 +58,14 @@ class Data {
         : (json["encadrant_distribution"] as List)
               .map((e) => EncadrantDistribution.fromJson(e))
               .toList();
-    facultyDistribution = json["faculty_distribution"] == null
+    facultyInternshipSummary =
+        json["faculty_internship_summary"] ==
+            null // UPDATED KEY
         ? null
-        : (json["faculty_distribution"] as List)
-              .map((e) => FacultyDistribution.fromJson(e))
+        : (json["faculty_internship_summary"] as List)
+              .map(
+                (e) => FacultyInternshipSummary.fromJson(e),
+              ) // UPDATED CLASS NAME
               .toList();
     subjectDistribution = json["subject_distribution"] == null
         ? null
@@ -91,10 +96,12 @@ class Data {
           ?.map((e) => e.toJson())
           .toList();
     }
-    if (facultyDistribution != null) {
-      newData["faculty_distribution"] = facultyDistribution
-          ?.map((e) => e.toJson())
-          .toList();
+    if (facultyInternshipSummary != null) {
+      // UPDATED KEY
+      newData["faculty_internship_summary"] =
+          facultyInternshipSummary // UPDATED CLASS NAME
+              ?.map((e) => e.toJson())
+              .toList();
     }
     if (subjectDistribution != null) {
       newData["subject_distribution"] = subjectDistribution
@@ -124,21 +131,40 @@ class SubjectDistribution {
   }
 }
 
-class FacultyDistribution {
+// RENAMED and MODIFIED from FacultyDistribution
+class FacultyInternshipSummary {
   String? facultyName;
-  int? count;
+  int? totalStudents; // New field
+  int?
+  totalInternships; // New field (was 'count' in old structure, but now clearer)
+  int? validatedInternships; // New field
+  double? successRate; // New field
 
-  FacultyDistribution({this.facultyName, this.count});
+  FacultyInternshipSummary({
+    this.facultyName,
+    this.totalStudents,
+    this.totalInternships,
+    this.validatedInternships,
+    this.successRate,
+  });
 
-  FacultyDistribution.fromJson(Map<String, dynamic> json) {
+  FacultyInternshipSummary.fromJson(Map<String, dynamic> json) {
     facultyName = json["facultyName"];
-    count = json["count"];
+    totalStudents = json["totalStudents"];
+    totalInternships =
+        json["totalInternships"]; // Corresponds to total internships from this faculty
+    validatedInternships = json["validatedInternships"];
+    successRate = (json["successRate"] as num?)
+        ?.toDouble(); // Cast num to double, handle null
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> newData = <String, dynamic>{};
     newData["facultyName"] = facultyName;
-    newData["count"] = count;
+    newData["totalStudents"] = totalStudents;
+    newData["totalInternships"] = totalInternships;
+    newData["validatedInternships"] = validatedInternships;
+    newData["successRate"] = successRate;
     return newData;
   }
 }

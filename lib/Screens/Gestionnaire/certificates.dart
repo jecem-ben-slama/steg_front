@@ -1,10 +1,12 @@
 // lib/Screens/Gestionnaire/Certificates.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Utils/Widgets/attestation_details.dart';
-import 'package:pfa/cubit/internship_cubit.dart'; // Your InternshipCubit
-import 'package:pfa/Model/attestation_model.dart'; // Attestation data model
-import 'package:pfa/Utils/snackbar.dart'; // For snackbars
+import 'package:pfa/Model/attestation_model.dart';
+import 'package:pfa/Utils/pdf_generator.dart';
+// REMOVED: import 'package:pfa/Utils/Widgets/attestation_details.dart'; // No longer needed
+import 'package:pfa/cubit/internship_cubit.dart';
+
+import 'package:pfa/Utils/snackbar.dart';
 
 class Certificates extends StatefulWidget {
   const Certificates({super.key});
@@ -17,7 +19,6 @@ class _CertificatesState extends State<Certificates> {
   @override
   void initState() {
     super.initState();
-    // Fetch only attestable internships when this screen loads
     context.read<InternshipCubit>().fetchAttestableInternships();
   }
 
@@ -25,33 +26,7 @@ class _CertificatesState extends State<Certificates> {
     await context.read<InternshipCubit>().fetchAttestableInternships();
   }
 
-  // Function to show the attestation dialog
-  void _showAttestationDialog(BuildContext context, AttestationData data) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Attestation de Stage'),
-          content: SizedBox(
-            // Use SizedBox to control dialog size
-            width: MediaQuery.of(dialogContext).size.width * 0.9,
-            height: MediaQuery.of(dialogContext).size.height * 0.8,
-            child: AttestationDisplayWidget(
-              attestationData: data,
-            ), // Use the display widget here
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // REMOVED: _showAttestationDialog method as it's no longer used
 
   @override
   Widget build(BuildContext context) {
@@ -64,17 +39,21 @@ class _CertificatesState extends State<Certificates> {
       ),
       body: BlocConsumer<InternshipCubit, InternshipState>(
         listener: (context, state) {
+          // Listen for AttestationLoaded to generate PDF
           if (state is AttestationLoaded) {
-            // Show the dialog directly when attestation data is loaded
-            _showAttestationDialog(context, state.attestationData);
+            _generateAttestationPdfAndShowSnackbar(
+              context,
+              state.attestationData,
+            );
           } else if (state is AttestationErrorState) {
             showFailureSnackBar(context, state.message);
           } else if (state is InternshipError) {
             showFailureSnackBar(context, state.message);
-          } else if (state is AttestationLoading) {}
+          }
         },
         builder: (context, state) {
-          if (state is AttestableInternshipsLoading) {
+          if (state is AttestableInternshipsLoading ||
+              state is AttestationLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is AttestableInternshipsLoaded) {
             final internships = state.internships;
@@ -101,69 +80,128 @@ class _CertificatesState extends State<Certificates> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: InkWell(
-                      // Make the card tappable
-                      onTap: () {
-                        // Trigger fetching of specific attestation data when card is tapped
-                        // The BlocListener will then show the dialog once data is loaded.
-                        context.read<InternshipCubit>().fetchAttestationData(
-                          internship.internshipID!,
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${internship.subjectTitle ?? 'N/A'} - ${internship.typeStage}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blueAccent,
-                              ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${internship.subjectTitle ?? 'N/A'} - ${internship.typeStage}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueAccent,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Student: ${internship.studentName}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Student: ${internship.studentName}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
                             ),
-                            Text(
-                              'Supervisor: ${internship.encadrantProName ?? 'N/A'} }',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
+                          ),
+                          Text(
+                            'Supervisor: ${internship.supervisorName ?? 'N/A'}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
                             ),
-                            Text(
-                              'Period: ${internship.dateDebut} to ${internship.dateFin}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
+                          ),
+                          Text(
+                            'Period: ${internship.dateDebut} to ${internship.dateFin}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
                             ),
+                          ),
 
-                            const SizedBox(height: 10),
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: Chip(
-                                label: const Text('Ready for Attestation'),
-                                backgroundColor: Colors.green.shade100,
-                                labelStyle: TextStyle(
-                                  color: Colors.green.shade800,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                avatar: Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green.shade800,
-                                ),
+                          if (internship.estRemunere!)
+                            Text(
+                              'Remuneration: ${internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} TND',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.green,
                               ),
                             ),
-                          ],
-                        ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Button for Attestation - NOW CALLS fetchAttestationData
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    context
+                                        .read<InternshipCubit>()
+                                        .fetchAttestationData(
+                                          internship.internshipID!,
+                                        );
+                                  },
+                                  icon: const Icon(Icons.description),
+                                  label: const Text('Attestation'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.shade700,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 3,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 8,
+                                ), // Spacing between buttons
+                                // Button for Fiche de Paie (Conditional)
+                                if (internship.estRemunere!)
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      try {
+                                        final pdfBytes =
+                                            await PdfGeneratorService.generateSimplePayslipPdf(
+                                              internship, // Pass the Internship object directly
+                                            );
+                                        final filename =
+                                            'FicheDePaie_${internship.studentName?.replaceAll(' ', '_') ?? 'N/A'}_${internship.internshipID}';
+                                        await PdfGeneratorService.saveAndOpenPdf(
+                                          pdfBytes,
+                                          filename,
+                                        );
+                                        showSuccessSnackBar(
+                                          context,
+                                          'Payslip PDF generated!',
+                                        );
+                                      } catch (e) {
+                                        showFailureSnackBar(
+                                          context,
+                                          'Error generating Payslip PDF: ${e.toString()}',
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.receipt_long),
+                                    label: const Text('Fiche de Paie'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue.shade700,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      elevation: 3,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -202,5 +240,26 @@ class _CertificatesState extends State<Certificates> {
         },
       ),
     );
+  }
+
+  // Helper function to generate PDF and show snackbar
+  Future<void> _generateAttestationPdfAndShowSnackbar(
+    BuildContext context,
+    AttestationData attestationData,
+  ) async {
+    try {
+      final pdfBytes = await PdfGeneratorService.generateAttestationPdf(
+        attestationData,
+      );
+      final filename =
+          'Attestation_${attestationData.student.lastName}_${attestationData.internship.stageID}';
+      await PdfGeneratorService.saveAndOpenPdf(pdfBytes, filename);
+      showSuccessSnackBar(context, 'Attestation PDF generated!');
+    } catch (e) {
+      showFailureSnackBar(
+        context,
+        'Error generating Attestation PDF: ${e.toString()}',
+      );
+    }
   }
 }

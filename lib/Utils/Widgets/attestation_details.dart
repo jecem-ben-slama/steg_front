@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:pfa/Model/attestation_model.dart';
 import 'package:pfa/Utils/pdf_generator.dart';
-import 'package:pfa/Utils/snackbar.dart'; // Import for consistent snackbar messages
+import 'package:pfa/Utils/snackbar.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class AttestationDisplayWidget extends StatelessWidget {
   final AttestationData attestationData;
@@ -17,78 +18,99 @@ class AttestationDisplayWidget extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Attestation de Stage',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Attestation de Stage',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueAccent,
               ),
-              const Divider(height: 30, thickness: 1.5),
-              _buildInfoRow(
-                'Stagiaire:',
-                '${attestationData.student.firstName} ${attestationData.student.lastName}',
-                Icons.person,
+            ),
+            const Divider(height: 30, thickness: 1.5),
+            _buildInfoRow(
+              'Stagiaire:',
+              '${attestationData.student.firstName} ${attestationData.student.lastName}',
+              Icons.person,
+            ),
+            _buildInfoRow(
+              'Email Stagiaire:',
+              attestationData.student.email,
+              Icons.email,
+            ),
+            _buildInfoRow(
+              'Type de Stage:',
+              attestationData.internship.typeStage,
+              Icons.work,
+            ),
+            _buildInfoRow(
+              'Sujet du Stage:',
+              attestationData.subject.title ?? 'Non spécifié',
+              Icons.topic,
+            ),
+            _buildInfoRow(
+              'Période:',
+              'Du ${attestationData.internship.dateDebut} au ${attestationData.internship.dateFin}',
+              Icons.date_range,
+            ),
+            _buildInfoRow(
+              'Encadrant:',
+              '${attestationData.supervisor.firstName ?? 'N/A'} ${attestationData.supervisor.lastName ?? ''}',
+              Icons.supervisor_account,
+            ),
+            const Divider(height: 30, thickness: 1.5),
+            const Text(
+              'Évaluation:',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
               ),
-              _buildInfoRow(
-                'Email Stagiaire:',
-                attestationData.student.email,
-                Icons.email,
+            ),
+            _buildInfoRow(
+              'Note:',
+              '${attestationData.evaluation.note.toStringAsFixed(1)} / 10',
+              Icons.star,
+            ),
+            _buildInfoRow(
+              'Commentaires:',
+              attestationData.evaluation.comments,
+              Icons.comment,
+            ),
+            _buildInfoRow(
+              'Date d\'évaluation:',
+              attestationData.evaluation.dateEvaluation,
+              Icons.calendar_today,
+            ),
+            const SizedBox(height: 30),
+            // QR Code Display
+            Center(
+              child: Column(
+                children: [
+                  const Text(
+                    'Scan to Verify Attestation:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+
+                  const SizedBox(height: 10),
+                  Text(
+                    'Attestation ID: ${attestationData.attestationID}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
               ),
-              _buildInfoRow(
-                'Type de Stage:',
-                attestationData.internship.typeStage,
-                Icons.work,
-              ),
-              _buildInfoRow(
-                'Sujet du Stage:',
-                attestationData.subject.title ?? 'Non spécifié',
-                Icons.topic,
-              ),
-              _buildInfoRow(
-                'Période:',
-                'Du ${attestationData.internship.dateDebut} au ${attestationData.internship.dateFin}',
-                Icons.date_range,
-              ),
-              _buildInfoRow(
-                'Encadrant:',
-                '${attestationData.supervisor.firstName ?? 'N/A'} ${attestationData.supervisor.lastName ?? ''}',
-                Icons.supervisor_account,
-              ),
-              const Divider(height: 30, thickness: 1.5),
-              const Text(
-                'Évaluation:',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
-                ),
-              ),
-              _buildInfoRow(
-                'Note:',
-                '${attestationData.evaluation.note.toStringAsFixed(1)} / 10',
-                Icons.star,
-              ),
-              _buildInfoRow(
-                'Commentaires:',
-                attestationData.evaluation.comments,
-                Icons.comment,
-              ),
-              _buildInfoRow(
-                'Date d\'évaluation:',
-                attestationData.evaluation.dateEvaluation,
-                Icons.calendar_today,
-              ),
-              const SizedBox(height: 30),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: ElevatedButton.icon(
+            ),
+            const SizedBox(height: 30),
+            // Buttons for PDF generation
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Button for Attestation PDF
+                ElevatedButton.icon(
                   onPressed: () async {
                     try {
                       final pdfBytes =
@@ -103,17 +125,17 @@ class AttestationDisplayWidget extends StatelessWidget {
                       );
                       showSuccessSnackBar(
                         context,
-                        'PDF generated and opened!',
-                      ); // Using custom snackbar
+                        'Attestation PDF generated!',
+                      );
                     } catch (e) {
                       showFailureSnackBar(
                         context,
-                        'Error generating PDF: ${e.toString()}',
-                      ); // Using custom snackbar
+                        'Error generating Attestation PDF: ${e.toString()}',
+                      );
                     }
                   },
                   icon: const Icon(Icons.picture_as_pdf),
-                  label: const Text('Create PDF'),
+                  label: const Text('Create Attestation PDF'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red.shade700,
                     foregroundColor: Colors.white,
@@ -127,9 +149,11 @@ class AttestationDisplayWidget extends StatelessWidget {
                     elevation: 5,
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 10), // Spacing between buttons
+                // NEW: Button for Payslip PDF (conditionally visible)
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Model/Stats/internships_distribution.dart';
+import 'package:pfa/Model/Stats/internships_distribution.dart'; // Your updated model
 import 'package:pfa/Screens/Gestionnaire/dashboard_charts.dart'; // Assuming CustomPieChart and CustomBarChart are here
 import 'package:pfa/cubit/stats_cubit.dart';
 
@@ -52,7 +52,6 @@ class _StatisticsState extends State<Statistics> {
                   const SizedBox(height: 16),
 
                   // Internship Status Distribution (Pie Chart)
-                  // Wrapped in SizedBox to provide a fixed height
                   SizedBox(
                     height: 300, // Explicit height for the chart container
                     child: CustomPieChart(
@@ -66,7 +65,6 @@ class _StatisticsState extends State<Statistics> {
                   const SizedBox(height: 20),
 
                   // Internship Type Distribution (Pie Chart)
-                  // Wrapped in SizedBox to provide a fixed height
                   SizedBox(
                     height: 300, // Explicit height for the chart container
                     child: CustomPieChart(
@@ -80,7 +78,6 @@ class _StatisticsState extends State<Statistics> {
                   const SizedBox(height: 20),
 
                   // Internship Duration Distribution (Bar Chart)
-                  // Wrapped in SizedBox to provide a fixed height
                   SizedBox(
                     height: 300, // Explicit height for the chart container
                     child: CustomBarChart(
@@ -95,7 +92,6 @@ class _StatisticsState extends State<Statistics> {
                   const SizedBox(height: 20),
 
                   // Encadrant Workload Distribution (Bar Chart)
-                  // Wrapped in SizedBox to provide a fixed height
                   SizedBox(
                     height: 300, // Explicit height for the chart container
                     child: CustomBarChart(
@@ -109,23 +105,119 @@ class _StatisticsState extends State<Statistics> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Faculty Distribution (Pie Chart)
-                  // Wrapped in SizedBox to provide a fixed height
-                  SizedBox(
-                    height: 300, // Explicit height for the chart container
-                    child: CustomPieChart(
-                      title: 'Faculty Distribution',
-                      data: {
-                        for (var d
-                            in allDistributions.facultyDistribution ?? [])
-                          d.facultyName!: d.count!,
-                      },
+                  // --- NEW: Faculty Internship Summary (Table/List) ---
+                  const Text(
+                    'Faculty Internship Summary',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // Check if data exists before trying to build the table
+                  if (allDistributions.facultyInternshipSummary != null &&
+                      allDistributions.facultyInternshipSummary!.isNotEmpty)
+                    Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SingleChildScrollView(
+                          // Allow horizontal scrolling for table if needed
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: 20,
+                            dataRowMinHeight: 40,
+                            dataRowMaxHeight: 60,
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  'Faculty',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Total Students',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Total Internships',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Validated Internships',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Success Rate (%)',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                            ],
+                            rows: allDistributions.facultyInternshipSummary!
+                                .map(
+                                  (summary) => DataRow(
+                                    cells: [
+                                      DataCell(
+                                        Text(summary.facultyName ?? 'N/A'),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          summary.totalStudents?.toString() ??
+                                              '0',
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          summary.totalInternships
+                                                  ?.toString() ??
+                                              '0',
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          summary.validatedInternships
+                                                  ?.toString() ??
+                                              '0',
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          '${summary.successRate?.toStringAsFixed(2) ?? '0.00'}%',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Center(
+                        child: Text(
+                          'No faculty internship summary data available.',
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 20),
 
                   // Subject Distribution (Pie Chart)
-                  // Wrapped in SizedBox to provide a fixed height
                   SizedBox(
                     height: 300, // Explicit height for the chart container
                     child: CustomPieChart(

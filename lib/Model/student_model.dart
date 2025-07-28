@@ -1,33 +1,25 @@
+// lib/Model/student_model.dart
 import 'package:equatable/equatable.dart';
 
 class Student extends Equatable {
   final int? studentID;
-  final int? userID;
   final String username;
   final String lastname;
   final String email;
-  final String? major;
-  final String? level;
-  final String? cin;
-  final String? phoneNumber;
-
-  final String? niveauEtude;
-  final String? nomFaculte;
+  final String? cin; // Sticking to lowercase in Dart for consistency with PHP
+  final String? niveau_etude; // Updated to match JSON
+  final String? faculte; // Updated to match JSON
   final String? cycle;
   final String? specialite;
 
   const Student({
     this.studentID,
-    this.userID,
     required this.username,
     required this.lastname,
     required this.email,
-    this.major,
-    this.level,
     this.cin,
-    this.phoneNumber,
-    this.niveauEtude,
-    this.nomFaculte,
+    this.niveau_etude,
+    this.faculte,
     this.cycle,
     this.specialite,
   });
@@ -35,30 +27,27 @@ class Student extends Equatable {
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
       studentID: int.tryParse(json['etudiantID']?.toString() ?? ''),
-      userID: int.tryParse(json['userID']?.toString() ?? ''),
       username: json['username'] as String,
       lastname: json['lastname'] as String,
       email: json['email'] as String,
-      major: json['specialite'] as String?,
-      level: json['niveauEtude'] as String?,
-      cin: json['cin'] as String?,
-      phoneNumber: json['phoneNumber'] as String?,
-      niveauEtude: json['niveauEtude'] as String?,
-      nomFaculte: json['nomFaculte'] as String?,
+      cin: json['cin'] as String?, 
+      niveau_etude: json['niveau_etude'] as String?, 
+      faculte: json['faculte'] as String?, // Map from 'faculte'
       cycle: json['cycle'] as String?,
       specialite: json['specialite'] as String?,
     );
   }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       'username': username,
       'lastname': lastname,
       'email': email,
-      if (major != null) 'specialite': major,
-      if (level != null) 'niveauEtude': level,
-      if (cin != null) 'CIN': cin,
-      if (phoneNumber != null) 'phoneNumber': phoneNumber,
-      if (userID != null) 'userID': userID,
+      if (cin != null) 'cin': cin, // Send as lowercase 'cin' to PHP
+      if (niveau_etude != null) 'niveau_etude': niveau_etude,
+      if (faculte != null) 'faculte': faculte,
+      if (cycle != null) 'cycle': cycle,
+      if (specialite != null) 'specialite': specialite,
     };
     if (studentID != null) {
       data['etudiantID'] = studentID;
@@ -72,27 +61,20 @@ class Student extends Equatable {
     String? username,
     String? lastname,
     String? email,
-    String? major,
-    String? level,
     String? cin,
-    String? phoneNumber,
-    String? niveauEtude,
-    String? nomFaculte,
+    String? niveau_etude,
+    String? faculte,
     String? cycle,
     String? specialite,
   }) {
     return Student(
       studentID: studentID ?? this.studentID,
-      userID: userID ?? this.userID,
       username: username ?? this.username,
       lastname: lastname ?? this.lastname,
       email: email ?? this.email,
-      major: major ?? this.major,
-      level: level ?? this.level,
       cin: cin ?? this.cin,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      niveauEtude: niveauEtude ?? this.niveauEtude,
-      nomFaculte: nomFaculte ?? this.nomFaculte,
+      niveau_etude: niveau_etude ?? this.niveau_etude,
+      faculte: faculte ?? this.faculte,
       cycle: cycle ?? this.cycle,
       specialite: specialite ?? this.specialite,
     );
@@ -101,16 +83,12 @@ class Student extends Equatable {
   @override
   List<Object?> get props => [
     studentID,
-    userID,
     username,
     lastname,
     email,
-    major,
-    level,
     cin,
-    phoneNumber,
-    niveauEtude,
-    nomFaculte,
+    niveau_etude,
+    faculte,
     cycle,
     specialite,
   ];

@@ -1,38 +1,36 @@
-// lib/Screens/Gestionnaire/manage_students.dart
+// lib/Screens/Gestionnaire/manage_academic_supervisor.dart
 import 'dart:async'; // Import for Timer
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Cubit/student_cubit.dart'; // Make sure this path is correct
-import 'package:pfa/Model/student_model.dart';
+import 'package:pfa/cubit/encad_cubit.dart'; // Import your EncadrantCubit
+import 'package:pfa/Model/encadrant_model.dart'; // Import your Encadrant model
 import 'package:pfa/Utils/Consts/validator.dart'; // Assuming you have a Validators class
 
 // Enum to define message types for styling
 enum MessageType { success, info, error, none }
 
-class ManageStudentsPopup extends StatefulWidget {
-  const ManageStudentsPopup({super.key});
+class ManageAcademicSupervisorPopup extends StatefulWidget {
+  const ManageAcademicSupervisorPopup({super.key});
 
   @override
-  State<ManageStudentsPopup> createState() => _ManageStudentsPopupState();
+  State<ManageAcademicSupervisorPopup> createState() =>
+      _ManageAcademicSupervisorPopupState();
 }
 
-class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
-  final TextEditingController usernameController = TextEditingController();
+class _ManageAcademicSupervisorPopupState
+    extends State<ManageAcademicSupervisorPopup> {
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController cinController = TextEditingController();
-  final TextEditingController niveau_etudeController =
-      TextEditingController(); // Renamed
-  final TextEditingController faculteController =
-      TextEditingController(); // Renamed
-  final TextEditingController cycleController = TextEditingController();
-  final TextEditingController specialiteController = TextEditingController();
 
+  // New: Controller for the search bar
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  Student? editingStudent;
-  bool isFormVisible = false;
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  String _searchQuery = ''; // State variable to hold the current search query
+
+  Encadrant? editingEncadrant; // Holds the encadrant being edited
+  bool isFormVisible = false; // Controls visibility of the add/edit form
+  final GlobalKey<FormState> _formKey =
+      GlobalKey<FormState>(); // Form key for validation
   String? _displayMessage;
   MessageType _displayMessageType = MessageType.none;
   Timer? _messageTimer;
@@ -40,118 +38,103 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   @override
   void initState() {
     super.initState();
-    context.read<StudentCubit>().fetchStudents();
+    // Fetch encadrants when the popup is initialized
+    context.read<EncadrantCubit1>().fetchEncadrants();
+
+    // Add listener to search controller for real-time filtering
     _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    usernameController.dispose();
+    nameController.dispose();
     lastnameController.dispose();
     emailController.dispose();
-    cinController.dispose();
-    niveau_etudeController.dispose(); // Dispose renamed controller
-    faculteController.dispose(); // Dispose renamed controller
-    cycleController.dispose();
-    specialiteController.dispose();
-    _messageTimer?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _messageTimer?.cancel(); // Cancel any active timer
     super.dispose();
   }
 
+  // Updates the search query and triggers a UI rebuild
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text.toLowerCase();
     });
   }
 
+  // Clears all form fields and resets the editing state
   void _clearForm() {
-    usernameController.clear();
+    nameController.clear();
     lastnameController.clear();
     emailController.clear();
-    cinController.clear();
-    niveau_etudeController.clear(); // Clear renamed controller
-    faculteController.clear(); // Clear renamed controller
-    cycleController.clear();
-    specialiteController.clear();
     setState(() {
-      editingStudent = null;
-      isFormVisible = false;
+      editingEncadrant = null;
+      isFormVisible = false; // Hide form after clearing
     });
-    _clearMessage();
+    _clearMessage(); // Clear any displayed messages
   }
 
-  void _populateForm(Student student) {
-    usernameController.text = student.username;
-    lastnameController.text = student.lastname;
-    emailController.text = student.email;
-    cinController.text = student.cin ?? '';
-    niveau_etudeController.text =
-        student.niveau_etude ?? ''; // Populate renamed controller
-    faculteController.text =
-        student.faculte ?? ''; // Populate renamed controller
-    cycleController.text = student.cycle ?? '';
-    specialiteController.text = student.specialite ?? '';
+  // Populates the form fields with data from an existing Encadrant for editing
+  void _populateForm(Encadrant encadrant) {
+    nameController.text = encadrant.name;
+    lastnameController.text = encadrant.lastname;
+    emailController.text = encadrant.email ?? ''; // Handle nullable email
     setState(() {
-      editingStudent = student;
-      isFormVisible = true;
+      editingEncadrant = encadrant;
+      isFormVisible = true; // Show form when editing
     });
-    _clearMessage();
+    _clearMessage(); // Clear any previous messages
   }
 
+  // Handles form submission (add or update)
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       _displayMessageInPopup(
-        'Please fill in all required fields.',
+        'Please fill in all required fields correctly.',
         MessageType.error,
       );
       return;
     }
 
-    final newStudent = Student(
-      studentID: editingStudent?.studentID, // Use studentID for updates
-      username: usernameController.text,
+    final newEncadrant = Encadrant(
+      encadrantID: editingEncadrant?.encadrantID, // Preserve ID for updates
+      name: nameController.text,
       lastname: lastnameController.text,
-      email: emailController.text,
-      cin: cinController.text.isNotEmpty ? cinController.text : null,
-      niveau_etude:
-          niveau_etudeController
-              .text
-              .isNotEmpty // Use renamed field
-          ? niveau_etudeController.text
-          : null,
-      faculte:
-          faculteController
-              .text
-              .isNotEmpty // Use renamed field
-          ? faculteController.text
-          : null,
-      cycle: cycleController.text.isNotEmpty ? cycleController.text : null,
-      specialite: specialiteController.text.isNotEmpty
-          ? specialiteController.text
-          : null,
+      email: emailController.text.isNotEmpty
+          ? emailController.text
+          : null, // Send null if empty
     );
 
     try {
-      if (editingStudent == null) {
-        await context.read<StudentCubit>().addStudent(newStudent);
+      if (editingEncadrant == null) {
+        // Add new encadrant
+        await context.read<EncadrantCubit1>().addEncadrant(newEncadrant);
       } else {
-        await context.read<StudentCubit>().updateStudent(newStudent);
+        // Update existing encadrant (implement this in your Cubit/Repository later)
+        // For now, we'll just show a message.
+        _displayMessageInPopup(
+          'Update functionality for academic supervisors is not yet implemented.',
+          MessageType.info,
+        );
+        // await context.read<EncadrantCubit>().updateEncadrant(newEncadrant);
       }
-      _clearForm(); // Clear form fields and hide form after submission
+      _clearForm(); // Clear form fields and hide form after successful submission
     } catch (e) {
-      // The Cubit will emit StudentError, which the BlocConsumer listener will catch
+      // The Cubit will emit EncadrantError, which the BlocConsumer listener will catch
       // and display the message in the popup. No need for extra handling here.
     }
   }
 
-  void _deleteStudent(int studentId) {
+  // Handles deleting an encadrant (placeholder for now)
+  void _deleteEncadrant(int encadrantId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this Student?'),
+        content: const Text(
+          'Are you sure you want to delete this Academic Supervisor?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -160,11 +143,16 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
           ElevatedButton(
             onPressed: () async {
               Navigator.of(ctx).pop(); // Close the confirmation dialog
-              try {
-                await context.read<StudentCubit>().deleteStudent(studentId);
-              } catch (e) {
-                // The Cubit will emit StudentError, which the BlocConsumer listener will catch.
-              }
+              // Implement delete functionality in your Cubit/Repository later
+              _displayMessageInPopup(
+                'Delete functionality for academic supervisors is not yet implemented.',
+                MessageType.info,
+              );
+              // try {
+              //   await context.read<EncadrantCubit>().deleteEncadrant(encadrantId);
+              // } catch (e) {
+              //   // The Cubit will emit EncadrantError, which the BlocConsumer listener will catch.
+              // }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
@@ -174,27 +162,30 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
     );
   }
 
+  // Toggles the visibility of the add/edit form
   void _toggleFormVisibility() {
     setState(() {
       isFormVisible = !isFormVisible;
       if (!isFormVisible) {
-        _clearForm();
+        _clearForm(); // Clear form if hiding it
       }
     });
   }
 
+  // Displays a message in the popup for a short duration
   void _displayMessageInPopup(String message, MessageType type) {
     setState(() {
       _displayMessage = message;
       _displayMessageType = type;
     });
 
-    _messageTimer?.cancel();
+    _messageTimer?.cancel(); // Cancel any existing timer
     _messageTimer = Timer(const Duration(seconds: 7), () {
-      _clearMessage();
+      _clearMessage(); // Clear the message after 7 seconds
     });
   }
 
+  // Clears the currently displayed message
   void _clearMessage() {
     setState(() {
       _displayMessage = null;
@@ -206,13 +197,15 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color.fromARGB(255, 202, 218, 236),
-      title: const Center(child: Text('Manage Students')),
+      title: const Center(child: Text('Manage Academic Supervisors')),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.55,
-        height: MediaQuery.of(context).size.height * 0.7,
+        width:
+            MediaQuery.of(context).size.width * 0.55, // Adjust width as needed
+        height:
+            MediaQuery.of(context).size.height * 0.7, // Adjust height as needed
         child: Column(
           children: [
-            //* Display a message in case of success, info, or error
+            // Display a message in case of success, info, or error
             AnimatedOpacity(
               opacity: _displayMessage != null ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
@@ -273,22 +266,19 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  editingStudent == null ? 'Add New Student' : 'Edit Student',
+                  editingEncadrant == null
+                      ? 'Add New Supervisor'
+                      : 'Edit Supervisor',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 IconButton(
-                  onPressed: () {
-                    if (isFormVisible && editingStudent != null) {
-                      _clearForm();
-                    }
-                    _toggleFormVisibility();
-                  },
+                  onPressed: _toggleFormVisibility,
                   icon: Icon(isFormVisible ? Icons.arrow_circle_up : Icons.add),
                   tooltip: isFormVisible ? 'Hide Form' : 'Show Form',
                 ),
               ],
             ),
-            //* Form for adding/editing a student
+            // Form for adding/editing an academic supervisor
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (Widget child, Animation<double> animation) {
@@ -296,7 +286,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
               },
               child: isFormVisible
                   ? Padding(
-                      key: const ValueKey('UserForm'),
+                      key: const ValueKey('EncadrantForm'),
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Form(
@@ -307,13 +297,14 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                 children: [
                                   Expanded(
                                     child: TextFormField(
-                                      controller: usernameController,
+                                      controller: nameController,
                                       decoration: const InputDecoration(
-                                        labelText: "First Name",
+                                        labelText: "Name",
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.person),
                                       ),
-                                      validator: Validators.validateName,
+                                      validator: Validators
+                                          .validateName, // Using your validator
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -336,98 +327,24 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                 ],
                               ),
                               const SizedBox(height: 10),
-
-                              // Row 2: Email
                               TextFormField(
                                 controller: emailController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Email',
+                                  labelText: 'Email (Optional)',
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.email),
                                 ),
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Email cannot be empty.';
-                                  }
-                                  if (!value.contains('@')) {
+                                  if (value != null &&
+                                      value.isNotEmpty &&
+                                      !value.contains('@')) {
                                     return 'Please enter a valid email.';
                                   }
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 10),
-
-                              // Row 3: CIN and Niveau d'étude
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: cinController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'CIN',
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(Icons.credit_card),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller:
-                                          niveau_etudeController, // Updated controller
-                                      decoration: const InputDecoration(
-                                        labelText:
-                                            'Niveau d\'étude', // Updated label
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(Icons.school),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Row 4: Faculté and Cycle
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller:
-                                          faculteController, // Updated controller
-                                      decoration: const InputDecoration(
-                                        labelText: 'Faculté', // Updated label
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(Icons.apartment),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: cycleController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Cycle',
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(Icons.repeat),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Row 5: Spécialité (now a single field row or integrate into previous row if space allows)
-                              TextFormField(
-                                controller: specialiteController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Spécialité',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.category),
-                                ),
-                              ),
                               const SizedBox(height: 20),
-
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
@@ -440,14 +357,14 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                   ElevatedButton.icon(
                                     onPressed: _submitForm,
                                     icon: Icon(
-                                      editingStudent == null
+                                      editingEncadrant == null
                                           ? Icons.add
                                           : Icons.save,
                                     ),
                                     label: Text(
-                                      editingStudent == null
-                                          ? 'Add Student'
-                                          : 'Update Student',
+                                      editingEncadrant == null
+                                          ? 'Add Supervisor'
+                                          : 'Update Supervisor',
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Theme.of(
@@ -473,14 +390,14 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                   : const SizedBox.shrink(),
             ),
             const Divider(height: 30, thickness: 1),
-            // Modified Row for "Existing Students" and Search Bar
+            // Section for existing academic supervisors
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'Existing Students',
+                      'Existing Academic Supervisors',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ),
@@ -490,8 +407,8 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        labelText: 'Search Students',
-                        hintText: 'Search by name, email, CIN...',
+                        labelText: 'Search Supervisors',
+                        hintText: 'Search by name, email...',
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.0),
@@ -508,41 +425,48 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: BlocConsumer<StudentCubit, StudentState>(
+              child: BlocConsumer<EncadrantCubit1, EncadrantState>(
                 listener: (context, state) {
                   // Listen for action-specific success/error messages
-                  if (state is StudentActionSuccess) {
+                  if (state is EncadrantOperationSuccess) {
                     _displayMessageInPopup(state.message, MessageType.success);
-                  } else if (state is StudentError) {
+                  } else if (state is EncadrantAddedSuccess) {
+                    _displayMessageInPopup(
+                      'Encadrant ${state.newEncadrant.name} added successfully!',
+                      MessageType.success,
+                    );
+                  } else if (state is EncadrantError) {
                     _displayMessageInPopup(state.message, MessageType.error);
                   }
                 },
                 builder: (context, state) {
-                  if (state is StudentLoading) {
+                  if (state is EncadrantLoading) {
                     return const Center(child: CircularProgressIndicator());
-                  } else if (state is StudentLoaded) {
-                    // Filter students based on search query
-                    final filteredStudents = state.students.where((student) {
+                  } else if (state is EncadrantLoaded) {
+                    // Filter encadrants based on search query
+                    final filteredEncadrants = state.encadrants.where((
+                      encadrant,
+                    ) {
                       final query = _searchQuery;
-                      return student.username.toLowerCase().contains(query) ||
-                          student.lastname.toLowerCase().contains(query) ||
-                          student.email.toLowerCase().contains(query) ||
-                          (student.cin?.toLowerCase().contains(query) ?? false);
+                      return encadrant.name.toLowerCase().contains(query) ||
+                          encadrant.lastname.toLowerCase().contains(query) ||
+                          (encadrant.email?.toLowerCase().contains(query) ??
+                              false);
                     }).toList();
 
-                    if (filteredStudents.isEmpty) {
+                    if (filteredEncadrants.isEmpty) {
                       return Center(
                         child: Text(
                           _searchQuery.isEmpty
-                              ? 'No students found. Add one using the form above!'
-                              : 'No students found matching "${_searchController.text}".',
+                              ? 'No academic supervisors found. Add one using the form above!'
+                              : 'No academic supervisors found matching "${_searchController.text}".',
                         ),
                       );
                     }
                     return ListView.builder(
-                      itemCount: filteredStudents.length,
+                      itemCount: filteredEncadrants.length,
                       itemBuilder: (context, index) {
-                        final student = filteredStudents[index];
+                        final encadrant = filteredEncadrants[index];
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             vertical: 5,
@@ -552,9 +476,9 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                           child: ListTile(
                             leading: const Icon(Icons.person),
                             title: Text(
-                              '${student.username} ${student.lastname}',
+                              '${encadrant.name} ${encadrant.lastname}',
                             ),
-                            subtitle: Text(student.email),
+                            subtitle: Text(encadrant.email ?? 'No Email'),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -563,8 +487,8 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                     Icons.edit,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _populateForm(student),
-                                  tooltip: 'Edit Student',
+                                  onPressed: () => _populateForm(encadrant),
+                                  tooltip: 'Edit Supervisor',
                                 ),
                                 IconButton(
                                   icon: const Icon(
@@ -572,8 +496,8 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                     color: Colors.red,
                                   ),
                                   onPressed: () =>
-                                      _deleteStudent(student.studentID!),
-                                  tooltip: 'Delete Student',
+                                      _deleteEncadrant(encadrant.encadrantID!),
+                                  tooltip: 'Delete Supervisor',
                                 ),
                               ],
                             ),
@@ -581,10 +505,12 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                         );
                       },
                     );
-                  } else if (state is StudentError) {
+                  } else if (state is EncadrantError) {
                     return Center(child: Text('Error: ${state.message}'));
                   }
-                  return const Center(child: Text('No students to display.'));
+                  return const Center(
+                    child: Text('No academic supervisors to display.'),
+                  );
                 },
               ),
             ),

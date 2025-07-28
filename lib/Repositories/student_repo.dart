@@ -1,4 +1,6 @@
+// lib/Repositories/student_repo.dart
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart'; // For debugPrint
 import 'package:pfa/Model/student_model.dart';
 
 class StudentRepository {
@@ -26,20 +28,20 @@ class StudentRepository {
       if (e.response != null) {
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+        debugPrint('Dio response data for fetch error: ${e.response?.data}');
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error fetching students: $errorMessage');
+      debugPrint('Dio Error fetching students: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error fetching students: $e');
+      debugPrint('General Error fetching students: $e');
       rethrow;
     }
   }
 
   //* Add Student
   Future<String> addStudent(Student student) async {
-    // Return type is now String
     try {
       final response = await _dio.post(
         '$studentsPath/add_student.php',
@@ -48,13 +50,8 @@ class StudentRepository {
 
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['status'] == 'success') {
-          // It now just returns the message from the backend.
-          // It doesn't attempt to parse a full Student object from a 'data' field.
           return response.data['message'] ?? 'Student added successfully.';
         } else {
-          // If server doesn't return data for add, but indicates success,
-          // you might return the original student object or refetch.
-          // For now, throwing to indicate missing data if expected.
           throw Exception(
             'Student added successfully, but no data returned from server.',
           );
@@ -72,31 +69,34 @@ class StudentRepository {
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error adding student: $errorMessage');
+      debugPrint('Dio Error adding student: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error adding student: $e');
+      debugPrint('General Error adding student: $e');
       rethrow;
     }
   }
 
   //* Update Student
   Future<void> updateStudent(Student student) async {
-    // Changed return type to Future<void>
     try {
       if (student.studentID == null) {
         throw Exception('Student ID is required for updating a student.');
       }
       final response = await _dio.post(
-        '$studentsPath/update_student.php',
-        data: student.toJson(),
+        '$studentsPath/update_student.php', // Assuming update_student.php is now edit_student.php
+        data: student
+            .toJson(), // *** CRITICAL: This uses the toJson() from the Student model ***
       );
+      debugPrint(
+        'updateStudent response: ${response.data}',
+      ); // Added for debugging
+
       if (response.statusCode == 200 &&
           response.data != null &&
-          response.data['status'] == 'success') {
-        // Server confirmed success, but returned no 'data' field.
-        // So, we don't try to parse it into a Student object.
-        // We just return void to indicate success.
+          (response.data['status'] == 'success' ||
+              response.data['status'] == 'info')) {
+        // Accept 'info' as success
         return;
       } else {
         throw Exception(
@@ -108,13 +108,14 @@ class StudentRepository {
       if (e.response != null) {
         errorMessage =
             'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+        debugPrint('Dio response data for update error: ${e.response?.data}');
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error updating student: $errorMessage');
+      debugPrint('Dio Error updating student: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error updating student: $e');
+      debugPrint('General Error updating student: $e');
       rethrow;
     }
   }
@@ -143,10 +144,10 @@ class StudentRepository {
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
-      print('Dio Error deleting student: $errorMessage');
+      debugPrint('Dio Error deleting student: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      print('General Error deleting student: $e');
+      debugPrint('General Error deleting student: $e');
       rethrow;
     }
   }
