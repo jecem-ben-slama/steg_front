@@ -1,1 +1,16 @@
-{}
+{
+  "fr": [
+    "success",
+    "failure",
+    "dashboard",
+    "certificates",
+    "accountingAndFinance",
+    "encadrantDashboard",
+    "addNotes",
+    "evaluations",
+    "adminPanel",
+    "userManagement",
+    "validateEvaluations",
+    "logOut"
+  ]
+}

@@ -1,7 +1,6 @@
 // lib/Services/pdf_generator_service.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -10,7 +9,6 @@ import 'dart:ui' as ui;
 
 import 'package:pfa/Model/attestation_model.dart';
 import 'package:pfa/Model/internship_model.dart';
-import 'package:pfa/Utils/snackbar.dart';
 
 class PdfGeneratorService {
   static Future<Uint8List> generateAttestationPdf(AttestationData data) async {

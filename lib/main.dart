@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:pfa/Utils/l10n/app_localizations.dart';
 
 //* Repositories
 import 'package:pfa/BLoc/Login/login_bloc.dart';
@@ -37,7 +39,12 @@ import 'package:pfa/Screens/Encadrant/encadrant_home.dart';
 import 'package:pfa/Screens/ChefCentreInformatique/chef_home.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LocaleProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 late final GoRouter router;
@@ -293,10 +300,24 @@ class _MyAppState extends State<MyApp> {
                 SubjectCubit(RepositoryProvider.of<SubjectRepository>(context)),
           ),
         ],
-        // NEW: Use Consumer to rebuild MaterialApp when locale changes
-        child: MaterialApp.router(
-          routerConfig: router,
-          debugShowCheckedModeBanner: false,
+        child: Consumer<LocaleProvider>(
+          builder: (context, localeProvider, child) {
+            return MaterialApp.router(
+              locale: localeProvider.locale,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en', ''), // English
+                Locale('fr', ''), // French
+              ],
+              routerConfig: router,
+              debugShowCheckedModeBanner: false,
+            );
+          },
         ),
       ),
     );
