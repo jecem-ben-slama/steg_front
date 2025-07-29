@@ -1,4 +1,3 @@
-// lib/Screens/Gestionnaire/manage_students.dart
 import 'dart:async'; // Import for Timer
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -106,6 +105,17 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
       editingStudent = student;
       isFormVisible = true;
     });
+
+    // --- Debugging Prints (Keep these for verification) ---
+    debugPrint(
+      'Populating form for student: ${student.username} ${student.lastname}',
+    );
+    debugPrint('Student.niveau_etude: ${student.niveau_etude}');
+    debugPrint('Student.faculte: ${student.faculte}');
+    debugPrint('Assigned selectedNiveauEtude: $selectedNiveauEtude');
+    debugPrint('Assigned selectedFaculte: $selectedFaculte');
+    // --- End Debugging Prints ---
+
     _clearMessage();
   }
 
@@ -124,8 +134,10 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
       lastname: lastnameController.text,
       email: emailController.text,
       cin: cinController.text.isNotEmpty ? cinController.text : null,
-      niveau_etude: selectedNiveauEtude,
-      faculte: selectedFaculte,
+      // Ensure these properties match your Student model's constructor
+      niveau_etude:
+          selectedNiveauEtude, // Ensure this is snake_case in your model
+      faculte: selectedFaculte, // Ensure this is snake_case in your model
       cycle: selectedCycle,
       specialite: selectedSpeciality,
     );
@@ -275,7 +287,6 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                 ),
                 IconButton(
                   onPressed: () {
-                   
                     _toggleFormVisibility();
                   },
                   icon: Icon(isFormVisible ? Icons.arrow_circle_up : Icons.add),
@@ -385,7 +396,11 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                             );
                                           })
                                           .toList(),
-                                      onChanged: (String? newValue) {},
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          selectedNiveauEtude = newValue;
+                                        });
+                                      },
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return 'Please select a Niveau d\'étude.';
@@ -423,8 +438,6 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                       onChanged: (String? newValue) {
                                         setState(() {
                                           selectedFaculte = newValue;
-                                          selectedSpeciality =
-                                              null; // Clear speciality if faculty changes
                                         });
                                       },
                                       validator: (value) {
@@ -549,120 +562,141 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
             ),
             const Divider(height: 30, thickness: 1),
             // Modified Row for "Existing Students" and Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Existing Students',
-                      style: Theme.of(context).textTheme.headlineSmall,
+            isFormVisible
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Existing Students',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2, // Give more space to the search bar
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              labelText: 'Search Students',
+                              hintText: 'Search by name, email, CIN...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10.0,
+                                horizontal: 12.0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2, // Give more space to the search bar
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        labelText: 'Search Students',
-                        hintText: 'Search by name, email, CIN...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 10.0,
-                          horizontal: 12.0,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 10),
-            Expanded(
-              child: BlocConsumer<StudentCubit, StudentState>(
-                listener: (context, state) {
-                  // Listen for action-specific success/error messages
-                  if (state is StudentActionSuccess) {
-                    _displayMessageInPopup(state.message, MessageType.success);
-                  } else if (state is StudentError) {
-                    _displayMessageInPopup(state.message, MessageType.error);
-                  }
-                },
-                builder: (context, state) {
-                  if (state is StudentLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is StudentLoaded) {
-                    // Filter students based on search query
-                    final filteredStudents = state.students.where((student) {
-                      final query = _searchQuery;
-                      return student.username.toLowerCase().contains(query) ||
-                          student.lastname.toLowerCase().contains(query) ||
-                          student.email.toLowerCase().contains(query) ||
-                          (student.cin?.toLowerCase().contains(query) ?? false);
-                    }).toList();
+            isFormVisible
+                ? const SizedBox.shrink()
+                : Expanded(
+                    child: BlocConsumer<StudentCubit, StudentState>(
+                      listener: (context, state) {
+                        // Listen for action-specific success/info/error messages
+                        if (state is StudentActionSuccess) {
+                          _displayMessageInPopup(
+                            state.message,
+                            MessageType.success,
+                          );
+                        } else if (state is StudentError) {
+                          _displayMessageInPopup(
+                            state.message,
+                            MessageType.error,
+                          );
+                        }
+                      },
+                      builder: (context, state) {
+                        if (state is StudentLoading) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (state is StudentLoaded) {
+                          // Filter students based on search query
+                          final filteredStudents = state.students.where((
+                            student,
+                          ) {
+                            final query = _searchQuery;
+                            return student.username.toLowerCase().contains(
+                                  query,
+                                ) ||
+                                student.lastname.toLowerCase().contains(
+                                  query,
+                                ) ||
+                                student.email.toLowerCase().contains(query) ||
+                                (student.cin?.toLowerCase().contains(query) ??
+                                    false);
+                          }).toList();
 
-                    if (filteredStudents.isEmpty) {
-                      return Center(
-                        child: Text(
-                          _searchQuery.isEmpty
-                              ? 'No students found. Add one using the form above!'
-                              : 'No students found matching "${_searchController.text}".',
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      itemCount: filteredStudents.length,
-                      itemBuilder: (context, index) {
-                        final student = filteredStudents[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            vertical: 5,
-                            horizontal: 8,
-                          ),
-                          elevation: 2,
-                          child: ListTile(
-                            leading: const Icon(Icons.person),
-                            title: Text(
-                              '${student.username} ${student.lastname}',
-                            ),
-                            subtitle: Text(student.email),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.blue,
-                                  ),
-                                  onPressed: () => _populateForm(student),
-                                  tooltip: 'Edit Student',
+                          if (filteredStudents.isEmpty) {
+                            return Center(
+                              child: Text(
+                                _searchQuery.isEmpty
+                                    ? 'No students found. Add one using the form above!'
+                                    : 'No students found matching "${_searchController.text}".',
+                              ),
+                            );
+                          }
+                          return ListView.builder(
+                            itemCount: filteredStudents.length,
+                            itemBuilder: (context, index) {
+                              final student = filteredStudents[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                  vertical: 5,
+                                  horizontal: 8,
                                 ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
+                                elevation: 2,
+                                child: ListTile(
+                                  leading: const Icon(Icons.person),
+                                  title: Text(
+                                    '${student.username} ${student.lastname}',
                                   ),
-                                  onPressed: () =>
-                                      _deleteStudent(student.studentID!),
-                                  tooltip: 'Delete Student',
+                                  subtitle: Text(student.email),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.edit,
+                                          color: Colors.blue,
+                                        ),
+                                        onPressed: () => _populateForm(student),
+                                        tooltip: 'Edit Student',
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () =>
+                                            _deleteStudent(student.studentID!),
+                                        tooltip: 'Delete Student',
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
+                              );
+                            },
+                          );
+                        } else if (state is StudentError) {
+                          return Center(child: Text('Error: ${state.message}'));
+                        }
+                        return const Center(
+                          child: Text('No students to display.'),
                         );
                       },
-                    );
-                  } else if (state is StudentError) {
-                    return Center(child: Text('Error: ${state.message}'));
-                  }
-                  return const Center(child: Text('No students to display.'));
-                },
-              ),
-            ),
+                    ),
+                  ),
           ],
         ),
       ),

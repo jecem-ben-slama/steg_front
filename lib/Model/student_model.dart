@@ -30,9 +30,9 @@ class Student extends Equatable {
       username: json['username'] as String,
       lastname: json['lastname'] as String,
       email: json['email'] as String,
-      cin: json['cin'] as String?, 
-      niveau_etude: json['niveau_etude'] as String?, 
-      faculte: json['faculte'] as String?, // Map from 'faculte'
+      cin: json['cin'] as String?,
+      niveau_etude: json['niveauEtude'] as String?,
+      faculte: json['nomFaculte'] as String?, // Map from 'faculte'
       cycle: json['cycle'] as String?,
       specialite: json['specialite'] as String?,
     );

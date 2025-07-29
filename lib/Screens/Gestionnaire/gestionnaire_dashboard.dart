@@ -28,6 +28,8 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
   String _searchQuery = '';
   String? _selectedStatusFilter;
   String? _selectedTypeFilter;
+  // Set to keep track of expanded internship IDs
+  Set<int> _expandedInternshipIds = {};
 
   final List<String> _statusOptions = [
     'All',
@@ -43,7 +45,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     switch (status?.toLowerCase()) {
       case 'validé':
         return Colors.green;
-      case 'En cours':
+      case 'en cours':
         return const Color.fromARGB(255, 19, 82, 145);
       case 'refusé':
         return Colors.red;
@@ -52,6 +54,17 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
       default:
         return Colors.grey;
     }
+  }
+
+  // Method to toggle the expansion state of an internship row
+  void _toggleExpanded(int internshipId) {
+    setState(() {
+      if (_expandedInternshipIds.contains(internshipId)) {
+        _expandedInternshipIds.remove(internshipId);
+      } else {
+        _expandedInternshipIds.add(internshipId);
+      }
+    });
   }
 
   //* Popup for delete confirmation
@@ -92,7 +105,8 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
             (internship.supervisorName?.toLowerCase().contains(query) ??
                 false) ||
             (internship.typeStage?.toLowerCase().contains(query) ?? false) ||
-            (internship.statut?.toLowerCase().contains(query) ?? false);
+            (internship.statut?.toLowerCase().contains(query) ??
+                false); // Search by academic supervisor name
       }).toList();
     }
 
@@ -385,13 +399,13 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               DeptCard(title: "Manage Student"),
+              DeptCard(title: "Manage Academic Supervisor"),
               DeptCard(title: "Manage Subject"),
               DeptCard(title: "Manage Supervisor"),
             ],
           ),
           const SizedBox(height: 24),
 
-          // THIS IS THE KEY CHANGE: Wrap the Container in Expanded
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -400,10 +414,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                // This Column now needs to be scrollable if its content (the table)
-                // exceeds the height given by Expanded.
                 child: SingleChildScrollView(
-                  // <--- Added for vertical scrolling of the table section
                   child: Column(
                     children: [
                       Row(
@@ -493,29 +504,42 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                             }
                           }
 
-                          // This SingleChildScrollView is for horizontal scrolling of the DataTable
-                          return DataTable(
-                            columns: const [
-                              DataColumn(label: Text("Student Name")),
-                              DataColumn(label: Text("Subject")),
-                              DataColumn(label: Text("Supervisor")),
-                              DataColumn(label: Text("Type")),
-                              DataColumn(label: Text("Start Date")),
-                              DataColumn(label: Text("End Date")),
-                              DataColumn(label: Text("Status")),
-                              DataColumn(label: Text("Actions")),
-                            ],
-                            rows: internshipsToDisplay.map((internship) {
-                              return DataRow(
+                          // Build rows dynamically to include expandable details
+                          List<DataRow> allRows = [];
+                          for (var internship in internshipsToDisplay) {
+                            // Main DataRow
+                            allRows.add(
+                              DataRow(
+                                key: ValueKey(
+                                  internship.internshipID,
+                                ), // Key for efficient updates
                                 cells: [
+                                  // Expand/Collapse Button
+                                  DataCell(
+                                    IconButton(
+                                      icon: Icon(
+                                        _expandedInternshipIds.contains(
+                                              internship.internshipID!,
+                                            )
+                                            ? Icons.keyboard_arrow_up
+                                            : Icons.keyboard_arrow_down,
+                                      ),
+                                      onPressed: () => _toggleExpanded(
+                                        internship.internshipID!,
+                                      ),
+                                    ),
+                                  ),
                                   DataCell(
                                     Text(internship.studentName ?? 'N/A'),
                                   ),
                                   DataCell(
-                                    Text(internship.subjectTitle ?? 'N/A'),
+                                    Text(
+                                      internship.subjectTitle ??
+                                          'Not Yet Chosen',
+                                    ),
                                   ),
                                   DataCell(
-                                    Text(internship.supervisorName ?? 'N/A'),
+                                    Text(internship.encadrantProName ?? 'N/A'),
                                   ),
                                   DataCell(Text(internship.typeStage ?? 'N/A')),
                                   DataCell(Text(internship.dateDebut ?? 'N/A')),
@@ -577,8 +601,106 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                     ),
                                   ),
                                 ],
+                              ),
+                            );
+
+                            // Expanded details row
+                            if (_expandedInternshipIds.contains(
+                              internship.internshipID!,
+                            )) {
+                              allRows.add(
+                                DataRow(
+                                  // Add a distinct color for the expanded row
+                                  color:
+                                      MaterialStateProperty.resolveWith<Color?>(
+                                        (Set<MaterialState> states) {
+                                          if (states.contains(
+                                            MaterialState.selected,
+                                          )) {
+                                            return Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.08);
+                                          }
+                                          return Colors.blue.withOpacity(
+                                            0.05,
+                                          ); // Light blue background
+                                        },
+                                      ),
+                                  cells: [
+                                    DataCell(
+                                      // This DataCell spans all columns
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical:
+                                              12.0, // Increased vertical padding
+                                          horizontal:
+                                              20.0, // Increased horizontal padding
+                                        ),
+                                        width:
+                                            double.infinity, // Take full width
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Academic Supervisor: ${internship.encadrantAcademiqueID ?? 'N/A'}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ), // Adjusted font size
+                                              softWrap:
+                                                  true, // Ensure text wraps
+                                            ),
+                                            const SizedBox(
+                                              height: 8,
+                                            ), // Increased spacing
+                                            Text(
+                                              'Remunerated: ${internship.estRemunere == true ? 'Yes' : 'No'}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ), // Adjusted font size
+                                            ),
+                                            if (internship.estRemunere ==
+                                                    true &&
+                                                internship
+                                                        .montantRemuneration !=
+                                                    null)
+                                              Text(
+                                                'Amount: ${internship.montantRemuneration?.toStringAsFixed(2) ?? 'N/A'}',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ), // Adjusted font size
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    // Placeholders for the remaining 8 columns
+                                    for (int i = 0; i < 8; i++)
+                                      const DataCell(SizedBox.shrink()),
+                                  ],
+                                ),
                               );
-                            }).toList(),
+                            }
+                          }
+
+                          return DataTable(
+                            columns: const [
+                              DataColumn(label: Text("")), // For expand button
+                              DataColumn(label: Text("Student Name")),
+                              DataColumn(label: Text("Subject")),
+                              DataColumn(label: Text("Supervisor")),
+                              DataColumn(label: Text("Type")),
+                              DataColumn(label: Text("Start Date")),
+                              DataColumn(label: Text("End Date")),
+                              DataColumn(label: Text("Status")),
+                              DataColumn(label: Text("Actions")),
+                            ],
+                            rows: allRows, // Use the dynamically built rows
+                            dataRowHeight:
+                                kMinInteractiveDimension +
+                                30.0, // Increased row height
                           );
                         },
                       ),
@@ -591,5 +713,17 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
         ],
       ),
     );
+  }
+}
+
+// Extension method for convenience
+extension ListExtension<T> on List<T> {
+  T? firstWhereOrNull(bool Function(T) test) {
+    for (var element in this) {
+      if (test(element)) {
+        return element;
+      }
+    }
+    return null;
   }
 }

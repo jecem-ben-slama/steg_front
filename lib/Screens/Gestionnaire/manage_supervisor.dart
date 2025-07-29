@@ -1,15 +1,19 @@
 import 'dart:async'; // Import for Timer
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/user_cubit.dart'; // Make sure this path is correct
 import 'package:pfa/Model/user_model.dart'; // Make sure this path is correct
+import 'dart:math'; // For generating random password
 
 // Enum to define message types for styling
 enum MessageType { success, info, error, none }
 
 class ManageUsers extends StatefulWidget {
-  const ManageUsers({super.key});
+  final String dialogTitle; // NEW: Add dialogTitle to distinguish context
+  const ManageUsers({
+    super.key,
+    required this.dialogTitle,
+  }); // NEW: Require dialogTitle
 
   @override
   State<ManageUsers> createState() => _ManageUsersState();
@@ -65,8 +69,20 @@ class _ManageUsersState extends State<ManageUsers> {
     });
   }
 
+  // Helper to generate a random password
+  String _generateRandomPassword({int length = 8}) {
+    const String chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()';
+    Random random = Random();
+    return String.fromCharCodes(
+      Iterable.generate(
+        length,
+        (_) => chars.codeUnitAt(random.nextInt(chars.length)),
+      ),
+    );
+  }
+
   void _clearForm() {
-    // Renamed for consistency
     _firstNameController.clear();
     _lastNameController.clear();
     _emailController.clear();
@@ -79,7 +95,6 @@ class _ManageUsersState extends State<ManageUsers> {
   }
 
   void _populateForm(User user) {
-    // Renamed for consistency
     _firstNameController.text = user.username;
     _lastNameController.text = user.lastname;
     _emailController.text = user.email;
@@ -93,14 +108,37 @@ class _ManageUsersState extends State<ManageUsers> {
   }
 
   void _submitForm() {
-    // Renamed for consistency
     if (!_formKey.currentState!.validate()) {
-      // Validate the form
       _displayMessageInPopup(
-        'Please fill in all required fields.',
+        'Please fill in all required fields correctly.',
         MessageType.error,
       );
       return;
+    }
+
+    String? passwordToSend;
+    String roleToSend;
+
+    // Determine role based on dialogTitle
+    if (widget.dialogTitle == 'Manage Academic Supervisor') {
+      roleToSend = 'EncadrantAcademique';
+      if (_editingUser == null) {
+        // Only generate password for new Encadrant Academique
+        passwordToSend = _generateRandomPassword();
+      } else if (_passwordController.text.isNotEmpty) {
+        // If editing and password field is not empty, use the new password
+        passwordToSend = _passwordController.text;
+      }
+    } else {
+      // Default for 'Manage Supervisor'
+      roleToSend = 'Encadrant';
+      if (_editingUser == null) {
+        // Password is required for new 'Encadrant' users
+        passwordToSend = _passwordController.text;
+      } else if (_passwordController.text.isNotEmpty) {
+        // If editing and password field is not empty, use the new password
+        passwordToSend = _passwordController.text;
+      }
     }
 
     final newUser = User(
@@ -108,26 +146,27 @@ class _ManageUsersState extends State<ManageUsers> {
       username: _firstNameController.text,
       lastname: _lastNameController.text,
       email: _emailController.text,
-      password: _editingUser == null
-          ? _passwordController
-                .text // Only include password if adding
-          : (_passwordController.text.isNotEmpty
-                ? _passwordController.text
-                : null), // Only send for update if not empty
-      role: "Encadrant", // Assuming role is always 'Encadrant' for these users
+      password: passwordToSend,
+      role: roleToSend,
     );
 
     if (_editingUser == null) {
       context.read<UserCubit>().addUser(newUser);
+      // If a password was auto-generated, display it in the success message
+      if (widget.dialogTitle == 'Manage Academic Supervisor' &&
+          passwordToSend != null) {
+        _displayMessageInPopup(
+          'User "${newUser.username}" added successfully! Password: $passwordToSend',
+          MessageType.success,
+        );
+      }
     } else {
       context.read<UserCubit>().updateUser(newUser);
     }
-    // *** ADDED THIS LINE ***
     _clearForm(); // Clear the form and hide it after submission
   }
 
   void _deleteUser(int userId) {
-    // Renamed for consistency
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -142,7 +181,6 @@ class _ManageUsersState extends State<ManageUsers> {
             onPressed: () {
               context.read<UserCubit>().deleteUser(userId);
               Navigator.of(ctx).pop(); // Close the confirmation dialog
-              // The main AlertDialog will remain open, and message will appear there.
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
@@ -153,7 +191,6 @@ class _ManageUsersState extends State<ManageUsers> {
   }
 
   void _toggleFormVisibility() {
-    // Renamed for consistency
     setState(() {
       _isFormVisible = !_isFormVisible;
       if (!_isFormVisible) {
@@ -169,10 +206,9 @@ class _ManageUsersState extends State<ManageUsers> {
       _displayMessageType = type;
     });
 
-    // Cancel any existing timer
     _messageTimer?.cancel();
-    // Start a new timer to clear the message after 3 seconds
-    _messageTimer = Timer(const Duration(seconds: 3), () {
+    _messageTimer = Timer(const Duration(seconds: 5), () {
+      // Increased duration for visibility
       _clearMessage();
     });
   }
@@ -188,7 +224,9 @@ class _ManageUsersState extends State<ManageUsers> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Manage Supervisors'),
+      title: Text(
+        widget.dialogTitle,
+      ), // Use dialogTitle for the AlertDialog title
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.7,
         height: MediaQuery.of(context).size.height * 0.8,
@@ -261,7 +299,7 @@ class _ManageUsersState extends State<ManageUsers> {
                 ),
                 IconButton(
                   onPressed: () {
-                    _toggleFormVisibility(); // Use the renamed method
+                    _toggleFormVisibility();
                   },
                   icon: Icon(
                     _isFormVisible
@@ -283,12 +321,10 @@ class _ManageUsersState extends State<ManageUsers> {
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Form(
-                          // Added Form widget
-                          key: _formKey, // Assigned GlobalKey
+                          key: _formKey,
                           child: Column(
                             children: [
                               TextFormField(
-                                // Changed to TextFormField
                                 controller: _firstNameController,
                                 decoration: const InputDecoration(
                                   labelText: 'First Name',
@@ -304,7 +340,6 @@ class _ManageUsersState extends State<ManageUsers> {
                               ),
                               const SizedBox(height: 10),
                               TextFormField(
-                                // Changed to TextFormField
                                 controller: _lastNameController,
                                 decoration: const InputDecoration(
                                   labelText: 'Last Name',
@@ -320,7 +355,6 @@ class _ManageUsersState extends State<ManageUsers> {
                               ),
                               const SizedBox(height: 10),
                               TextFormField(
-                                // Changed to TextFormField
                                 controller: _emailController,
                                 decoration: const InputDecoration(
                                   labelText: 'Email',
@@ -340,38 +374,56 @@ class _ManageUsersState extends State<ManageUsers> {
                                 },
                               ),
                               const SizedBox(height: 10),
-                              _editingUser == null
-                                  ? TextFormField(
-                                      // Changed to TextFormField
-                                      controller: _passwordController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Password',
-                                        border: OutlineInputBorder(),
-                                        prefixIcon: Icon(Icons.lock),
-                                      ),
-                                      obscureText: true,
-                                      validator: (value) {
-                                        if (_editingUser == null &&
-                                            (value == null || value.isEmpty)) {
-                                          return 'Password is required for new users.';
-                                        }
-                                        return null;
-                                      },
-                                    )
-                                  : const SizedBox.shrink(),
+                              // Conditionally show password field
+                              if (_editingUser == null &&
+                                  widget.dialogTitle !=
+                                      'Manage Academic Supervisor')
+                                TextFormField(
+                                  controller: _passwordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Password',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.lock),
+                                  ),
+                                  obscureText: true,
+                                  validator: (value) {
+                                    if (_editingUser == null &&
+                                        widget.dialogTitle !=
+                                            'Manage Academic Supervisor' &&
+                                        (value == null || value.isEmpty)) {
+                                      return 'Password is required for new users.';
+                                    }
+                                    return null;
+                                  },
+                                )
+                              else if (_editingUser != null &&
+                                  widget.dialogTitle !=
+                                      'Manage Academic Supervisor')
+                                TextFormField(
+                                  controller: _passwordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'New Password (optional)',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.lock),
+                                  ),
+                                  obscureText: true,
+                                  validator: (value) {
+                                    // No validation needed if optional
+                                    return null;
+                                  },
+                                ),
                               const SizedBox(height: 20),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   OutlinedButton.icon(
-                                    onPressed: _clearForm, // Use renamed method
+                                    onPressed: _clearForm,
                                     icon: const Icon(Icons.clear),
                                     label: const Text('Clear'),
                                   ),
                                   const SizedBox(width: 10),
                                   ElevatedButton.icon(
-                                    onPressed:
-                                        _submitForm, // Use renamed method
+                                    onPressed: _submitForm,
                                     icon: Icon(
                                       _editingUser == null
                                           ? Icons.add
@@ -413,7 +465,9 @@ class _ManageUsersState extends State<ManageUsers> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Existing Supervisors',
+                      widget.dialogTitle == 'Manage Academic Supervisor'
+                          ? 'Existing Academic Supervisors'
+                          : 'Existing Supervisors',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ),
@@ -423,7 +477,7 @@ class _ManageUsersState extends State<ManageUsers> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search supervisors by name or email...',
+                        hintText: 'Search by name or email...',
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.0),
@@ -442,33 +496,32 @@ class _ManageUsersState extends State<ManageUsers> {
             Expanded(
               child: BlocConsumer<UserCubit, UserState>(
                 listener: (context, state) {
-                  // Display message within the popup for success or error
                   if (state is UserActionSuccess) {
                     _displayMessageInPopup(state.message, MessageType.success);
-                    // No pop here, let the user see the message and close manually
                   } else if (state is UserError) {
                     _displayMessageInPopup(state.message, MessageType.error);
-                    // No pop here, let the user see the message and close manually
                   }
-                  // Removed the `Navigator.of(context).pop()` from the listener
-                  // as the dialog now stays open to show the in-popup message.
                 },
                 builder: (context, state) {
                   if (state is UserLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is UserLoaded) {
-                    // Filter users based on search query
                     final filteredUsers = state.users.where((user) {
                       final usernameLower = user.username.toLowerCase();
                       final lastnameLower = user.lastname.toLowerCase();
                       final emailLower = user.email.toLowerCase();
                       final searchQueryLower = _searchQuery.toLowerCase();
 
-                      // Only show users with role 'Encadrant' or 'Admin'
-                      final isSupervisor =
-                          user.role == 'Encadrant' || user.role == 'Admin';
+                      // Filter based on dialogTitle
+                      bool matchesRole = false;
+                      if (widget.dialogTitle == 'Manage Academic Supervisor') {
+                        matchesRole = user.role == 'EncadrantAcademique';
+                      } else {
+                        matchesRole =
+                            user.role == 'Encadrant' || user.role == 'Admin';
+                      }
 
-                      return isSupervisor &&
+                      return matchesRole &&
                           (usernameLower.contains(searchQueryLower) ||
                               lastnameLower.contains(searchQueryLower) ||
                               emailLower.contains(searchQueryLower));
@@ -477,20 +530,20 @@ class _ManageUsersState extends State<ManageUsers> {
                     if (filteredUsers.isEmpty && _searchQuery.isNotEmpty) {
                       return Center(
                         child: Text(
-                          'No supervisors found matching "${_searchQuery}".',
+                          'No ${widget.dialogTitle == 'Manage Academic Supervisor' ? 'academic supervisors' : 'supervisors'} found matching "${_searchQuery}".',
                         ),
                       );
                     } else if (filteredUsers.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Text(
-                          'No supervisors found. Add one using the form above!',
+                          'No ${widget.dialogTitle == 'Manage Academic Supervisor' ? 'academic supervisors' : 'supervisors'} found. Add one using the form above!',
                         ),
                       );
                     }
                     return ListView.builder(
                       itemCount: filteredUsers.length,
                       itemBuilder: (context, index) {
-                        final user = filteredUsers[index]; // Use filtered list
+                        final user = filteredUsers[index];
                         return Card(
                           margin: const EdgeInsets.symmetric(
                             vertical: 6,
@@ -512,7 +565,11 @@ class _ManageUsersState extends State<ManageUsers> {
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [Text('Email: ${user.email}')],
+                              children: [
+                                Text('Email: ${user.email}'),
+                                if (user.role != null && user.role!.isNotEmpty)
+                                  Text('Role: ${user.role}'),
+                              ],
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -522,8 +579,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                     Icons.edit,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () =>
-                                      _populateForm(user), // Use renamed method
+                                  onPressed: () => _populateForm(user),
                                   tooltip: 'Edit User',
                                 ),
                                 IconButton(
@@ -531,9 +587,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                     Icons.delete,
                                     color: Colors.red,
                                   ),
-                                  onPressed: () => _deleteUser(
-                                    user.userID!,
-                                  ), // Use renamed method
+                                  onPressed: () => _deleteUser(user.userID!),
                                   tooltip: 'Delete User',
                                 ),
                               ],
@@ -543,13 +597,11 @@ class _ManageUsersState extends State<ManageUsers> {
                       },
                     );
                   } else if (state is UserError) {
-                    // If the error occurred during initial fetch, show the error message.
-                    // Otherwise, the list will be shown, and the message in the AnimatedOpacity.
                     if (state.lastLoadedUsers == null ||
                         state.lastLoadedUsers!.isEmpty) {
                       return Center(child: Text('Error: ${state.message}'));
                     }
-                    return const SizedBox.shrink(); // Message handled by AnimatedOpacity
+                    return const SizedBox.shrink();
                   }
                   return const Center(
                     child: Text('Start managing users by adding one above.'),

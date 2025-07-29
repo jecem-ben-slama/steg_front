@@ -477,3 +477,251 @@ class CustomBarChart extends StatelessWidget {
     });
   }
 }
+// Assuming this file exists and provides TextStroke
+
+class CustomLineChart extends StatelessWidget {
+  final String title;
+  final Map<String, double> data; // Data for line chart (e.g., year -> amount)
+  final String? xAxisTitle;
+  final String? yAxisTitle;
+
+  const CustomLineChart({
+    Key? key,
+    required this.title,
+    required this.data,
+    this.xAxisTitle,
+    this.yAxisTitle,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: Colors.grey,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text(
+                          'No data available for this chart.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Sort data by year for proper line chart display
+    final sortedEntries = data.entries.toList()
+      ..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
+
+    final List<FlSpot> spots = sortedEntries.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.value);
+    }).toList();
+
+    final List<String> xTitles = sortedEntries.map((e) => e.key).toList();
+    final double minY = 0;
+    final double maxY =
+        (spots.isNotEmpty ? spots.map((s) => s.y).reduce(max) : 0.0) *
+        1.1; // 10% buffer
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: LineChart(
+                LineChartData(
+                  minX: 0,
+                  maxX: (spots.length - 1).toDouble(),
+                  minY: minY,
+                  maxY: maxY,
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: xAxisTitle != null
+                          ? Text(
+                              xAxisTitle!,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            )
+                          : null,
+                      axisNameSize: xAxisTitle != null
+                          ? 20
+                          : 0, // Space for title
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1, // Show all year labels
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < xTitles.length) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              space: 4.0,
+                              child: Text(
+                                xTitles[index],
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 9,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                        reservedSize: 35,
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      axisNameWidget: yAxisTitle != null
+                          ? Text(
+                              yAxisTitle!,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            )
+                          : null,
+                      axisNameSize: yAxisTitle != null ? 20 : 0,
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toStringAsFixed(
+                              0,
+                            ), // Show integer values for amount
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 9,
+                            ),
+                            textAlign: TextAlign.right,
+                          );
+                        },
+                        reservedSize:
+                            40, // Increased reserved size for potentially larger numbers
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true, // Show vertical lines for years
+                    getDrawingHorizontalLine: (value) =>
+                        FlLine(color: Colors.grey.shade50, strokeWidth: 0.5),
+                    getDrawingVerticalLine: (value) =>
+                        FlLine(color: Colors.grey.shade50, strokeWidth: 0.5),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(color: Colors.grey.shade200, width: 1),
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color:
+                          _chartColors[0], // Use the first color from the palette
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: _chartColors[0].withOpacity(
+                          0.3,
+                        ), // Soft fill below the line
+                      ),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((LineBarSpot touchedSpot) {
+                          final year = xTitles[touchedSpot.spotIndex];
+                          final amount = touchedSpot.y.toStringAsFixed(2);
+                          return LineTooltipItem(
+                            '$year\n',
+                            const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'TND $amount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

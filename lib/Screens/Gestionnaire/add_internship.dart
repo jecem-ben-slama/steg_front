@@ -31,21 +31,24 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
 
   bool _estRemunere = false;
   Student? _selectedStudent;
-  // Subject? _selectedSubject; // REMOVED: Variable for selected subject
   User? _selectedSupervisor;
+  User?
+  _selectedAcademicSupervisor; // NEW: State variable for academic supervisor
 
   // Define internship type options
   final List<String> _internshipTypeOptions = ['PFA', 'PFE', 'Stage Ouvrier'];
   List<Student> _students = [];
-  // List<Subject> _subjects = []; // REMOVED: List to hold subjects
   List<User> _supervisors = [];
+  List<User> _academicSupervisors =
+      []; // NEW: List to hold academic supervisors
 
   @override
   void initState() {
     super.initState();
     context.read<StudentCubit>().fetchStudents();
-    // context.read<SubjectCubit>().fetchSubjects(); // REMOVED: Fetch subjects
-    context.read<UserCubit>().fetchUsers();
+    context
+        .read<UserCubit>()
+        .fetchUsers(); // Fetches all users, including academic supervisors
   }
 
   @override
@@ -64,8 +67,8 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
       _selectedInternshipType = null; // Clear selected type
       _estRemunere = false;
       _selectedStudent = null;
-      // _selectedSubject = null; // REMOVED: Clear selected subject
       _selectedSupervisor = null;
+      _selectedAcademicSupervisor = null; // NEW: Clear academic supervisor
     });
   }
 
@@ -77,11 +80,10 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
     // Basic validation for dropdowns and remuneration amount
     if (_selectedInternshipType == null ||
         _selectedStudent == null ||
-        // _selectedSubject == null || // REMOVED: Validate subject
         _selectedSupervisor == null) {
       showFailureSnackBar(
         context,
-        'Please select Internship Type, Student, and Supervisor.', // Adjusted message
+        'Please select Internship Type, Student, and Professional Supervisor.', // Adjusted message for clarity
       );
       return;
     }
@@ -110,9 +112,15 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
           ? double.tryParse(_montantRemunerationController.text)
           : null,
       etudiantID: _selectedStudent!.studentID,
-      // sujetID: _selectedSubject!.subjectID, // REMOVED: Subject ID is no longer selected
       encadrantProID: _selectedSupervisor!.userID,
+      encadrantAcademiqueID: _selectedAcademicSupervisor
+          ?.userID, // NEW: Add academic supervisor ID (can be null)
     );
+
+    // NEW: Debug print the full JSON payload before sending
+    debugPrint('--- Full Internship Object to be Added (JSON) ---');
+    debugPrint(newInternship.toJson().toString());
+    debugPrint('---------------------------------------------------');
 
     context.read<InternshipCubit>().addInternship(newInternship);
     Navigator.of(context).pop();
@@ -300,52 +308,7 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
                           },
                         ),
                         const SizedBox(height: 10),
-                        // Removed Subject Dropdown (as per request)
-                        // BlocBuilder<SubjectCubit, SubjectState>(
-                        //   builder: (context, state) {
-                        //     if (state is SubjectLoaded) {
-                        //       _subjects = state.subjects; // Update local list
-                        //       return DropdownButtonFormField<Subject>(
-                        //         value: _selectedSubject,
-                        //         decoration: const InputDecoration(
-                        //           labelText: 'Subject',
-                        //           border: OutlineInputBorder(),
-                        //           prefixIcon: Icon(
-                        //             Icons.menu_book,
-                        //           ), // Appropriate icon
-                        //         ),
-                        //         items: _subjects.map((subject) {
-                        //           return DropdownMenuItem<Subject>(
-                        //             value: subject,
-                        //             child: Text(
-                        //               subject.subjectName,
-                        //             ), // Assuming Subject has a title field
-                        //           );
-                        //         }).toList(),
-                        //         onChanged: (value) {
-                        //           setState(() {
-                        //             _selectedSubject = value;
-                        //           });
-                        //         },
-                        //         validator: (value) {
-                        //           if (value == null) {
-                        //             return 'Please select a subject.';
-                        //           }
-                        //           return null;
-                        //         },
-                        //       );
-                        //     } else if (state is SubjectLoading) {
-                        //       return const LinearProgressIndicator();
-                        //     } else if (state is SubjectError) {
-                        //       return Text(
-                        //         'Error loading subjects: ${state.message}',
-                        //       );
-                        //     }
-                        //     return const SizedBox.shrink();
-                        //   },
-                        // ),
-                        // const SizedBox(height: 10),
-                        //* Supervisor Dropdown
+                        //* Professional Supervisor Dropdown
                         BlocBuilder<UserCubit, UserState>(
                           builder: (context, state) {
                             if (state is UserLoaded) {
@@ -356,7 +319,8 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
                               return DropdownButtonFormField<User>(
                                 value: _selectedSupervisor,
                                 decoration: const InputDecoration(
-                                  labelText: 'Supervisor',
+                                  labelText:
+                                      'Professional Supervisor', // Changed label
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.person_outline),
                                 ),
@@ -364,8 +328,8 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
                                   return DropdownMenuItem<User>(
                                     value: user,
                                     child: Text(
-                                      user.username,
-                                    ), // Assuming username is supervisor's name
+                                      '${user.username} ${user.lastname}', // Display full name
+                                    ),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -375,7 +339,7 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
                                 },
                                 validator: (value) {
                                   if (value == null) {
-                                    return 'Please select a supervisor.';
+                                    return 'Please select a professional supervisor.';
                                   }
                                   return null;
                                 },
@@ -384,7 +348,65 @@ class _AddInternshipPopupState extends State<AddInternshipPopup> {
                               return const LinearProgressIndicator();
                             } else if (state is UserError) {
                               return Text(
-                                'Error loading supervisors: ${state.message}',
+                                'Error loading professional supervisors: ${state.message}',
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        //* Academic Supervisor Dropdown (NEW)
+                        BlocBuilder<UserCubit, UserState>(
+                          builder: (context, state) {
+                            if (state is UserLoaded) {
+                              // Filter users to only include 'EncadrantAcademique' role
+                              _academicSupervisors = state.users
+                                  .where(
+                                    (user) =>
+                                        user.role == 'EncadrantAcademique',
+                                  )
+                                  .toList();
+                              return DropdownButtonFormField<User>(
+                                value: _selectedAcademicSupervisor,
+                                decoration: const InputDecoration(
+                                  labelText:
+                                      'Academic Supervisor (Optional)', // Label indicates optional
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(
+                                    Icons.person_pin,
+                                  ), // Distinct icon
+                                ),
+                                items: [
+                                  const DropdownMenuItem<User>(
+                                    value: null,
+                                    child: Text(
+                                      'None (Optional)',
+                                    ), // Option for null
+                                  ),
+                                  ..._academicSupervisors.map((user) {
+                                    return DropdownMenuItem<User>(
+                                      value: user,
+                                      child: Text(
+                                        '${user.username} ${user.lastname}', // Display full name
+                                      ),
+                                    );
+                                  }).toList(),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedAcademicSupervisor = value;
+                                  });
+                                },
+                                // No validator needed as it's optional
+                                validator: (value) {
+                                  return null; // Always valid, as it's optional
+                                },
+                              );
+                            } else if (state is UserLoading) {
+                              return const LinearProgressIndicator();
+                            } else if (state is UserError) {
+                              return Text(
+                                'Error loading academic supervisors: ${state.message}',
                               );
                             }
                             return const SizedBox.shrink();

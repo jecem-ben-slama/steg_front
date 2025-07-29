@@ -1,21 +1,56 @@
-// lib/Services/pdf_generator_service.dart
+// lib/Utils/pdf_generator.dart
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // Import for BuildContext (if still needed for fonts etc.)
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+// import 'package:pfa/Repositories/document_repo.dart'; // No longer needed directly here for _sendPdfToBackend
+import 'package:printing/printing.dart'; // Still useful for previewing/sharing
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:ui' as ui;
+import 'dart:convert'; // Import for base64Encode
+// import 'package:flutter_bloc/flutter_bloc.dart'; // No longer needed directly here for RepositoryProvider.of
 
 import 'package:pfa/Model/attestation_model.dart';
 import 'package:pfa/Model/internship_model.dart';
 
 class PdfGeneratorService {
-  static Future<Uint8List> generateAttestationPdf(AttestationData data) async {
+  // The _sendPdfToBackend logic is now moved to Certificates.dart
+  // and is called after PDF generation and download.
+  // So, this static method is no longer needed here.
+  /*
+  static Future<void> _sendPdfToBackend({
+    required BuildContext context,
+    required int stageId,
+    required Uint8List pdfBytes,
+    required String pdfType,
+    required String filename,
+  }) async {
+    try {
+      final documentRepository = RepositoryProvider.of<DocumentRepository>(
+        context,
+      );
+
+      await documentRepository.savePdfDocumentToBackend(
+        stageId: stageId,
+        pdfBytes: pdfBytes,
+        pdfType: pdfType,
+        filename: filename,
+      );
+      debugPrint('PDF sent to backend and recorded successfully!');
+    } catch (e) {
+      debugPrint('Error from DocumentRepository during PDF send: $e');
+      rethrow;
+    }
+  }
+  */
+
+  static Future<Uint8List> generateAttestationPdf(
+    BuildContext context, // Keep BuildContext if you use it for fonts or assets
+    AttestationData data,
+  ) async {
     final pdf = pw.Document();
     final font = await PdfGoogleFonts.openSansRegular();
 
-    // Check if qrCodeData is available before attempting to generate QR code
     pw.MemoryImage? qrCodePngBytes;
     if (data.qrCodeData != null && data.qrCodeData!.isNotEmpty) {
       try {
@@ -33,7 +68,7 @@ class PdfGeneratorService {
         qrCodePngBytes = pw.MemoryImage(qrCodeByteData!.buffer.asUint8List());
       } catch (e) {
         debugPrint('Error generating QR code for PDF: $e');
-        qrCodePngBytes = null; // Set to null if there's an error
+        qrCodePngBytes = null;
       }
     }
 
@@ -208,336 +243,124 @@ class PdfGeneratorService {
       ),
     );
 
-    return pdf.save();
+    final Uint8List pdfBytes = await pdf.save();
+    return pdfBytes; // Return the generated PDF bytes
   }
 
-  // ... (generatePayslipPdf and generateSimplePayslipPdf remain unchanged)
-
-  static Future<Uint8List> generatePayslipPdf(AttestationData data) async {
-    final pdf = pw.Document();
-    final font = await PdfGoogleFonts.openSansRegular();
-    final boldFont = await PdfGoogleFonts.openSansBold();
-
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Center(
-                child: pw.Text(
-                  'FICHE DE PAIE',
-                  style: pw.TextStyle(
-                    font: boldFont,
-                    fontSize: 30,
-                    color: PdfColors.blue900,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Divider(),
-              pw.SizedBox(height: 20),
-
-              // Company Information (Placeholder)
-              pw.Text(
-                '[Nom de l\'Organisation/Entreprise]',
-                style: pw.TextStyle(font: boldFont, fontSize: 18),
-              ),
-              pw.Text(
-                '[Adresse de l\'Organisation]',
-                style: pw.TextStyle(font: font, fontSize: 12),
-              ),
-              pw.Text(
-                '[Ville, Code Postal]',
-                style: pw.TextStyle(font: font, fontSize: 12),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Employee (Student) Information
-              pw.Text(
-                'Salarié (Stagiaire):',
-                style: pw.TextStyle(font: boldFont, fontSize: 16),
-              ),
-              pw.Text(
-                'Nom: ${data.student.firstName} ${data.student.lastName}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.Text(
-                'Email: ${data.student.email}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Internship Details
-              pw.Text(
-                'Détails du Stage:',
-                style: pw.TextStyle(font: boldFont, fontSize: 16),
-              ),
-              pw.Text(
-                'Type de Stage: ${data.internship.typeStage}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.Text(
-                'Sujet: ${data.subject.title ?? 'Non spécifié'}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.Text(
-                'Période: Du ${data.internship.dateDebut} au ${data.internship.dateFin}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Remuneration Details
-              pw.Text(
-                'Détails de la Rémunération:',
-                style: pw.TextStyle(font: boldFont, fontSize: 16),
-              ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Montant Brut:',
-                    style: pw.TextStyle(font: font, fontSize: 14),
-                  ),
-                  pw.Text(
-                    '${data.internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} €',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 16,
-                      color: PdfColors.green,
-                    ),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 5),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Cotisations Sociales (Est.):',
-                    style: pw.TextStyle(font: font, fontSize: 14),
-                  ),
-                  pw.Text(
-                    '0.00 €',
-                    style: pw.TextStyle(font: font, fontSize: 14),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'MONTANT NET À PAYER:',
-                    style: pw.TextStyle(font: boldFont, fontSize: 16),
-                  ),
-                  pw.Text(
-                    '${data.internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} €',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 18,
-                      color: PdfColors.green800,
-                    ),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 40),
-
-              // Signature/Date
-              pw.Align(
-                alignment: pw.Alignment.bottomRight,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Text(
-                      'Fait à [Votre Ville], le ${DateTime.now().toIso8601String().split('T')[0]}',
-                      style: pw.TextStyle(font: font, fontSize: 12),
-                    ),
-                    pw.SizedBox(height: 10),
-                    pw.Text(
-                      'Signature de l\'Employeur',
-                      style: pw.TextStyle(font: boldFont, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    return pdf.save();
-  }
-
-  static Future<Uint8List> generateSimplePayslipPdf(Internship data) async {
-    final pdf = pw.Document();
-    final font = await PdfGoogleFonts.openSansRegular();
-    final boldFont = await PdfGoogleFonts.openSansBold();
-
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Center(
-                child: pw.Text(
-                  'FICHE DE PAIE',
-                  style: pw.TextStyle(
-                    font: boldFont,
-                    fontSize: 30,
-                    color: PdfColors.blue900,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Divider(),
-              pw.SizedBox(height: 20),
-
-              // Company Information (Placeholder)
-              pw.Text(
-                '[Nom de l\'Organisation/Entreprise]',
-                style: pw.TextStyle(font: boldFont, fontSize: 18),
-              ),
-              pw.Text(
-                '[Adresse de l\'Organisation]',
-                style: pw.TextStyle(font: font, fontSize: 12),
-              ),
-              pw.Text(
-                '[Ville, Code Postal]',
-                style: pw.TextStyle(font: font, fontSize: 12),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Employee (Student) Information
-              pw.Text(
-                'Salarié (Stagiaire):',
-                style: pw.TextStyle(font: boldFont, fontSize: 16),
-              ),
-              pw.Text(
-                'Nom: ${data.studentName ?? 'N/A'}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.Text(
-                'Email: ${data.studentEmail ?? 'N/A'}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Internship Details
-              pw.Text(
-                'Détails du Stage:',
-                style: pw.TextStyle(font: boldFont, fontSize: 16),
-              ),
-              pw.Text(
-                'Type de Stage: ${data.typeStage}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.Text(
-                'Sujet: ${data.subjectTitle ?? 'Non spécifié'}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.Text(
-                'Période: Du ${data.dateDebut} au ${data.dateFin}',
-                style: pw.TextStyle(font: font, fontSize: 14),
-              ),
-              pw.SizedBox(height: 20),
-
-              // Remuneration Details
-              pw.Text(
-                'Détails de la Rémunération:',
-                style: pw.TextStyle(font: boldFont, fontSize: 16),
-              ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Montant Brut:',
-                    style: pw.TextStyle(font: font, fontSize: 14),
-                  ),
-                  pw.Text(
-                    '${data.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} €',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 16,
-                      color: PdfColors.green,
-                    ),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 5),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Cotisations Sociales (Est.):',
-                    style: pw.TextStyle(font: font, fontSize: 14),
-                  ),
-                  pw.Text(
-                    '0.00 €', // Placeholder
-                    style: pw.TextStyle(font: font, fontSize: 14),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'MONTANT NET À PAYER:',
-                    style: pw.TextStyle(font: boldFont, fontSize: 16),
-                  ),
-                  pw.Text(
-                    '${data.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} €',
-                    style: pw.TextStyle(
-                      font: boldFont,
-                      fontSize: 18,
-                      color: PdfColors.green800,
-                    ),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 40),
-
-              // Signature/Date
-              pw.Align(
-                alignment: pw.Alignment.bottomRight,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Text(
-                      'Fait à [Votre Ville], le ${DateTime.now().toIso8601String().split('T')[0]}',
-                      style: pw.TextStyle(font: font, fontSize: 12),
-                    ),
-                    pw.SizedBox(height: 10),
-                    pw.Text(
-                      'Signature de l\'Employeur',
-                      style: pw.TextStyle(font: boldFont, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    return pdf.save();
-  }
-
-  static Future<void> saveAndOpenPdf(
-    Uint8List pdfBytes,
-    String filename,
+  static Future<Uint8List> generateSimplePayslipPdf(
+    BuildContext context, // Keep BuildContext if you use it for fonts or assets
+    dynamic internship, // Assuming this is an InternshipModel or similar
   ) async {
-    try {
-      await Printing.sharePdf(bytes: pdfBytes, filename: '$filename.pdf');
-    } catch (e) {
-      debugPrint('Error saving or opening PDF: $e');
-      throw Exception('Could not save or open PDF: ${e.toString()}');
-    }
+    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.openSansRegular();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Center(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'FICHE DE PAIE',
+                  style: pw.TextStyle(
+                    font: font,
+                    fontSize: 28,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey900,
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Text(
+                  'Stagiaire: ${internship.studentName}',
+                  style: pw.TextStyle(font: font, fontSize: 16),
+                ),
+                pw.Text(
+                  'Période: Du ${internship.dateDebut} au ${internship.dateFin}',
+                  style: pw.TextStyle(font: font, fontSize: 16),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Divider(),
+                pw.SizedBox(height: 10),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Description',
+                      style: pw.TextStyle(
+                        font: font,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.Text(
+                      'Montant (TND)',
+                      style: pw.TextStyle(
+                        font: font,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                pw.Divider(),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Rémunération de stage',
+                      style: pw.TextStyle(font: font),
+                    ),
+                    pw.Text(
+                      '${internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} TND',
+                      style: pw.TextStyle(font: font),
+                    ),
+                  ],
+                ),
+                // Add more items if your payslip has more details
+                pw.SizedBox(height: 20),
+                pw.Divider(thickness: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Net à Payer',
+                      style: pw.TextStyle(
+                        font: font,
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    pw.Text(
+                      '${internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} TND',
+                      style: pw.TextStyle(
+                        font: font,
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 18,
+                        color: PdfColors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 30),
+                pw.Align(
+                  alignment: pw.Alignment.bottomRight,
+                  child: pw.Text(
+                    'Date d\'émission: ${DateTime.now().toIso8601String().split('T')[0]}',
+                    style: pw.TextStyle(
+                      font: font,
+                      fontSize: 12,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    final Uint8List pdfBytes = await pdf.save();
+    return pdfBytes; // Return the generated PDF bytes
   }
 }

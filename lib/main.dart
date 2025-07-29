@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pfa/Repositories/document_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
+import 'package:pfa/cubit/document_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -67,6 +69,7 @@ class _MyAppState extends State<MyApp> {
   late final ChefCentreRepository chefCentreRepository;
   late final StatsRepository statsRepository;
   late final StudentRepository studentRepository;
+  late final DocumentRepository documentRepository;
 
   @override
   void initState() {
@@ -98,6 +101,7 @@ class _MyAppState extends State<MyApp> {
     chefCentreRepository = ChefCentreRepository(dio: dio);
     statsRepository = StatsRepository(dio: dio);
     studentRepository = StudentRepository(dio: dio);
+    documentRepository = DocumentRepository(dio: dio);
 
     //_setDevToken(); // Uncomment if you use this for development tokens
 
@@ -263,6 +267,9 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<UserRepository>(
           create: (context) => UserRepository(dio: dio),
         ),
+        RepositoryProvider<DocumentRepository>(
+          create: (context) => DocumentRepository(dio: dio),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -283,6 +290,11 @@ class _MyAppState extends State<MyApp> {
           BlocProvider<ChefCentreCubit>(
             create: (context) => ChefCentreCubit(
               RepositoryProvider.of<ChefCentreRepository>(context),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => DocumentCubit(
+              RepositoryProvider.of<DocumentRepository>(context),
             ),
           ),
           BlocProvider(

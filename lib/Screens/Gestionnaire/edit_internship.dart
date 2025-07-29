@@ -5,8 +5,6 @@ import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Utils/snackbar.dart';
 import 'package:intl/intl.dart';
 import 'package:pfa/Model/user_model.dart';
-// import 'package:pfa/Model/subject_model.dart'; // Removed: No longer needed for selection
-// import 'package:pfa/cubit/subject_cubit.dart'; // Removed: No longer needed for selection
 import 'package:pfa/Cubit/user_cubit.dart'; // Ensure UserCubit is imported
 
 class InternshipEditDialog extends StatefulWidget {
@@ -21,20 +19,25 @@ class InternshipEditDialog extends StatefulWidget {
 class InternshipEditDialogState extends State<InternshipEditDialog> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController studentNameController;
-  late TextEditingController supervisorNameController;
+  late TextEditingController
+  supervisorNameController; // This will be deprecated for dropdown
 
   late TextEditingController dateDebutController;
   late TextEditingController dateFinController;
   late String selectedTypeStage;
-  // Removed: late String selectedStatut; // No longer selectable
   late bool estRemunere;
   late TextEditingController montantRemunerationController;
 
-
-  User? _selectedSupervisor; // Variable for selected supervisor
-  List<User> _supervisors = []; // List to hold supervisors
-  bool _isLoadingSupervisors = true; // Loading state for supervisors
-
+  User? _selectedSupervisor; // Variable for selected professional supervisor
+  User?
+  _selectedAcademicSupervisor; // NEW: Variable for selected academic supervisor
+  List<User> _supervisors = []; // List to hold professional supervisors
+  List<User> _academicSupervisors =
+      []; // NEW: List to hold academic supervisors
+  bool _isLoadingSupervisors =
+      true; // Loading state for professional supervisors
+  bool _isLoadingAcademicSupervisors =
+      true; // NEW: Loading state for academic supervisors
 
   final List<String> typeStageOptions = [
     'PFE',
@@ -50,7 +53,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     studentNameController = TextEditingController(
       text: widget.internship.studentName ?? '',
     );
-    // Initialize supervisorNameController, but it will be replaced by dropdown
     supervisorNameController = TextEditingController(
       text: widget.internship.supervisorName ?? '',
     );
@@ -76,17 +78,6 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
       text: widget.internship.dateFin ?? '',
     );
 
-    // Removed status initialization logic as it's no longer selectable
-    // String incomingStatut = widget.internship.statut?.trim() ?? 'En attente';
-    // if (statusOptions.contains(incomingStatut)) {
-    //   selectedStatut = incomingStatut;
-    // } else {
-    //   selectedStatut = 'En attente';
-    //   debugPrint(
-    //     'Warning: Incoming status "${widget.internship.statut}" from backend did not match known options. Defaulting to "En attente".',
-    //   );
-    // }
-
     estRemunere = widget.internship.estRemunere ?? false;
 
     String initialMontantText;
@@ -100,51 +91,65 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
       text: initialMontantText,
     );
 
+    // Debug print the incoming academic supervisor ID
+    debugPrint(
+      'InternshipEditDialog: Initial widget.internship.encadrantAcademiqueID: ${widget.internship.encadrantAcademiqueID}',
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchSupervisors(); // Fetch supervisors
+      _loadUsersAndSetSupervisors(); // Combined fetch and selection
     });
   }
 
-  // Method to fetch supervisors
-  Future<void> _fetchSupervisors() async {
+  // NEW: Combined method to fetch all users and set selected supervisors
+  Future<void> _loadUsersAndSetSupervisors() async {
     setState(() {
       _isLoadingSupervisors = true;
+      _isLoadingAcademicSupervisors = true;
     });
 
     try {
-      await context.read<UserCubit>().fetchUsers();
+      await context.read<UserCubit>().fetchUsers(); // Fetch all users
       final state = context.read<UserCubit>().state;
       if (state is UserLoaded) {
         setState(() {
-          // Filter users to only include supervisors.
-          // Adjust 'Encadrant' based on your actual User role enumeration/string.
+          // Populate professional supervisors
           _supervisors = state.users
-              .where(
-                (user) => user.role == 'Encadrant' || user.role == 'Admin',
-              ) // Adjust roles as per your User model
+              .where((user) => user.role == 'Encadrant' || user.role == 'Admin')
               .toList();
 
-          // Try to pre-select the current supervisor
+          // Populate academic supervisors
+          _academicSupervisors = state.users
+              .where((user) => user.role == 'EncadrantAcademique')
+              .toList();
+
+          // Try to pre-select the current professional supervisor
           _selectedSupervisor = _supervisors.firstWhereOrNull(
             (user) => user.userID == widget.internship.encadrantProID,
           );
-          // If no matching supervisor is found and there are supervisors, select the first one
+          // If no matching professional supervisor is found and there are supervisors, select the first one
           if (_selectedSupervisor == null && _supervisors.isNotEmpty) {
             _selectedSupervisor = _supervisors.first;
           }
+
+          // Try to pre-select the current academic supervisor
+          _selectedAcademicSupervisor = _academicSupervisors.firstWhereOrNull(
+            (user) => user.userID == widget.internship.encadrantAcademiqueID,
+          );
         });
       }
     } catch (e) {
-      print('Error fetching supervisors: $e');
+      print('Error fetching users for supervisors: $e');
       if (mounted) {
         showFailureSnackBar(context, 'Failed to load supervisors: $e');
       }
     } finally {
       setState(() {
         _isLoadingSupervisors = false;
+        _isLoadingAcademicSupervisors = false;
       });
       print(
-        'Supervisors loading complete. _isLoadingSupervisors: $_isLoadingSupervisors',
+        'All Supervisors loading complete. _isLoadingSupervisors: $_isLoadingSupervisors, _isLoadingAcademicSupervisors: $_isLoadingAcademicSupervisors',
       );
     }
   }
@@ -152,7 +157,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
   @override
   void dispose() {
     studentNameController.dispose();
-    supervisorNameController.dispose();
+    supervisorNameController.dispose(); // Still dispose, though less used
     dateDebutController.dispose();
     dateFinController.dispose();
     montantRemunerationController.dispose();
@@ -188,6 +193,12 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
     debugPrint('BUILD METHOD - _supervisors count: ${_supervisors.length}');
     debugPrint(
       'BUILD METHOD - _selectedSupervisor: ${_selectedSupervisor?.username ?? "None"}',
+    );
+    debugPrint(
+      'BUILD METHOD - _academicSupervisors count: ${_academicSupervisors.length}',
+    );
+    debugPrint(
+      'BUILD METHOD - _selectedAcademicSupervisor: ${_selectedAcademicSupervisor?.username ?? "None"}',
     );
 
     return BlocListener<InternshipCubit, InternshipState>(
@@ -241,7 +252,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                   enabled: false, // Visually disable it
                 ),
                 const SizedBox(height: 16),
-                //* Supervisor Dropdown
+                //* Professional Supervisor Dropdown
                 _isLoadingSupervisors
                     ? const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -251,37 +262,86 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                           ? const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16.0),
                               child: Text(
-                                'No supervisors available. Cannot assign.',
+                                'No professional supervisors available. Cannot assign.',
                                 style: TextStyle(color: Colors.red),
                               ),
                             )
                           : DropdownButtonFormField<User>(
                               value: _selectedSupervisor,
                               decoration: const InputDecoration(
-                                labelText: 'Supervisor',
+                                labelText:
+                                    'Professional Supervisor', // Updated label
                                 border: OutlineInputBorder(),
                               ),
                               items: _supervisors.map((User user) {
                                 return DropdownMenuItem<User>(
                                   value: user,
                                   child: Text(
-                                    user.username,
-                                  ), // Assuming User has a 'userName' field
+                                    '${user.username} ${user.lastname}', // Display full name
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (User? newValue) {
                                 setState(() {
                                   _selectedSupervisor = newValue;
                                   debugPrint(
-                                    'Dropdown onChanged: Selected Supervisor: ${_selectedSupervisor?.username}, ID: ${_selectedSupervisor?.userID}',
+                                    'Dropdown onChanged: Selected Professional Supervisor: ${_selectedSupervisor?.username}, ID: ${_selectedSupervisor?.userID}',
                                   );
                                 });
                               },
                               validator: (value) {
                                 if (value == null) {
-                                  return 'Please select a supervisor';
+                                  return 'Please select a professional supervisor';
                                 }
                                 return null;
+                              },
+                            )),
+                const SizedBox(height: 16),
+                //* Academic Supervisor Dropdown (NEW)
+                _isLoadingAcademicSupervisors
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: CircularProgressIndicator(),
+                      )
+                    : (_academicSupervisors.isEmpty &&
+                              _selectedAcademicSupervisor == null
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                'No academic supervisors available.',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : DropdownButtonFormField<User>(
+                              value: _selectedAcademicSupervisor,
+                              decoration: const InputDecoration(
+                                labelText: 'Academic Supervisor (Optional)',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                const DropdownMenuItem<User>(
+                                  value: null,
+                                  child: Text('None (Optional)'),
+                                ),
+                                ..._academicSupervisors.map((User user) {
+                                  return DropdownMenuItem<User>(
+                                    value: user,
+                                    child: Text(
+                                      '${user.username} ${user.lastname}',
+                                    ),
+                                  );
+                                }).toList(),
+                              ],
+                              onChanged: (User? newValue) {
+                                setState(() {
+                                  _selectedAcademicSupervisor = newValue;
+                                  debugPrint(
+                                    'Dropdown onChanged: Selected Academic Supervisor: ${_selectedAcademicSupervisor?.username}, ID: ${_selectedAcademicSupervisor?.userID}',
+                                  );
+                                });
+                              },
+                              validator: (value) {
+                                return null; // This field is optional
                               },
                             )),
                 const SizedBox(height: 16),
@@ -412,6 +472,8 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       etudiantID: widget.internship.etudiantID,
                       // Use selected supervisor ID
                       encadrantProID: _selectedSupervisor?.userID,
+                      encadrantAcademiqueID: _selectedAcademicSupervisor
+                          ?.userID, // NEW: Add academic supervisor ID
                       sujetID:
                           widget.internship.sujetID, // Keep original sujetID
                       typeStage: selectedTypeStage,
@@ -425,7 +487,7 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       studentName:
                           widget.internship.studentName, // Keep original
                       supervisorName: _selectedSupervisor
-                          ?.username, // Update with selected supervisor's name
+                          ?.username, // Update with selected professional supervisor's name
                       subjectTitle:
                           widget.internship.subjectTitle, // Keep original
                     );
@@ -450,8 +512,11 @@ class InternshipEditDialogState extends State<InternshipEditDialog> {
                       'Original Sujet ID: ${widget.internship.sujetID}',
                     ); // Debug original sujet ID
                     debugPrint(
-                      'New Supervisor ID: ${updatedInternship.encadrantProID}',
-                    ); // Debug new supervisor ID
+                      'New Professional Supervisor ID: ${updatedInternship.encadrantProID}',
+                    ); // Debug new professional supervisor ID
+                    debugPrint(
+                      'New Academic Supervisor ID: ${updatedInternship.encadrantAcademiqueID}',
+                    ); // NEW: Debug new academic supervisor ID
                     debugPrint('-------------------------------------------');
 
                     context.read<InternshipCubit>().editInternship(

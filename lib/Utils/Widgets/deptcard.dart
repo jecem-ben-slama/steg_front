@@ -30,8 +30,9 @@ class _DeptCardState extends State<DeptCard> {
           return BlocProvider(
             create: (_) =>
                 UserCubit(RepositoryProvider.of<UserRepository>(context)),
-            child:
-                const ManageUsers(), // Ensure this is the correct class name for your user management dialog
+            child: const ManageUsers(
+              dialogTitle: "Manage Supervisor",
+            ), // Ensure this is the correct class name for your user management dialog
           );
         },
       );
@@ -49,7 +50,6 @@ class _DeptCardState extends State<DeptCard> {
         },
       );
     } else if (widget.title == 'Manage Subject') {
-      // <-- New Condition for Subject
       print('Condition met: "Manage Subject" card tapped.');
       showDialog(
         context: context,
@@ -58,6 +58,22 @@ class _DeptCardState extends State<DeptCard> {
             create: (_) =>
                 SubjectCubit(RepositoryProvider.of<SubjectRepository>(context)),
             child: const ManageSubjects(), // Use the new Subject dialog
+          );
+        },
+      );
+    } else if (widget.title == 'Manage Academic Supervisor') {
+      // <-- NEW: Condition for Encadrant Academique
+      print('Condition met: "Manage Academic Supervisor" card tapped.');
+      showDialog(
+        context: context,
+        builder: (dialogContext) {
+          return BlocProvider(
+            create: (_) => UserCubit(
+              RepositoryProvider.of<UserRepository>(context),
+            ), // Assuming UserCubit manages Encadrants
+            child: const ManageUsers(
+              dialogTitle: 'Manage Academic Supervisor',
+            ), // Assuming ManageUsers dialog is suitable for Encadrants
           );
         },
       );
@@ -124,6 +140,8 @@ class _DeptCardState extends State<DeptCard> {
         return Icons.school;
       case 'Manage Subject':
         return Icons.book; // Icon for subjects
+      case 'Manage Academic Supervisor': // <-- NEW: Icon for Encadrant Academique
+        return Icons.person_pin; // A distinct icon for academic supervisors
       default:
         return Icons.category; // Default icon
     }

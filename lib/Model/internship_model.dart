@@ -2,13 +2,15 @@
 import 'package:equatable/equatable.dart'; // Import Equatable
 import 'package:pfa/Model/evaluation_model.dart'; // Import the new Evaluation model
 
-class Internship extends Equatable { // Extend Equatable
+class Internship extends Equatable {
+  // Extend Equatable
   final int? internshipID;
   final String? studentName;
   final String? studentEmail; // Added for completeness, if it's coming from API
   final String? subjectTitle;
   final String? supervisorName; // Maps to encadrantProName or similar
   final int? encadrantProID;
+  final int? encadrantAcademiqueID; // NEW: Field for academic supervisor ID
   final String? typeStage;
   final String? dateDebut;
   final String? dateFin;
@@ -23,12 +25,13 @@ class Internship extends Equatable { // Extend Equatable
   final int? companyID;
   final int? encadrantPedaID;
   final String? encadrantPedaName; // Assuming this is needed somewhere
-  final int? studentID; // This might be redundant with etudiantID, confirm your backend maps
-  final String? encadrantProName; // Assuming supervisorName is encadrantProName from DB
+  final int?
+  studentID; // This might be redundant with etudiantID, confirm your backend maps
+  final String?
+  encadrantProName; // Assuming supervisorName is encadrantProName from DB
 
   // New: Holds the Encadrant's specific evaluation for this internship
   final Evaluation? encadrantEvaluation;
-
 
   Internship({
     this.internshipID,
@@ -37,6 +40,7 @@ class Internship extends Equatable { // Extend Equatable
     this.subjectTitle,
     this.supervisorName, // This will be mapped from 'encadrantProName' or similar
     this.encadrantProID,
+    this.encadrantAcademiqueID, // NEW: Add to constructor
     this.typeStage,
     this.dateDebut,
     this.dateFin,
@@ -72,11 +76,18 @@ class Internship extends Equatable { // Extend Equatable
     return Internship(
       internshipID: int.tryParse(json['stageID']?.toString() ?? ''),
       studentName: json['studentName'] as String?,
-      studentEmail: json['studentEmail'] as String?, // Assuming 'studentEmail' comes from backend
+      studentEmail:
+          json['studentEmail']
+              as String?, // Assuming 'studentEmail' comes from backend
       subjectTitle: json['subjectTitle'] as String?,
       // Map supervisorName from encadrantProName or similar from the API
-      supervisorName: json['supervisorName'] as String? ?? json['encadrantProName'] as String?,
+      supervisorName:
+          json['encadrantFirstName'] as String? ??
+          json['encadrantFirstName'] as String?,
       encadrantProID: int.tryParse(json['encadrantProID']?.toString() ?? ''),
+      encadrantAcademiqueID: int.tryParse(
+        json['encadrantAcademiqueID']?.toString() ?? '',
+      ), // NEW: Parse academic supervisor ID
       typeStage: json['typeStage'] as String?,
       dateDebut: json['dateDebut'] as String?,
       dateFin: json['dateFin'] as String?,
@@ -85,7 +96,9 @@ class Internship extends Equatable { // Extend Equatable
       montantRemuneration: json['montantRemuneration'] != null
           ? double.tryParse(json['montantRemuneration'].toString())
           : null,
-      etudiantID: int.tryParse(json['etudiantID']?.toString() ?? '') ?? int.tryParse(json['studentID']?.toString() ?? ''), // Handle both
+      etudiantID:
+          int.tryParse(json['etudiantID']?.toString() ?? '') ??
+          int.tryParse(json['studentID']?.toString() ?? ''), // Handle both
       sujetID: int.tryParse(json['sujetID']?.toString() ?? ''),
 
       // These fields were present in your provided image and in my "full" model.
@@ -93,13 +106,18 @@ class Internship extends Equatable { // Extend Equatable
       description: json['description'] as String?,
       companyID: int.tryParse(json['entrepriseID']?.toString() ?? ''),
       encadrantPedaID: int.tryParse(json['encadrantPedaID']?.toString() ?? ''),
-      encadrantPedaName: json['encadrantPedaName'] as String?, // Assuming this exists
-      studentID: int.tryParse(json['studentID']?.toString() ?? ''), // Keep if distinct from etudiantID
-      encadrantProName: json['encadrantProName'] as String?,
+      encadrantPedaName:
+          json['encadrantPedaName'] as String?, // Assuming this exists
+      studentID: int.tryParse(
+        json['studentID']?.toString() ?? '',
+      ), // Keep if distinct from etudiantID
+      encadrantProName: json['supervisorName'] as String?,
 
       // Parse the nested 'encadrantEvaluation' JSON into an Evaluation object
       encadrantEvaluation: json['encadrantEvaluation'] != null
-          ? Evaluation.fromJson(json['encadrantEvaluation'] as Map<String, dynamic>)
+          ? Evaluation.fromJson(
+              json['encadrantEvaluation'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -112,6 +130,7 @@ class Internship extends Equatable { // Extend Equatable
       'subjectTitle': subjectTitle,
       'supervisorName': supervisorName,
       'encadrantProID': encadrantProID,
+      'encadrantAcademiqueID': encadrantAcademiqueID, // NEW: Add to toJson
       'typeStage': typeStage,
       'dateDebut': dateDebut,
       'dateFin': dateFin,
@@ -140,6 +159,7 @@ class Internship extends Equatable { // Extend Equatable
     String? subjectTitle,
     String? supervisorName,
     int? encadrantProID,
+    int? encadrantAcademiqueID, // NEW: Add to copyWith
     String? typeStage,
     String? dateDebut,
     String? dateFin,
@@ -163,6 +183,9 @@ class Internship extends Equatable { // Extend Equatable
       subjectTitle: subjectTitle ?? this.subjectTitle,
       supervisorName: supervisorName ?? this.supervisorName,
       encadrantProID: encadrantProID ?? this.encadrantProID,
+      encadrantAcademiqueID:
+          encadrantAcademiqueID ??
+          this.encadrantAcademiqueID, // NEW: Handle in copyWith
       typeStage: typeStage ?? this.typeStage,
       dateDebut: dateDebut ?? this.dateDebut,
       dateFin: dateFin ?? this.dateFin,
@@ -183,28 +206,29 @@ class Internship extends Equatable { // Extend Equatable
 
   @override
   List<Object?> get props => [
-        internshipID,
-        studentName,
-        studentEmail,
-        subjectTitle,
-        supervisorName,
-        encadrantProID,
-        typeStage,
-        dateDebut,
-        dateFin,
-        statut,
-        estRemunere,
-        montantRemuneration,
-        etudiantID,
-        sujetID,
-        description,
-        companyID,
-        encadrantPedaID,
-        encadrantPedaName,
-        studentID,
-        encadrantProName,
-        encadrantEvaluation, // Include the new Evaluation field in props
-      ];
+    internshipID,
+    studentName,
+    studentEmail,
+    subjectTitle,
+    supervisorName,
+    encadrantProID,
+    encadrantAcademiqueID, // NEW: Add to props
+    typeStage,
+    dateDebut,
+    dateFin,
+    statut,
+    estRemunere,
+    montantRemuneration,
+    etudiantID,
+    sujetID,
+    description,
+    companyID,
+    encadrantPedaID,
+    encadrantPedaName,
+    studentID,
+    encadrantProName,
+    encadrantEvaluation, // Include the new Evaluation field in props
+  ];
 
   // The operator == and hashCode are handled by Equatable,
   // so you typically don't need to override them explicitly unless you want custom logic.

@@ -1,8 +1,10 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Model/Stats/internships_distribution.dart'; // Your updated model
 import 'package:pfa/Screens/Gestionnaire/dashboard_charts.dart'; // Assuming CustomPieChart and CustomBarChart are here
 import 'package:pfa/cubit/stats_cubit.dart';
+import 'package:pfa/Utils/Widgets/statcard.dart'; // Assuming StatCard is available here
 
 class Statistics extends StatefulWidget {
   const Statistics({super.key});
@@ -99,7 +101,7 @@ class _StatisticsState extends State<Statistics> {
                   ),
                   const SizedBox(height: 20),
 
-                  // --- NEW: Faculty Internship Summary (Table/List) ---
+                  // --- Faculty Internship Summary (Table/List) ---
                   const Text(
                     'Faculty Internship Summary',
                     style: TextStyle(
@@ -109,7 +111,6 @@ class _StatisticsState extends State<Statistics> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Check if data exists before trying to build the table
                   if (allDistributions.facultyInternshipSummary != null &&
                       allDistributions.facultyInternshipSummary!.isNotEmpty)
                     Card(
@@ -118,7 +119,6 @@ class _StatisticsState extends State<Statistics> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: SingleChildScrollView(
-                          // Allow horizontal scrolling for table if needed
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
                             columnSpacing: 20,
@@ -221,6 +221,43 @@ class _StatisticsState extends State<Statistics> {
                             in allDistributions.subjectDistribution ?? [])
                           d.subjectTitle!: d.count!,
                       },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // --- Financial Overview Section ---
+                  const Text(
+                    'Financial Overview',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  StatCard(
+                    title: 'Total Remunerations Paid',
+                    value:
+                        'TND ${allDistributions.totalFinancialExpenses?.toStringAsFixed(2) ?? '0.00'}',
+                    icon: Icons.wallet,
+                    color: Colors.purple, // A distinct color for financial data
+                  ),
+                  const SizedBox(height: 20),
+
+                  // --- NEW: Annual Financial Expenses Chart (Line Chart) ---
+                  SizedBox(
+                    height: 300, // Explicit height for the chart container
+                    child: CustomLineChart(
+                      // Changed to CustomLineChart
+                      title: 'Annual Remunerations Paid',
+                      data: {
+                        for (var d
+                            in allDistributions.annualFinancialExpenses ?? [])
+                          d.year!.toString(): d
+                              .annualExpenses!, // Map year to string key, amount to value
+                      },
+                      xAxisTitle: 'Year',
+                      yAxisTitle: 'Amount Paid (TND)',
                     ),
                   ),
                   const SizedBox(height: 20),

@@ -69,6 +69,7 @@ class AttestationErrorState extends InternshipState {
   final String message;
   AttestationErrorState(this.message);
 }
+
 // --- END NEW ATTESTATION STATES ---
 
 // --- Internship Cubit ---

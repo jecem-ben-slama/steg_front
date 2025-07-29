@@ -1,3 +1,5 @@
+import 'package:equatable/equatable.dart';
+
 class InternshipDistribution {
   String? status;
   Data? data;
@@ -24,17 +26,21 @@ class Data {
   List<TypeDistribution>? typeDistribution;
   List<DurationDistribution>? durationDistribution;
   List<EncadrantDistribution>? encadrantDistribution;
-  List<FacultyInternshipSummary>?
-  facultyInternshipSummary; // RENAMED AND UPDATED
+  List<FacultyInternshipSummary>? facultyInternshipSummary;
   List<SubjectDistribution>? subjectDistribution;
+  double? totalFinancialExpenses;
+  List<AnnualFinancialExpense>?
+  annualFinancialExpenses; // NEW FIELD: For annual expenses
 
   Data({
     this.statusDistribution,
     this.typeDistribution,
     this.durationDistribution,
     this.encadrantDistribution,
-    this.facultyInternshipSummary, // RENAMED AND UPDATED
+    this.facultyInternshipSummary,
     this.subjectDistribution,
+    this.totalFinancialExpenses,
+    this.annualFinancialExpenses, // NEW: Add to constructor
   });
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -58,19 +64,23 @@ class Data {
         : (json["encadrant_distribution"] as List)
               .map((e) => EncadrantDistribution.fromJson(e))
               .toList();
-    facultyInternshipSummary =
-        json["faculty_internship_summary"] ==
-            null // UPDATED KEY
+    facultyInternshipSummary = json["faculty_internship_summary"] == null
         ? null
         : (json["faculty_internship_summary"] as List)
-              .map(
-                (e) => FacultyInternshipSummary.fromJson(e),
-              ) // UPDATED CLASS NAME
+              .map((e) => FacultyInternshipSummary.fromJson(e))
               .toList();
     subjectDistribution = json["subject_distribution"] == null
         ? null
         : (json["subject_distribution"] as List)
               .map((e) => SubjectDistribution.fromJson(e))
+              .toList();
+    totalFinancialExpenses = (json["total_financial_expenses"] as num?)
+        ?.toDouble();
+    // NEW: Parse annual_financial_expenses
+    annualFinancialExpenses = json["annual_financial_expenses"] == null
+        ? null
+        : (json["annual_financial_expenses"] as List)
+              .map((e) => AnnualFinancialExpense.fromJson(e))
               .toList();
   }
 
@@ -97,17 +107,46 @@ class Data {
           .toList();
     }
     if (facultyInternshipSummary != null) {
-      // UPDATED KEY
-      newData["faculty_internship_summary"] =
-          facultyInternshipSummary // UPDATED CLASS NAME
-              ?.map((e) => e.toJson())
-              .toList();
+      newData["faculty_internship_summary"] = facultyInternshipSummary
+          ?.map((e) => e.toJson())
+          .toList();
     }
     if (subjectDistribution != null) {
       newData["subject_distribution"] = subjectDistribution
           ?.map((e) => e.toJson())
           .toList();
     }
+    if (totalFinancialExpenses != null) {
+      newData["total_financial_expenses"] = totalFinancialExpenses;
+    }
+    // NEW: Include annual_financial_expenses in toJson
+    if (annualFinancialExpenses != null) {
+      newData["annual_financial_expenses"] = annualFinancialExpenses
+          ?.map((e) => e.toJson())
+          .toList();
+    }
+    return newData;
+  }
+}
+
+// NEW CLASS: To represent annual financial expense data
+class AnnualFinancialExpense {
+  int? year;
+  double? annualExpenses;
+
+  AnnualFinancialExpense({this.year, this.annualExpenses});
+
+  factory AnnualFinancialExpense.fromJson(Map<String, dynamic> json) {
+    return AnnualFinancialExpense(
+      year: json["year"] as int?,
+      annualExpenses: (json["annualExpenses"] as num?)?.toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> newData = <String, dynamic>{};
+    newData["year"] = year;
+    newData["annualExpenses"] = annualExpenses;
     return newData;
   }
 }
@@ -131,14 +170,12 @@ class SubjectDistribution {
   }
 }
 
-// RENAMED and MODIFIED from FacultyDistribution
 class FacultyInternshipSummary {
   String? facultyName;
-  int? totalStudents; // New field
-  int?
-  totalInternships; // New field (was 'count' in old structure, but now clearer)
-  int? validatedInternships; // New field
-  double? successRate; // New field
+  int? totalStudents;
+  int? totalInternships;
+  int? validatedInternships;
+  double? successRate;
 
   FacultyInternshipSummary({
     this.facultyName,
@@ -151,11 +188,9 @@ class FacultyInternshipSummary {
   FacultyInternshipSummary.fromJson(Map<String, dynamic> json) {
     facultyName = json["facultyName"];
     totalStudents = json["totalStudents"];
-    totalInternships =
-        json["totalInternships"]; // Corresponds to total internships from this faculty
+    totalInternships = json["totalInternships"];
     validatedInternships = json["validatedInternships"];
-    successRate = (json["successRate"] as num?)
-        ?.toDouble(); // Cast num to double, handle null
+    successRate = (json["successRate"] as num?)?.toDouble();
   }
 
   Map<String, dynamic> toJson() {
