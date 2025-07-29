@@ -21,12 +21,6 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController cinController = TextEditingController();
-  final TextEditingController niveau_etudeController =
-      TextEditingController(); // Renamed
-  final TextEditingController faculteController =
-      TextEditingController(); // Renamed
-  final TextEditingController cycleController = TextEditingController();
-  final TextEditingController specialiteController = TextEditingController();
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -36,6 +30,27 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   String? _displayMessage;
   MessageType _displayMessageType = MessageType.none;
   Timer? _messageTimer;
+
+  // Lists for dropdown options
+  final List<String> niveauEtudeOptions = ['Anneé 1', 'Anneé 2', 'Anneé 3'];
+
+  final List<String> facultesOptions = [
+    "FST",
+    "ISTIC",
+    "ISET",
+    "FSEG",
+    "Ecole Ingernieur",
+  ];
+
+  final List<String> specialitiesOptions = ["Info", "Electronique", "Reseau"];
+
+  final List<String> cycleOptions = ["Licence", "Master", "ingénierie"];
+
+  // State variables for selected dropdown values
+  String? selectedNiveauEtude;
+  String? selectedFaculte;
+  String? selectedSpeciality;
+  String? selectedCycle;
 
   @override
   void initState() {
@@ -50,10 +65,6 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
     lastnameController.dispose();
     emailController.dispose();
     cinController.dispose();
-    niveau_etudeController.dispose(); // Dispose renamed controller
-    faculteController.dispose(); // Dispose renamed controller
-    cycleController.dispose();
-    specialiteController.dispose();
     _messageTimer?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
@@ -71,11 +82,11 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
     lastnameController.clear();
     emailController.clear();
     cinController.clear();
-    niveau_etudeController.clear(); // Clear renamed controller
-    faculteController.clear(); // Clear renamed controller
-    cycleController.clear();
-    specialiteController.clear();
     setState(() {
+      selectedNiveauEtude = null;
+      selectedFaculte = null;
+      selectedSpeciality = null;
+      selectedCycle = null;
       editingStudent = null;
       isFormVisible = false;
     });
@@ -87,13 +98,11 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
     lastnameController.text = student.lastname;
     emailController.text = student.email;
     cinController.text = student.cin ?? '';
-    niveau_etudeController.text =
-        student.niveau_etude ?? ''; // Populate renamed controller
-    faculteController.text =
-        student.faculte ?? ''; // Populate renamed controller
-    cycleController.text = student.cycle ?? '';
-    specialiteController.text = student.specialite ?? '';
     setState(() {
+      selectedNiveauEtude = student.niveau_etude;
+      selectedFaculte = student.faculte;
+      selectedCycle = student.cycle;
+      selectedSpeciality = student.specialite;
       editingStudent = student;
       isFormVisible = true;
     });
@@ -115,22 +124,10 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
       lastname: lastnameController.text,
       email: emailController.text,
       cin: cinController.text.isNotEmpty ? cinController.text : null,
-      niveau_etude:
-          niveau_etudeController
-              .text
-              .isNotEmpty // Use renamed field
-          ? niveau_etudeController.text
-          : null,
-      faculte:
-          faculteController
-              .text
-              .isNotEmpty // Use renamed field
-          ? faculteController.text
-          : null,
-      cycle: cycleController.text.isNotEmpty ? cycleController.text : null,
-      specialite: specialiteController.text.isNotEmpty
-          ? specialiteController.text
-          : null,
+      niveau_etude: selectedNiveauEtude,
+      faculte: selectedFaculte,
+      cycle: selectedCycle,
+      specialite: selectedSpeciality,
     );
 
     try {
@@ -278,9 +275,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                 ),
                 IconButton(
                   onPressed: () {
-                    if (isFormVisible && editingStudent != null) {
-                      _clearForm();
-                    }
+                   
                     _toggleFormVisibility();
                   },
                   icon: Icon(isFormVisible ? Icons.arrow_circle_up : Icons.add),
@@ -358,7 +353,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                               ),
                               const SizedBox(height: 10),
 
-                              // Row 3: CIN and Niveau d'étude
+                              // Row 3: CIN and Niveau d'étude (Dropdown)
                               Row(
                                 children: [
                                   Expanded(
@@ -373,58 +368,138 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: TextFormField(
-                                      controller:
-                                          niveau_etudeController, // Updated controller
+                                    child: DropdownButtonFormField<String>(
+                                      value: selectedNiveauEtude,
                                       decoration: const InputDecoration(
-                                        labelText:
-                                            'Niveau d\'étude', // Updated label
+                                        labelText: 'Niveau d\'étude',
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.school),
                                       ),
+                                      items: niveauEtudeOptions
+                                          .map<DropdownMenuItem<String>>((
+                                            String value,
+                                          ) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          })
+                                          .toList(),
+                                      onChanged: (String? newValue) {},
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a Niveau d\'étude.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 10),
 
-                              // Row 4: Faculté and Cycle
+                              // Row 4: Faculté (Dropdown) and Cycle (Dropdown)
                               Row(
                                 children: [
                                   Expanded(
-                                    child: TextFormField(
-                                      controller:
-                                          faculteController, // Updated controller
+                                    child: DropdownButtonFormField<String>(
+                                      value: selectedFaculte,
                                       decoration: const InputDecoration(
-                                        labelText: 'Faculté', // Updated label
+                                        labelText: 'Faculté',
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.apartment),
                                       ),
+                                      items: facultesOptions
+                                          .map<DropdownMenuItem<String>>((
+                                            String value,
+                                          ) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          })
+                                          .toList(),
+
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          selectedFaculte = newValue;
+                                          selectedSpeciality =
+                                              null; // Clear speciality if faculty changes
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a Faculté.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: TextFormField(
-                                      controller: cycleController,
+                                    child: DropdownButtonFormField<String>(
+                                      value: selectedCycle,
                                       decoration: const InputDecoration(
                                         labelText: 'Cycle',
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.repeat),
                                       ),
+                                      items: cycleOptions
+                                          .map<DropdownMenuItem<String>>((
+                                            String value,
+                                          ) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(value),
+                                            );
+                                          })
+                                          .toList(),
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          selectedCycle = newValue;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a Cycle.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 10),
 
-                              // Row 5: Spécialité (now a single field row or integrate into previous row if space allows)
-                              TextFormField(
-                                controller: specialiteController,
+                              // Row 5: Spécialité (Dropdown)
+                              DropdownButtonFormField<String>(
+                                value: selectedSpeciality,
                                 decoration: const InputDecoration(
                                   labelText: 'Spécialité',
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.category),
                                 ),
+                                items: specialitiesOptions
+                                    .map<DropdownMenuItem<String>>((
+                                      String value,
+                                    ) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    })
+                                    .toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    selectedSpeciality = newValue;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select a Spécialité.';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 20),
 

@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:pfa/Model/encadrant_internships_model.dart';
 import 'package:pfa/Model/finished_internship_model.dart';
-import 'package:pfa/Model/internship_model.dart';
 import 'package:pfa/Model/note_model.dart'; // Import the NoteModel
 
 class EncadrantRepository {
@@ -11,30 +11,43 @@ class EncadrantRepository {
   // Constructor: Takes a Dio instance (typically from AuthService)
   EncadrantRepository({required Dio dio}) : _dio = dio;
 
-  //* Fetch All Assigned Internships for Encadrant
-  Future<List<Internship>> getAssignedInternships() async {
+   //* Fetch All Assigned Internships for Encadrant
+  Future<List<AssignedInternship>> getAssignedInternships() async {
     try {
       final response = await _dio.get(
         '$_encadrantPath/get_encadrant_internships.php',
       );
 
-      if (response.statusCode == 200 &&
-          response.data != null &&
-          response.data['status'] == 'success') {
-        final List<dynamic> internshipJsonList = response.data['data'];
-        return internshipJsonList
-            .map((json) => Internship.fromJson(json))
-            .toList();
+      // We now expect the entire response to conform to InternshipResponse structure
+      if (response.statusCode == 200 && response.data != null) {
+        // Parse the entire response body into our InternshipResponse model
+        final AssignedInternshipResponse internshipResponse =
+            AssignedInternshipResponse.fromJson(response.data);
+
+        if (internshipResponse.status == 'success') {
+          return internshipResponse.data; // Return the list of Internships
+        } else {
+          // If the status is not 'success' but the request itself was 200 OK,
+          // it means the server sent a business-logic error message.
+          throw Exception(
+              'Failed to fetch internships: ${internshipResponse.message}');
+        }
       } else {
+        // Handle cases where statusCode is not 200 or response.data is null unexpectedly
         throw Exception(
-          'Failed to fetch internships: ${response.data?['message'] ?? response.statusMessage}',
+          'Failed to fetch internships: ${response.statusMessage ?? 'Unknown error'}',
         );
       }
     } on DioException catch (e) {
       String errorMessage = 'Failed to fetch internships.';
       if (e.response != null) {
-        errorMessage =
-            'Server error: ${e.response?.statusCode} - ${e.response?.data['message'] ?? e.response?.statusMessage}';
+        // Attempt to parse the server's error message from the response data
+        final responseData = e.response?.data;
+        if (responseData != null && responseData is Map<String, dynamic> && responseData.containsKey('message')) {
+          errorMessage = 'Server error: ${e.response?.statusCode} - ${responseData['message']}';
+        } else {
+          errorMessage = 'Server error: ${e.response?.statusCode} - ${e.response?.statusMessage ?? 'No message'}';
+        }
       } else {
         errorMessage = 'Network error: ${e.message}';
       }
@@ -44,6 +57,7 @@ class EncadrantRepository {
       print('General Error fetching internships: $e');
       rethrow; // Re-throw any other unexpected errors
     }
+  
   }
 
   //* Fetch Internship Notes (NEW METHOD)

@@ -31,12 +31,6 @@ class _CertificatesState extends State<Certificates> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Generate Attestations'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
       body: BlocConsumer<InternshipCubit, InternshipState>(
         listener: (context, state) {
           // Listen for AttestationLoaded to generate PDF

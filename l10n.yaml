@@ -1,0 +1,5 @@
+# l10n.yaml
+arb-dir: lib/Utils/l10n # Directory where your .arb files will be stored
+template-arb-file: app_en.arb # The base file for English (or your default language)
+output-localization-file: app_localizations.dart # The name of the generated Dart file
+untranslated-messages-file: untranslated_messages.txt # Optional: to track untranslated keys

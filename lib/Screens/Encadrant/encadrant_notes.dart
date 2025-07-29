@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Screens/Encadrant/add_note.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
-import 'package:pfa/Model/internship_model.dart';
-import 'package:pfa/Model/note_model.dart';
+
 import 'package:pfa/Utils/snackbar.dart';
 
 class EncadrantNotesPage extends StatefulWidget {
@@ -107,7 +106,7 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                       itemBuilder: (context, index) {
                         final internship = state.internships[index];
                         final bool isCurrentlyExpanded =
-                            _expandedInternshipId == internship.internshipID;
+                            _expandedInternshipId == internship.stageID;
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 16.0),
@@ -117,24 +116,14 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                           ),
                           child: ExpansionTile(
                             key: ValueKey(
-                              internship.internshipID,
+                              internship.stageID,
                             ), // Important for ExpansionTile state
                             initiallyExpanded: isCurrentlyExpanded,
                             onExpansionChanged: (expanded) {
-                              if (internship.internshipID != null) {
-                                _onExpansionChanged(
-                                  expanded,
-                                  internship.internshipID!,
-                                );
-                              } else {
-                                showFailureSnackBar(
-                                  context,
-                                  "Internship ID is missing.",
-                                );
-                              }
+                              _onExpansionChanged(expanded, internship.stageID);
                             },
                             title: Text(
-                              '${internship.studentName ?? 'N/A'} - ${internship.subjectTitle ?? 'N/A'}',
+                              '${internship.studentFirstName} ${internship.studentLastName}  - ${internship.subjectTitle ?? 'N/A'}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -143,12 +132,10 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Type: ${internship.typeStage ?? 'N/A'}'),
+                                Text('Type: ${internship.typeStage}'),
+
                                 Text(
-                                  'Supervisor: ${internship.supervisorName ?? 'N/A'}',
-                                ),
-                                Text(
-                                  'Status: ${internship.statut ?? 'N/A'}',
+                                  'Status: ${internship.statut}',
                                   style: TextStyle(
                                     color: _getStatusColor(internship.statut),
                                     fontWeight: FontWeight.bold,
@@ -164,15 +151,15 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                                   buildWhen: (previous, current) =>
                                       (current is NoteActionLoading &&
                                           current.targetInternshipId ==
-                                              internship.internshipID) ||
+                                              internship.stageID) ||
                                       (previous is NoteActionLoading &&
                                           previous.targetInternshipId ==
-                                              internship.internshipID &&
-                                          !(current is NoteActionLoading)),
+                                              internship.stageID &&
+                                          current is! NoteActionLoading),
                                   builder: (context, state) {
                                     if (state is NoteActionLoading &&
                                         state.targetInternshipId ==
-                                            internship.internshipID) {
+                                            internship.stageID) {
                                       return const SizedBox(
                                         width:
                                             24, // Allocate space for indicator
@@ -189,26 +176,19 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                                       ),
                                       tooltip: 'Add Note',
                                       onPressed: () {
-                                        if (internship.internshipID != null) {
-                                          showDialog(
-                                            context: context,
-                                            builder: (dialogContext) {
-                                              return BlocProvider.value(
-                                                value: context
-                                                    .read<EncadrantCubit>(),
-                                                child: AddNoteDialog(
-                                                  internshipId:
-                                                      internship.internshipID!,
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        } else {
-                                          showFailureSnackBar(
-                                            context,
-                                            "Internship ID is missing.",
-                                          );
-                                        }
+                                        showDialog(
+                                          context: context,
+                                          builder: (dialogContext) {
+                                            return BlocProvider.value(
+                                              value: context
+                                                  .read<EncadrantCubit>(),
+                                              child: AddNoteDialog(
+                                                internshipId:
+                                                    internship.stageID,
+                                              ),
+                                            );
+                                          },
+                                        );
                                       },
                                     );
                                   },
@@ -221,9 +201,7 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                             children: <Widget>[
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
-                                child: _buildNotesSection(
-                                  internship.internshipID!,
-                                ),
+                                child: _buildNotesSection(internship.stageID),
                               ),
                             ],
                           ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pfa/Model/internship_model.dart';
+import 'package:pfa/Model/encadrant_internships_model.dart';
 import 'package:pfa/Screens/Encadrant/assign_subject.dart';
+import 'package:pfa/Utils/Consts/style.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
 import 'package:pfa/cubit/subject_cubit.dart';
 
@@ -11,6 +12,21 @@ class EncadrantDashboardScreen extends StatefulWidget {
   @override
   State<EncadrantDashboardScreen> createState() =>
       _EncadrantDashboardScreenState();
+}
+
+Color _getStatusColor(String? status) {
+  switch (status?.toLowerCase()) {
+    case 'validé':
+      return Colors.green;
+    case 'Proposé':
+      return Colors.orange;
+    case 'refusé':
+      return Colors.red;
+    case 'En cours':
+      return Colors.blue;
+    default:
+      return Colors.grey;
+  }
 }
 
 class _EncadrantDashboardScreenState extends State<EncadrantDashboardScreen> {
@@ -26,7 +42,7 @@ class _EncadrantDashboardScreenState extends State<EncadrantDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Encadrant Dashboard')),
+      backgroundColor: MyColors.lightBlue,
       body: BlocConsumer<EncadrantCubit, EncadrantState>(
         listener: (context, state) {
           if (state is EncadrantActionSuccess) {
@@ -61,7 +77,7 @@ class _EncadrantDashboardScreenState extends State<EncadrantDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Student: ${internship.studentName}',
+                          'Student: ${internship.studentFirstName} ${internship.studentLastName}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -69,11 +85,17 @@ class _EncadrantDashboardScreenState extends State<EncadrantDashboardScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        Text('Title: ${internship.subjectTitle ?? 'N/A'}'),
+                        Text('Internship Type: ${internship.typeStage}'),
                         Text(
                           'Subject: ${internship.subjectTitle ?? 'Not Assigned'}',
                         ),
-                        Text('Status: ${internship.statut ?? ""}'),
+                        Text(
+                          'Status: ${internship.statut}',
+                          style: TextStyle(
+                            color: _getStatusColor(internship.statut),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         // Only show "Assign Subject" if no subject is assigned
                         if (internship.subjectTitle == null ||
@@ -85,8 +107,14 @@ class _EncadrantDashboardScreenState extends State<EncadrantDashboardScreen> {
                             child: ElevatedButton.icon(
                               onPressed: () =>
                                   _showAssignSubjectDialog(context, internship),
-                              icon: const Icon(Icons.assignment),
-                              label: const Text('Assign Subject'),
+                              icon: const Icon(
+                                Icons.assignment,
+                                color: MyColors.darkBlue,
+                              ),
+                              label: const Text(
+                                'Assign Subject',
+                                style: TextStyle(color: MyColors.darkBlue),
+                              ),
                             ),
                           ),
                         // Show "Subject Assignment in Progress" if loading for this specific internship
@@ -123,7 +151,10 @@ class _EncadrantDashboardScreenState extends State<EncadrantDashboardScreen> {
   }
 
   // Function to show the assign subject dialog
-  void _showAssignSubjectDialog(BuildContext context, Internship internship) {
+  void _showAssignSubjectDialog(
+    BuildContext context,
+    AssignedInternship internship,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {

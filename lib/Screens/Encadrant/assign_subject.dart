@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import 'package:pfa/Model/internship_model.dart';
+import 'package:pfa/Model/encadrant_internships_model.dart';
 import 'package:pfa/Model/subject_model.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
 import 'package:pfa/cubit/subject_cubit.dart';
 
 class AssignSubjectDialog extends StatefulWidget {
-  final Internship internship;
+  final AssignedInternship internship;
 
   const AssignSubjectDialog({super.key, required this.internship});
 
@@ -21,7 +20,7 @@ class _AssignSubjectDialogState extends State<AssignSubjectDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Assign Subject to ${widget.internship.studentName}'),
+      title: Text('Assign Subject to ${widget.internship.studentFirstName} ${widget.internship.studentLastName} '),
       content: SingleChildScrollView(
         child: BlocConsumer<SubjectCubit, SubjectState>(
           listener: (context, state) {
@@ -76,7 +75,7 @@ class _AssignSubjectDialogState extends State<AssignSubjectDialog> {
                             context
                                 .read<EncadrantCubit>()
                                 .assignSubjectToInternship(
-                                  widget.internship.internshipID!,
+                                  widget.internship.stageID,
                                   _selectedSubject!.subjectID!,
                                 );
                             Navigator.of(context).pop(); // Close the dialog

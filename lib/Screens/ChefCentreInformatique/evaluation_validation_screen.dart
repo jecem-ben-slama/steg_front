@@ -74,7 +74,6 @@ class _EvaluationValidationScreenState
                 context.read<ChefCentreCubit>().validateOrRejectEvaluation(
                   evaluationID: evaluationID,
                   actionType: 'reject',
-                  
                 );
               },
               child: const Text(
@@ -91,10 +90,6 @@ class _EvaluationValidationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Evaluations for Validation'),
-        backgroundColor: Colors.blue.shade700,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

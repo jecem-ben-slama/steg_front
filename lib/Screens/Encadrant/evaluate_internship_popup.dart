@@ -98,8 +98,8 @@ class _EvaluateInternshipPopupState extends State<EvaluateInternshipPopup> {
                     final double? parsedNote = double.tryParse(value);
                     if (parsedNote == null ||
                         parsedNote < 0 ||
-                        parsedNote > 10) {
-                      return 'Note must be a number between 0 and 10.';
+                        parsedNote > 20) {
+                      return 'Note must be a number between 0 and 20.';
                     }
                     return null;
                   },

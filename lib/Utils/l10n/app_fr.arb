@@ -1,0 +1,61 @@
+{
+  "@@locale": "fr",
+  "loginTitle": "Connexion",
+  "welcomeBack": "Bienvenue de retour !",
+  "email": "E-mail",
+  "password": "Mot de passe",
+  "login": "Se connecter",
+  "forgotPassword": "Mot de passe oublié ?",
+  "loginFailedError": "Échec de connexion : {error}",
+  "@loginFailedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "unknownRole": "Rôle d'utilisateur inconnu. Déconnexion.",
+  "emailRequired": "L'e-mail est requis.",
+  "passwordRequired": "Le mot de passe est requis.",
+  "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+  "confirmDeletion": "Confirmer la suppression",
+  "deleteConfirmationContent": "Êtes-vous sûr de vouloir supprimer ce stage ? Cette action est irréversible.",
+  "cancel": "Annuler",
+  "delete": "Supprimer",
+  "searchHint": "Rechercher par étudiant, sujet, encadrant, statut...",
+  "statusLabel": "Statut",
+  "typeLabel": "Type",
+  "all": "Tout",
+  "validated": "Validé",
+  "pending": "En attente",
+  "rejected": "Refusé",
+  "proposed": "Proposé",
+  "pfa": "PFA",
+  "pfe": "PFE",
+  "ouvrierInternship": "Stage Ouvrier",
+  "activeInternships": "Stages Actifs",
+  "totalEncadrants": "Total Encadrants",
+  "pendingEvaluations": "Évaluations en attente",
+  "errorLoadingStatistics": "Erreur lors du chargement des statistiques : {message}",
+  "@errorLoadingStatistics": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "retryStats": "Réessayer les statistiques",
+  "manageStudent": "Gérer les étudiants",
+  "manageSubject": "Gérer les sujets",
+  "manageSupervisor": "Gérer les encadrants",
+  "internships": "Stages",
+  "addInternship": "Ajouter un stage",
+  "studentName": "Nom de l'étudiant",
+  "subject": "Sujet",
+  "supervisor": "Encadrant",
+  "type": "Type",
+  "startDate": "Date de début",
+  "endDate": "Date de fin",
+  "status": "Statut",
+  "actions": "Actions",
+  "na": "N/A",
+  "internshipIdMissing": "L'ID du stage est manquant pour la suppression.",
+  "noMatchingInternships": "Aucun stage correspondant aux filtres actuels.",
+  "noInternshipsFound": "Aucun stage trouvé."
+}

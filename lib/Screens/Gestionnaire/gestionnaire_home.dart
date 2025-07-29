@@ -94,18 +94,14 @@ class _GestionnaireHomeState extends State<GestionnaireHome> {
                         children: [
                           SizedBox(height: screenHeight * 0.05),
                           //* Logo
-                          const CircleAvatar(
+                          CircleAvatar(
                             radius: 32,
                             backgroundColor: Colors.white,
-                            child: Icon(
-                              Icons.dashboard,
-                              color: Color(0xFF0A2847),
-                              size: 40,
-                            ),
+                            child: Image.asset('assets/STEG.png'),
                           ),
                           SizedBox(height: screenHeight * 0.05),
                           Text(
-                            "Micon Protocol",
+                            "CTI",
                             style: TextStyle(
                               fontSize: screenWidth * 0.02,
                               color: Colors.white,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Screens/Encadrant/evaluate_internship_popup.dart';
 import 'package:pfa/Utils/snackbar.dart';
-import 'package:pfa/cubit/encadrant_cubit.dart'; // Ensure this path is correct
+import 'package:pfa/cubit/encadrant_cubit.dart';
 
 class EncadrantFinishedInternshipsScreen extends StatefulWidget {
   const EncadrantFinishedInternshipsScreen({super.key});
@@ -17,24 +17,22 @@ class _EncadrantFinishedInternshipsScreenState
   @override
   void initState() {
     super.initState();
-    // Trigger fetching finished internships when the screen initializes
     context.read<EncadrantCubit>().fetchFinishedInternships();
   }
 
-  // Helper function to determine status color
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
       case 'validé':
         return Colors.green;
       case 'en attente':
         return Colors.orange;
-      case 'refusé': // For unvalidated/rejected by encadrant
+      case 'refusé':
         return Colors.red;
       case 'proposé':
         return Colors.blue;
       case 'en cours':
         return Colors.purple;
-      case 'terminé': // Assuming 'terminé' is the status before validation
+      case 'terminé':
         return Colors.grey.shade700;
       case 'accepté':
         return Colors.lightGreen;
@@ -43,10 +41,9 @@ class _EncadrantFinishedInternshipsScreenState
     }
   }
 
-  // Dialog to confirm unvalidation
   void _showUnvalidateConfirmationDialog(
     BuildContext context,
-    int internshipId,
+    int internshipId, // This is internshipID from the model
   ) {
     showDialog(
       context: context,
@@ -54,7 +51,7 @@ class _EncadrantFinishedInternshipsScreenState
         return AlertDialog(
           title: const Text('Confirm Unvalidation'),
           content: const Text(
-            'Are you sure you want to mark this internship as "Not Acceptable"? This will set its status to "Refusé" and clear your evaluation.',
+            'Are you sure you want to mark this internship as "Refused"? This will set its status to "Refusé" and clear your evaluation.',
           ),
           actions: <Widget>[
             TextButton(
@@ -70,14 +67,13 @@ class _EncadrantFinishedInternshipsScreenState
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop(); // Close the confirmation dialog
+                Navigator.of(dialogContext).pop();
                 context.read<EncadrantCubit>().evaluateInternship(
-                  stageID: internshipId,
+                  stageID:
+                      internshipId, // Pass internshipId (which is stageID in cubit method)
                   actionType: 'unvalidate',
-                  note: null, // Clear note on unvalidate
-                  commentaires: null, // Clear comments on unvalidate
+                  note: null,
+                  commentaires: null,
                 );
               },
             ),
@@ -90,21 +86,19 @@ class _EncadrantFinishedInternshipsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Finished Internships for Evaluation'),
-        backgroundColor: Colors.blue.shade700,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Internships Awaiting Your Final Evaluation',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey,
+            Center(
+              child: const Text(
+                'Internships Awaiting Your Final Evaluation',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -115,14 +109,11 @@ class _EncadrantFinishedInternshipsScreenState
                 } else if (state is EncadrantError) {
                   showFailureSnackBar(context, 'Error: ${state.message}');
                 }
-                // No need to handle FinishedInternshipsLoaded here, as it's handled in builder
               },
-              // buildWhen ensures the main list only rebuilds on relevant state changes
               buildWhen: (previous, current) =>
                   current is FinishedInternshipsLoading ||
                   current is FinishedInternshipsLoaded ||
                   current is EncadrantError ||
-                  // Also rebuild if an action loading state starts/ends on the finished internships list
                   (current is EvaluationActionLoading &&
                       previous is FinishedInternshipsLoaded) ||
                   (previous is EvaluationActionLoading &&
@@ -169,12 +160,14 @@ class _EncadrantFinishedInternshipsScreenState
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Subject: ${internship.subjectTitle}',
+                                  'Subject: ${internship.subjectTitle ?? 'N/A'}', // Use null-aware operator
                                   style: const TextStyle(fontSize: 16),
                                 ),
                                 const SizedBox(height: 4),
                                 Text('Type: ${internship.typeStage}'),
-                                Text('End Date: ${internship.dateFin}'),
+                                Text(
+                                  'End Date: ${internship.dateFin.toString().split(' ')[0]}',
+                                ), // Format date
                                 const SizedBox(height: 8),
                                 Text(
                                   'Current Status: ${internship.statut}',
@@ -185,7 +178,7 @@ class _EncadrantFinishedInternshipsScreenState
                                 ),
                                 if (internship.estRemunere)
                                   Text(
-                                    'Remuneration: ${internship.montantRemuneration.toStringAsFixed(2)} TND',
+                                    'Remuneration: ${internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} TND', // Use null-aware operator
                                   ),
                                 const SizedBox(height: 10),
                                 // Display Encadrant's evaluation if it exists
@@ -208,13 +201,7 @@ class _EncadrantFinishedInternshipsScreenState
                                         'Comments: ${internship.encadrantEvaluation!.commentaires?.isNotEmpty == true ? internship.encadrantEvaluation!.commentaires : 'No comments'}',
                                       ),
 
-                                      Text(
-                                        'Chef Centre Validated: Yes on ${internship.encadrantEvaluation!}',
-                                        style: const TextStyle(
-                                          color: Colors.blue,
-                                          fontStyle: FontStyle.italic,
-                                        ),
-                                      ),
+                                      // Corrected to show actual validation status
                                       const SizedBox(height: 10),
                                     ],
                                   )
@@ -232,8 +219,6 @@ class _EncadrantFinishedInternshipsScreenState
                                   ),
                                 // Action Buttons
                                 BlocBuilder<EncadrantCubit, EncadrantState>(
-                                  // This BlocBuilder specifically listens for EvaluationActionLoading
-                                  // to show/hide loading indicators on buttons for this specific internship.
                                   buildWhen: (previous, current) =>
                                       (current is EvaluationActionLoading &&
                                           current.targetStageId ==
@@ -254,8 +239,7 @@ class _EncadrantFinishedInternshipsScreenState
                                       children: [
                                         if (isLoadingForThisInternship)
                                           const SizedBox(
-                                            width:
-                                                24, // Allocate space for indicator
+                                            width: 24,
                                             height: 24,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
@@ -272,7 +256,7 @@ class _EncadrantFinishedInternshipsScreenState
                                                         .read<EncadrantCubit>(),
                                                     child: EvaluateInternshipPopup(
                                                       internshipId: internship
-                                                          .internshipID,
+                                                          .internshipID, // Use internshipID
                                                       currentNote: internship
                                                           .encadrantEvaluation
                                                           ?.note,
@@ -300,11 +284,12 @@ class _EncadrantFinishedInternshipsScreenState
                                             onPressed: () {
                                               _showUnvalidateConfirmationDialog(
                                                 context,
-                                                internship.internshipID,
+                                                internship
+                                                    .internshipID, // Use internshipID
                                               );
                                             },
                                             icon: const Icon(Icons.close),
-                                            label: const Text('Not Acceptable'),
+                                            label: const Text('Refuse'),
                                             style: OutlinedButton.styleFrom(
                                               foregroundColor: Colors.red,
                                               side: const BorderSide(
@@ -334,9 +319,7 @@ class _EncadrantFinishedInternshipsScreenState
                     ),
                   );
                 }
-                return const Expanded(
-                  child: SizedBox.shrink(),
-                ); // Default empty state
+                return const Expanded(child: SizedBox.shrink());
               },
             ),
           ],

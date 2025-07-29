@@ -1,9 +1,9 @@
 // lib/cubits/encadrant_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:pfa/Model/internship_model.dart';
+import 'package:pfa/Model/encadrant_internships_model.dart';
 import 'package:pfa/Model/note_model.dart';
-import 'package:pfa/Model/finished_internship_model.dart'; // Import finished internship model
+import 'package:pfa/Model/finished_internship_model.dart';
 import 'package:pfa/Repositories/encadrant_repo.dart';
 
 // --- States ---
@@ -31,7 +31,7 @@ class NoteActionLoading extends EncadrantState {
 class FinishedInternshipsLoading extends EncadrantState {}
 
 class EncadrantLoaded extends EncadrantState {
-  final List<Internship> internships;
+  final List<AssignedInternship> internships; // Changed to AssignedInternship
   const EncadrantLoaded(this.internships);
 
   @override
@@ -94,7 +94,8 @@ class EncadrantError extends EncadrantState {
 class EncadrantCubit extends Cubit<EncadrantState> {
   final EncadrantRepository _encadrantRepository;
   // Hold the last successfully loaded internships to keep them visible
-  List<Internship> _lastLoadedInternships = [];
+  List<AssignedInternship> _lastLoadedInternships =
+      []; // Changed to AssignedInternship
   // Hold the last successfully loaded finished internships
   List<FinishedInternship> _lastLoadedFinishedInternships = [];
 
@@ -104,6 +105,7 @@ class EncadrantCubit extends Cubit<EncadrantState> {
   Future<void> fetchAssignedInternships() async {
     try {
       emit(EncadrantLoading());
+      // The repository method should now return List<AssignedInternship>
       final internships = await _encadrantRepository.getAssignedInternships();
       _lastLoadedInternships = internships; // Store for later
       emit(EncadrantLoaded(internships));
@@ -130,6 +132,9 @@ class EncadrantCubit extends Cubit<EncadrantState> {
   }
 
   //* Add a new note to an internship
+  // Note: The `internship_model.dart` and `AssignedInternship` are identical
+  // so this method should work without changes, but it's good to be explicit
+  // about which model it expects if there were differences.
   Future<void> addNoteToInternship(int stageID, String contenuNote) async {
     try {
       emit(
@@ -240,6 +245,9 @@ class EncadrantCubit extends Cubit<EncadrantState> {
       emit(EncadrantError('Failed to assign subject: ${e.toString()}'));
       // Attempt to re-fetch assigned internships to ensure the list is up-to-date
       // even if the assignment failed (e.g., due to server error, not invalid input)
+      // This is a common pattern to ensure data consistency after an action.
+      // However, be mindful of potential infinite loops if the error constantly triggers a re-fetch that fails.
+      // For now, keeping it as is, assuming the re-fetch itself won't immediately re-error with the same problem.
       await fetchAssignedInternships();
     }
   }

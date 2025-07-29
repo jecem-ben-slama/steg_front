@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class EvaluationToValidate {
   final int evaluationID;
   final int stageID;

@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
-
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 //* Repositories
 import 'package:pfa/BLoc/Login/login_bloc.dart';
 import 'package:pfa/Services/login_service.dart';
-// ↑↑ was coded using the BLoC pattern, which was later changed to Cubit for the rest of the app
 import 'package:pfa/Repositories/login_repo.dart';
 import 'package:pfa/Repositories/internship_repo.dart';
 import 'package:pfa/repositories/student_repo.dart';
@@ -25,14 +25,16 @@ import 'package:pfa/cubit/user_cubit.dart';
 import 'package:pfa/cubit/chef_cubit.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
 import 'package:pfa/cubit/stats_cubit.dart';
-import 'package:pfa/cubit/subject_cubit.dart'; // <--- Ensure this import is present
+import 'package:pfa/cubit/subject_cubit.dart';
+
+// NEW: Import the LocaleProvider
+import 'package:pfa/Utils/locale_provider.dart';
 
 //* Screens
 import 'package:pfa/Screens/login.dart';
 import 'package:pfa/Screens/Gestionnaire/gestionnaire_home.dart';
 import 'package:pfa/Screens/Encadrant/encadrant_home.dart';
 import 'package:pfa/Screens/ChefCentreInformatique/chef_home.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,16 +56,15 @@ class _MyAppState extends State<MyApp> {
   late final InternshipRepository internshipRepository;
   late final UserRepository userRepository;
   late final SubjectRepository subjectRepository;
-  late final EncadrantRepository encadrantRepository; // <--- Declare here
-  late final ChefCentreRepository chefCentreRepository; // <--- Declare here
-  late final StatsRepository statsRepository; // <--- Declare here
-  late final StudentRepository studentRepository; // <--- Declare here
+  late final EncadrantRepository encadrantRepository;
+  late final ChefCentreRepository chefCentreRepository;
+  late final StatsRepository statsRepository;
+  late final StudentRepository studentRepository;
 
   @override
-  //* Configuration of Dio and Repositories
   void initState() {
     super.initState();
-    //? Initialize Dio with base options
+
     dio =
         Dio(
             BaseOptions(
@@ -80,25 +81,22 @@ class _MyAppState extends State<MyApp> {
           ..interceptors.add(
             LogInterceptor(responseBody: true, requestBody: true),
           );
-    //? Initialize Repositories
+
     loginService = LoginService(dio: dio);
     loginRepository = LoginRepository(loginService: loginService);
     userRepository = UserRepository(dio: dio);
     internshipRepository = InternshipRepository(dio: dio);
     subjectRepository = SubjectRepository(dio: dio);
-    encadrantRepository = EncadrantRepository(dio: dio); // <--- Initialize here
-    chefCentreRepository = ChefCentreRepository(
-      dio: dio,
-    ); // <--- Initialize here
-    statsRepository = StatsRepository(dio: dio); // <--- Initialize here
-    studentRepository = StudentRepository(dio: dio); // <--- Initialize here
+    encadrantRepository = EncadrantRepository(dio: dio);
+    chefCentreRepository = ChefCentreRepository(dio: dio);
+    statsRepository = StatsRepository(dio: dio);
+    studentRepository = StudentRepository(dio: dio);
 
     //_setDevToken(); // Uncomment if you use this for development tokens
 
     //* Router
-    //! Move the router initialization to a separate file
     router = GoRouter(
-      initialLocation: '/login',
+      initialLocation: '/login', // Set initial location directly to login
       refreshListenable: loginRepository,
       redirect: (BuildContext context, GoRouterState state) async {
         final bool loggedIn = await loginRepository.getToken() != null;
@@ -109,23 +107,25 @@ class _MyAppState extends State<MyApp> {
 
         final String location = state.matchedLocation;
         final bool tryingToLogin = location == '/login';
-        final bool tryingToSplash = location == '/';
 
+        // If not logged in
         if (!loggedIn) {
           debugPrint('GoRouter Redirect: User NOT logged in.');
-          if (tryingToLogin || tryingToSplash) {
-            debugPrint('GoRouter Redirect: Allowing access to login/splash.');
-            return null;
+          if (tryingToLogin) {
+            debugPrint('GoRouter Redirect: Allowing access to login.');
+            return null; // Allow access to login if not logged in
           } else {
             debugPrint(
-              'GoRouter Redirect: Redirecting to /login (not logged in).',
+              'GoRouter Redirect: Redirecting to /login (not logged in, trying protected route).',
             );
-            return '/login';
+            return '/login'; // Redirect to login for any other route
           }
         }
 
+        // If logged in
         debugPrint('GoRouter Redirect: User IS logged in.');
-        if (tryingToLogin || tryingToSplash) {
+        if (tryingToLogin) {
+          // If logged in and trying to access the login page, redirect to home based on role
           if (currentUserRole == 'Gestionnaire') {
             return '/gestionnaire/home';
           } else if (currentUserRole == 'Encadrant') {
@@ -139,7 +139,8 @@ class _MyAppState extends State<MyApp> {
           await loginRepository.deleteToken();
           return '/login';
         }
-        //!!! Change this to handle the new role
+
+        // Role-based access control for other routes (if already on a non-login route)
         if (currentUserRole == 'Gestionnaire') {
           if (location.startsWith('/encadrant') ||
               location.startsWith('/ChefCentreInformatique')) {
@@ -175,14 +176,9 @@ class _MyAppState extends State<MyApp> {
         debugPrint(
           'GoRouter Redirect: No redirect needed. Continuing to $location.',
         );
-        return null;
+        return null; // No redirect needed, allow access to current location
       },
       routes: <RouteBase>[
-        GoRoute(
-          path: '/',
-          builder: (BuildContext context, GoRouterState state) =>
-              const Scaffold(body: Center(child: CircularProgressIndicator())),
-        ),
         GoRoute(
           path: '/login',
           builder: (BuildContext context, GoRouterState state) =>
@@ -196,11 +192,9 @@ class _MyAppState extends State<MyApp> {
             child: const GestionnaireHome(),
           ),
         ),
-        
         GoRoute(
           path: '/encadrant/home',
           builder: (BuildContext context, GoRouterState state) =>
-              // EncadrantHome needs both EncadrantCubit and SubjectCubit
               MultiBlocProvider(
                 providers: [
                   BlocProvider<EncadrantCubit>(
@@ -208,7 +202,6 @@ class _MyAppState extends State<MyApp> {
                         EncadrantCubit(context.read<EncadrantRepository>()),
                   ),
                   BlocProvider<SubjectCubit>(
-                    // <--- ADDED THIS BlocProvider
                     create: (context) =>
                         SubjectCubit(context.read<SubjectRepository>()),
                   ),
@@ -225,20 +218,11 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  //! This function is used to set a development token for testing purposes.
   void _setDevToken() async {
     if (kDebugMode) {
       final prefs = await SharedPreferences.getInstance();
-      //*gestionnaire
       const String devToken =
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTI3Mzc5OTAsImV4cCI6MTc1MzM0Mjc5MCwiZGF0YSI6eyJ1c2VySUQiOjEsInVzZXJuYW1lIjoiZ2VzdGlvbm5haXJlIiwicm9sZSI6Ikdlc3Rpb25uYWlyZSJ9fQ.k9s5rMp5-dRAUWwNbOdV-P0YfV3AjOuG_AwJBrP9Ldk'; // Replace with YOUR token
-
-      //*encadrant
-      const String devToken1 =
-          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5NjEsImV4cCI6MTc1MzYyOTc2MSwiZGF0YSI6eyJ1c2VySUQiOjUsInVzZXJuYW1lIjoiRW5jYWRyYW50VXBkYXRlZCIsInJvbGUiOiJFbmNhZHJhbnQifX0.bJQJufOTJkBTRA2fEzzb0P7IcIDL_sUMXnnSCm1kh_s";
-      //* chef
-      const String devToken2 =
-          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTMwMjQ5MTEsImV4cCI6MTc1MzYyOTcxMSwiZGF0YSI6eyJ1c2VySUQiOjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJDaGVmQ2VudHJlSW5mb3JtYXRpcXVlIn19.LKXQ_w6WexprOW8oZqevmZapnHA6JrRlMZlPiwERGyU";
 
       await prefs.setString('jwt_token', devToken);
       debugPrint('Development token set in SharedPreferences.');
@@ -255,14 +239,11 @@ class _MyAppState extends State<MyApp> {
           create: (context) => StudentRepository(dio: dio),
         ),
         RepositoryProvider<SubjectRepository>(
-          // Provide SubjectRepository
           create: (context) => SubjectRepository(dio: dio),
         ),
         RepositoryProvider<InternshipRepository>(
-          // Provide InternshipRepository
           create: (context) => InternshipRepository(dio: dio),
         ),
-        // Changed to RepositoryProvider for EncadrantRepository
         RepositoryProvider<EncadrantRepository>(
           create: (context) => EncadrantRepository(dio: dio),
         ),
@@ -282,6 +263,7 @@ class _MyAppState extends State<MyApp> {
             create: (context) => LoginBloc(loginRepository: loginRepository),
           ),
           ChangeNotifierProvider<LoginRepository>.value(value: loginRepository),
+          // NEW: Provide LocaleProvider
           BlocProvider<InternshipCubit>(
             create: (context) => InternshipCubit(
               RepositoryProvider.of<InternshipRepository>(context),
@@ -307,11 +289,11 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
           BlocProvider<SubjectCubit>(
-            create: (context) => SubjectCubit(
-              RepositoryProvider.of<SubjectRepository>(context),
-            ),
+            create: (context) =>
+                SubjectCubit(RepositoryProvider.of<SubjectRepository>(context)),
           ),
         ],
+        // NEW: Use Consumer to rebuild MaterialApp when locale changes
         child: MaterialApp.router(
           routerConfig: router,
           debugShowCheckedModeBanner: false,

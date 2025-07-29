@@ -261,9 +261,6 @@ class _ManageUsersState extends State<ManageUsers> {
                 ),
                 IconButton(
                   onPressed: () {
-                    if (_editingUser != null) {
-                      _clearForm(); // Clear form if hiding and in edit mode
-                    }
                     _toggleFormVisibility(); // Use the renamed method
                   },
                   icon: Icon(

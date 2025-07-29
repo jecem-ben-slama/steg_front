@@ -22,12 +22,6 @@ class _StatisticsState extends State<Statistics> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Internship Statistics & Distributions'),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
       body: BlocBuilder<GestionnaireStatsCubit, GestionnaireStatsState>(
         builder: (context, state) {
           if (state is GestionnaireStatsLoading) {

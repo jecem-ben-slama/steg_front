@@ -19,24 +19,24 @@ class SidebarItemData {
 //* Sidebar items for Gestionnaire
 final List<SidebarItemData> gestionnaireSidebarItems = [
   const SidebarItemData(
-    icon: Icons.dashboard,
+    icon: Icons.dashboard_customize_outlined,
     label: "Dashboard",
     index: 0,
     roles: ['Gestionnaire'],
   ),
   const SidebarItemData(
-    icon: Icons.business,
-    label: "Papers",
+    icon: Icons.folder,
+    label: "Certificates",
     index: 1,
     roles: ['Gestionnaire'],
   ),
   const SidebarItemData(
-    icon: Icons.account_balance_wallet,
+    icon: Icons.bar_chart_rounded,
     label: "Accounting and Finance",
     index: 2,
     roles: ['Gestionnaire'],
   ),
-  
+
   const SidebarItemData(
     icon: Icons.access_time,
     label: "My Profile",
@@ -88,7 +88,7 @@ final List<SidebarItemData> chefSidebarItems = [
     roles: ['ChefCentreInformatique'],
   ),
   const SidebarItemData(
-    icon: Icons.person,
+    icon: Icons.grade,
     label: "Validate Evaluations",
     index: 2,
     roles: ['ChefCentreInformatique'],
