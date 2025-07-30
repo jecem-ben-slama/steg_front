@@ -107,7 +107,7 @@ class Internship extends Equatable {
       companyID: int.tryParse(json['entrepriseID']?.toString() ?? ''),
       encadrantPedaID: int.tryParse(json['encadrantPedaID']?.toString() ?? ''),
       encadrantPedaName:
-          json['encadrantPedaName'] as String?, // Assuming this exists
+          json['academicSupervisorName'] as String?, // Assuming this exists
       studentID: int.tryParse(
         json['studentID']?.toString() ?? '',
       ), // Keep if distinct from etudiantID

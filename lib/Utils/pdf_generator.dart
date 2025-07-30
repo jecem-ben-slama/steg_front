@@ -14,36 +14,6 @@ import 'package:pfa/Model/attestation_model.dart';
 import 'package:pfa/Model/internship_model.dart';
 
 class PdfGeneratorService {
-  // The _sendPdfToBackend logic is now moved to Certificates.dart
-  // and is called after PDF generation and download.
-  // So, this static method is no longer needed here.
-  /*
-  static Future<void> _sendPdfToBackend({
-    required BuildContext context,
-    required int stageId,
-    required Uint8List pdfBytes,
-    required String pdfType,
-    required String filename,
-  }) async {
-    try {
-      final documentRepository = RepositoryProvider.of<DocumentRepository>(
-        context,
-      );
-
-      await documentRepository.savePdfDocumentToBackend(
-        stageId: stageId,
-        pdfBytes: pdfBytes,
-        pdfType: pdfType,
-        filename: filename,
-      );
-      debugPrint('PDF sent to backend and recorded successfully!');
-    } catch (e) {
-      debugPrint('Error from DocumentRepository during PDF send: $e');
-      rethrow;
-    }
-  }
-  */
-
   static Future<Uint8List> generateAttestationPdf(
     BuildContext context, // Keep BuildContext if you use it for fonts or assets
     AttestationData data,
@@ -117,14 +87,7 @@ class PdfGeneratorService {
                   'A effectué un stage de type "${data.internship.typeStage}"',
                   style: pw.TextStyle(font: font, fontSize: 18),
                 ),
-                pw.Text(
-                  'Sur le sujet : "${data.subject.title ?? 'Non spécifié'}"',
-                  style: pw.TextStyle(
-                    font: font,
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
+
                 pw.SizedBox(height: 10),
                 pw.Text(
                   'Période : Du ${data.internship.dateDebut} au ${data.internship.dateFin}',
@@ -145,42 +108,7 @@ class PdfGeneratorService {
                     color: PdfColors.blue800,
                   ),
                 ),
-                pw.Text(
-                  'Email: ${data.supervisor.email ?? 'N/A'}',
-                  style: pw.TextStyle(
-                    font: font,
-                    fontSize: 14,
-                    color: PdfColors.grey700,
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Divider(),
-                pw.SizedBox(height: 20),
-                pw.Text(
-                  'Évaluation du stage :',
-                  style: pw.TextStyle(
-                    font: font,
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.Text(
-                  'Note : ${data.evaluation.note.toStringAsFixed(1)} / 10',
-                  style: pw.TextStyle(font: font, fontSize: 16),
-                ),
-                pw.Text(
-                  'Commentaires : ${data.evaluation.comments}',
-                  style: pw.TextStyle(font: font, fontSize: 16),
-                ),
-                pw.Text(
-                  'Date d\'évaluation : ${data.evaluation.dateEvaluation}',
-                  style: pw.TextStyle(
-                    font: font,
-                    fontSize: 14,
-                    color: PdfColors.grey700,
-                  ),
-                ),
-                pw.SizedBox(height: 30),
+
                 // Conditionally display QR Code section
                 if (qrCodePngBytes != null)
                   pw.Center(
@@ -217,12 +145,12 @@ class PdfGeneratorService {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text(
-                        'Fait à [Votre Ville], le ${DateTime.now().toIso8601String().split('T')[0]}',
+                        'Fait à Sfax, le ${DateTime.now().toIso8601String().split('T')[0]}',
                         style: pw.TextStyle(font: font, fontSize: 14),
                       ),
                       pw.SizedBox(height: 10),
                       pw.Text(
-                        '[Nom du Directeur/Responsable]',
+                        'Chef Centre',
                         style: pw.TextStyle(
                           font: font,
                           fontSize: 16,
@@ -230,7 +158,7 @@ class PdfGeneratorService {
                         ),
                       ),
                       pw.Text(
-                        '[Titre/Fonction]',
+                        'Chef',
                         style: pw.TextStyle(font: font, fontSize: 14),
                       ),
                     ],

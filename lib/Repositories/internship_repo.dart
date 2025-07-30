@@ -333,5 +333,4 @@ class InternshipRepository {
       throw Exception('An unexpected error occurred: ${e.toString()}');
     }
   }
-
 }

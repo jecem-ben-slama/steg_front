@@ -166,6 +166,7 @@ class SubjectAttestationData extends Equatable {
 }
 
 // Sub-model for Supervisor details
+// Sub-model for Supervisor details
 class SupervisorAttestationData extends Equatable {
   final int? supervisorID; // Can be null if not assigned
   final String? firstName;
@@ -184,10 +185,9 @@ class SupervisorAttestationData extends Equatable {
       supervisorID: json['supervisorID'] != null
           ? int.tryParse(json['supervisorID'].toString())
           : null,
-      firstName:
-          json['encadrantFirstName'] as String?, // Use 'encadrantFirstName'
-      lastName: json['encadrantLastName'] as String?, // Use 'encadrantLastName'
-      email: json['encadrantEmail'] as String?, // Use 'encadrantEmail'
+      firstName: json['firstName'] as String?, // CHANGE THIS: Use 'firstName'
+      lastName: json['lastName'] as String?, // CHANGE THIS: Use 'lastName'
+      email: json['email'] as String?, // CHANGE THIS: Use 'email'
     );
   }
 

@@ -260,7 +260,7 @@ class _CertificatesState extends State<Certificates> {
                 ), // Changed icon color
                 const SizedBox(width: 12), // Increased spacing
                 Text(
-                  'Generate $label PDF',
+                  'Generate PDF',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black87, // Darker text color
@@ -389,7 +389,7 @@ class _CertificatesState extends State<Certificates> {
                 // Combined Attestation Button
                 _buildGenerateAndQrButton(
                   context,
-                  label: 'Attestation',
+                  label: 'Certificate',
                   icon: Icons.description,
                   color: Colors.red.shade700,
                   onGeneratePressed: () {
@@ -411,7 +411,7 @@ class _CertificatesState extends State<Certificates> {
                 if (internship.estRemunere!)
                   _buildGenerateAndQrButton(
                     context,
-                    label: 'Fiche de Paie',
+                    label: 'Payslip',
                     icon: Icons.receipt_long,
                     color: Colors.blue.shade700,
                     onGeneratePressed: () async {

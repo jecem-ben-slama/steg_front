@@ -52,10 +52,6 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Assigned Internships & Notes'),
-        backgroundColor: Colors.blue.shade700,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

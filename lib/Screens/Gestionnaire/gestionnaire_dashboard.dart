@@ -28,8 +28,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
   String _searchQuery = '';
   String? _selectedStatusFilter;
   String? _selectedTypeFilter;
-  // Set to keep track of expanded internship IDs
-  Set<int> _expandedInternshipIds = {};
+  // Removed _expandedInternshipIds as we are now using a popup
 
   final List<String> _statusOptions = [
     'All',
@@ -56,15 +55,83 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
     }
   }
 
-  // Method to toggle the expansion state of an internship row
-  void _toggleExpanded(int internshipId) {
-    setState(() {
-      if (_expandedInternshipIds.contains(internshipId)) {
-        _expandedInternshipIds.remove(internshipId);
-      } else {
-        _expandedInternshipIds.add(internshipId);
-      }
-    });
+  // Method to show internship details in a popup
+  void _showInternshipDetailsPopup(
+    BuildContext context,
+    Internship internship,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Internship Details'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDetailRow('Student Name:', internship.studentName),
+                _buildDetailRow('CIN', internship.studentEmail),
+                _buildDetailRow('Subject Title:', internship.subjectTitle),
+                _buildDetailRow(
+                  'Professional Supervisor:',
+                  internship.encadrantProName,
+                ),
+                _buildDetailRow(
+                  'Academic Supervisor:',
+                  "${internship.encadrantPedaName}",
+                ),
+                _buildDetailRow('Type:', internship.typeStage),
+                _buildDetailRow('Start Date:', internship.dateDebut),
+                _buildDetailRow('End Date:', internship.dateFin),
+                _buildDetailRow(
+                  'Status:',
+                  internship.statut,
+                  color: _getStatusColor(internship.statut),
+                ),
+                _buildDetailRow(
+                  'Remunerated:',
+                  internship.estRemunere == true ? 'Yes' : 'No',
+                ),
+                if (internship.estRemunere == true &&
+                    internship.montantRemuneration != null)
+                  _buildDetailRow(
+                    'Amount:',
+                    internship.montantRemuneration?.toStringAsFixed(2),
+                  ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Helper method to build consistent detail rows
+  Widget _buildDetailRow(String label, String? value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value ?? 'N/A',
+              style: TextStyle(color: color),
+              softWrap: true,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   //* Popup for delete confirmation
@@ -346,7 +413,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                           color: Colors.blueAccent,
                         ),
                         StatCard(
-                          title: 'Total Encadrants',
+                          title: 'Total supervisors',
                           value: kpi.encadrantsCount.toString(),
                           icon: Icons.people,
                           color: Colors.green,
@@ -504,7 +571,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                             }
                           }
 
-                          // Build rows dynamically to include expandable details
+                          // Build rows dynamically
                           List<DataRow> allRows = [];
                           for (var internship in internshipsToDisplay) {
                             // Main DataRow
@@ -514,30 +581,23 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                   internship.internshipID,
                                 ), // Key for efficient updates
                                 cells: [
-                                  // Expand/Collapse Button
+                                  // Details Button (now opens a popup)
                                   DataCell(
                                     IconButton(
-                                      icon: Icon(
-                                        _expandedInternshipIds.contains(
-                                              internship.internshipID!,
-                                            )
-                                            ? Icons.keyboard_arrow_up
-                                            : Icons.keyboard_arrow_down,
-                                      ),
-                                      onPressed: () => _toggleExpanded(
-                                        internship.internshipID!,
-                                      ),
+                                      icon: const Icon(
+                                        Icons.info_outline,
+                                      ), // Changed icon to info
+                                      onPressed: () =>
+                                          _showInternshipDetailsPopup(
+                                            context,
+                                            internship,
+                                          ), // Call popup method
                                     ),
                                   ),
                                   DataCell(
                                     Text(internship.studentName ?? 'N/A'),
                                   ),
-                                  DataCell(
-                                    Text(
-                                      internship.subjectTitle ??
-                                          'Not Yet Chosen',
-                                    ),
-                                  ),
+
                                   DataCell(
                                     Text(internship.encadrantProName ?? 'N/A'),
                                   ),
@@ -603,104 +663,64 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                                 ],
                               ),
                             );
-
-                            // Expanded details row
-                            if (_expandedInternshipIds.contains(
-                              internship.internshipID!,
-                            )) {
-                              allRows.add(
-                                DataRow(
-                                  // Add a distinct color for the expanded row
-                                  color:
-                                      MaterialStateProperty.resolveWith<Color?>(
-                                        (Set<MaterialState> states) {
-                                          if (states.contains(
-                                            MaterialState.selected,
-                                          )) {
-                                            return Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withOpacity(0.08);
-                                          }
-                                          return Colors.blue.withOpacity(
-                                            0.05,
-                                          ); // Light blue background
-                                        },
-                                      ),
-                                  cells: [
-                                    DataCell(
-                                      // This DataCell spans all columns
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical:
-                                              12.0, // Increased vertical padding
-                                          horizontal:
-                                              20.0, // Increased horizontal padding
-                                        ),
-                                        width:
-                                            double.infinity, // Take full width
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Academic Supervisor: ${internship.encadrantAcademiqueID ?? 'N/A'}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ), // Adjusted font size
-                                              softWrap:
-                                                  true, // Ensure text wraps
-                                            ),
-                                            const SizedBox(
-                                              height: 8,
-                                            ), // Increased spacing
-                                            Text(
-                                              'Remunerated: ${internship.estRemunere == true ? 'Yes' : 'No'}',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ), // Adjusted font size
-                                            ),
-                                            if (internship.estRemunere ==
-                                                    true &&
-                                                internship
-                                                        .montantRemuneration !=
-                                                    null)
-                                              Text(
-                                                'Amount: ${internship.montantRemuneration?.toStringAsFixed(2) ?? 'N/A'}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                ), // Adjusted font size
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    // Placeholders for the remaining 8 columns
-                                    for (int i = 0; i < 8; i++)
-                                      const DataCell(SizedBox.shrink()),
-                                  ],
-                                ),
-                              );
-                            }
                           }
 
                           return DataTable(
                             columns: const [
-                              DataColumn(label: Text("")), // For expand button
-                              DataColumn(label: Text("Student Name")),
-                              DataColumn(label: Text("Subject")),
-                              DataColumn(label: Text("Supervisor")),
-                              DataColumn(label: Text("Type")),
-                              DataColumn(label: Text("Start Date")),
-                              DataColumn(label: Text("End Date")),
-                              DataColumn(label: Text("Status")),
-                              DataColumn(label: Text("Actions")),
+                              DataColumn(
+                                label: Text(
+                                  "Details",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ), // Changed label for clarity
+                              DataColumn(
+                                label: Text(
+                                  "Student Name",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+
+                              DataColumn(
+                                label: Text(
+                                  "Supervisor",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  "Type",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  "Start Date",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  "End Date",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  "Status",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  "Actions",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
                             ],
                             rows: allRows, // Use the dynamically built rows
                             dataRowHeight:
                                 kMinInteractiveDimension +
-                                30.0, // Increased row height
+                                10.0, // Adjusted row height
                           );
                         },
                       ),

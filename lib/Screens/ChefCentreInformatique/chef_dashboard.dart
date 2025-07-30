@@ -78,26 +78,36 @@ class ChefDashboardScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          internship.subjectTitle ?? 'No Subject Title',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        const Divider(
+                          height: 20,
+                          thickness: 1,
+                          color: Colors.blueGrey,
                         ),
                         const SizedBox(height: 8),
-                        Text('Student: ${internship.studentName ?? 'N/A'}'),
                         Text(
-                          'Supervisor: ${internship.supervisorName ?? 'N/A'}',
+                          'Student: ${internship.studentName ?? 'N/A'}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        Text('Type: ${internship.typeStage ?? 'N/A'}'),
-                        Text('Status: ${internship.statut ?? 'N/A'}'),
+                        Text(
+                          'Supervisor: ${internship.encadrantProName ?? 'N/A'}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Type: ${internship.typeStage ?? 'N/A'}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Status: ${internship.statut ?? 'N/A'}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         Text(
                           'From: ${internship.dateDebut ?? 'N/A'} To: ${internship.dateFin ?? 'N/A'}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         if (internship.estRemunere == true)
                           Text(
                             'Remuneration: ${internship.montantRemuneration ?? 'N/A'} TND',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         const SizedBox(height: 16),
                         Row(
