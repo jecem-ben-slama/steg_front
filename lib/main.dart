@@ -28,8 +28,7 @@ import 'package:pfa/cubit/internship_cubit.dart';
 import 'package:pfa/cubit/user_cubit.dart';
 import 'package:pfa/cubit/chef_cubit.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
-import 'package:pfa/cubit/stats_cubit.dart';
-import 'package:pfa/cubit/subject_cubit.dart';
+import 'package:pfa/cubit/stats_cubit.dart';// NEW: Import ScannedSubjectCubit
 
 // NEW: Import the LocaleProvider
 import 'package:pfa/Utils/locale_provider.dart';
@@ -71,6 +70,7 @@ class _MyAppState extends State<MyApp> {
   late final StudentRepository studentRepository;
   late final DocumentRepository documentRepository;
 
+
   @override
   void initState() {
     super.initState();
@@ -102,6 +102,7 @@ class _MyAppState extends State<MyApp> {
     statsRepository = StatsRepository(dio: dio);
     studentRepository = StudentRepository(dio: dio);
     documentRepository = DocumentRepository(dio: dio);
+
 
     //_setDevToken(); // Uncomment if you use this for development tokens
 
@@ -212,10 +213,7 @@ class _MyAppState extends State<MyApp> {
                     create: (context) =>
                         EncadrantCubit(context.read<EncadrantRepository>()),
                   ),
-                  BlocProvider<SubjectCubit>(
-                    create: (context) =>
-                        SubjectCubit(context.read<SubjectRepository>()),
-                  ),
+                 
                 ],
                 child: const EncadrantHome(),
               ),
@@ -270,6 +268,7 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<DocumentRepository>(
           create: (context) => DocumentRepository(dio: dio),
         ),
+       
       ],
       child: MultiBlocProvider(
         providers: [
@@ -307,25 +306,12 @@ class _MyAppState extends State<MyApp> {
               RepositoryProvider.of<EncadrantRepository>(context),
             ),
           ),
-          BlocProvider<SubjectCubit>(
-            create: (context) =>
-                SubjectCubit(RepositoryProvider.of<SubjectRepository>(context)),
-          ),
+         
+          
         ],
         child: Consumer<LocaleProvider>(
           builder: (context, localeProvider, child) {
             return MaterialApp.router(
-              locale: localeProvider.locale,
-              localizationsDelegates: const [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const [
-                Locale('en', ''), // English
-                Locale('fr', ''), // French
-              ],
               routerConfig: router,
               debugShowCheckedModeBanner: false,
             );

@@ -1,6 +1,7 @@
 // lib/repositories/subject_repo.dart
 import 'package:dio/dio.dart';
-import '../Model/subject_model.dart'; // Adjust path as needed
+import 'dart:typed_data';
+import '../Model/subject_model.dart';
 
 class SubjectRepository {
   static const String _subjectsPath = 'Gestionnaire/Sujets';
@@ -9,7 +10,7 @@ class SubjectRepository {
 
   SubjectRepository({required Dio dio}) : _dio = dio;
 
-  //* Fetches all subjects
+  // Fetch all subjects
   Future<List<Subject>> fetchSubjects() async {
     try {
       final response = await _dio.get('$_subjectsPath/list_sujet.php');
@@ -19,16 +20,13 @@ class SubjectRepository {
           final List<dynamic> subjectJsonList = response.data['data'] ?? [];
           return subjectJsonList.map((json) => Subject.fromJson(json)).toList();
         } else {
-          // Backend returned 200 OK, but status is not 'success' (e.g., 'error' with a message)
           throw Exception(
-            response.data['message'] ??
-                'Failed to fetch subjects with unknown status.',
+            response.data['message'] ?? 'Failed to fetch subjects.',
           );
         }
       } else {
-        // HTTP status code is not 200 or response.data is null
         throw Exception(
-          'Failed to fetch subjects: ${response.statusMessage ?? 'Unknown server response'}',
+          'Failed to fetch subjects: ${response.statusMessage ?? 'Unknown error'}',
         );
       }
     } on DioException catch (e) {
@@ -43,59 +41,73 @@ class SubjectRepository {
       throw Exception(errorMessage);
     } catch (e) {
       print('General Error fetching subjects: $e');
-      throw Exception('An unexpected error occurred while fetching subjects.');
+      throw Exception('Unexpected error while fetching subjects.');
     }
   }
 
-  //* Adds a new subject
-  Future<Subject> addSubject(Subject subject) async {
+  // REMOVED: uploadPdfFile method is no longer needed as it's merged into addSubject and updateSubject.
+  // The backend's add_sujet.php handles the PDF directly.
+
+  // Add new subject
+  Future<Subject> addSubject(
+    Subject subject, {
+    Uint8List? pdfBytes,
+    String? pdfFilename,
+  }) async {
     try {
+      FormData formData = FormData.fromMap({
+        'titre': subject.subjectName,
+        'description':
+            subject.description ?? '', // Ensure description is not null
+      });
+
+      if (pdfBytes != null && pdfFilename != null) {
+        formData.files.add(
+          MapEntry(
+            'pdfFile', // This key must match the name of your file input in PHP ($_FILES['pdfFile'])
+            MultipartFile.fromBytes(pdfBytes, filename: pdfFilename),
+          ),
+        );
+      }
+
       print('--- Subject Add Request ---');
-      print('Request URL: ${_dio.options.baseUrl}$_subjectsPath/add_sujet.php');
-      print('Request Data: ${subject.toJson()}');
+      print('URL: ${_dio.options.baseUrl}$_subjectsPath/add_sujet.php');
+      print('FormData (fields): ${formData.fields}');
+      print('FormData (files): ${formData.files.map((e) => e.key).toList()}');
       print('---------------------------');
 
       final response = await _dio.post(
         '$_subjectsPath/add_sujet.php',
-        data: subject.toJson(), // Sends subject data as JSON
+        data: formData,
+        // Dio automatically sets Content-Type for FormData
+        // options: Options(headers: {"Content-Type": "multipart/form-data"}), // No longer explicitly needed
       );
 
-      print('--- Subject Add Raw Response ---');
-      print('Status Code: ${response.statusCode}');
-      print('Response Data (raw): ${response.data}'); // THIS IS CRUCIAL
-      print('Response Headers: ${response.headers}'); // Check Content-Type here
+      print('--- Subject Add Response ---');
+      print('Status: ${response.statusCode}');
+      print('Data: ${response.data}');
       print('---------------------------');
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // PHP might send 200 or 201
-        if (response.data != null && response.data['status'] == 'success') {
-          if (response.data['data'] is Map<String, dynamic>) {
-            final parsedSubject = Subject.fromJson(response.data['data']);
-            print('Parsed Subject from response.data[data]: $parsedSubject');
-            return parsedSubject; // Parse the full subject data
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        if (data != null && data['status'] == 'success') {
+          final subjectData = data['data'];
+          if (subjectData != null && subjectData is Map<String, dynamic>) {
+            return Subject.fromJson(subjectData);
           } else {
-            throw Exception(
-              'Failed to add subject: Missing or invalid "data" field in response.',
-            );
+            throw Exception('Invalid or missing "data" in response.');
           }
         } else {
-          throw Exception(
-            'Failed to add subject: ${response.data?['message'] ?? 'Unknown server error'}',
-          );
+          throw Exception(data?['message'] ?? 'Failed to add subject.');
         }
       } else {
-        throw Exception(
-          'Failed to add subject with status code: ${response.statusCode}. Message: ${response.statusMessage}',
-        );
+        throw Exception('Unexpected status code: ${response.statusCode}.');
       }
     } on DioException catch (e) {
-      String errorMessage = 'Failed to add subject due to a network error.';
+      String errorMessage = 'Network error while adding subject.';
       if (e.response != null) {
         errorMessage =
-            'Server responded with status ${e.response?.statusCode}: ${e.response?.data['message'] ?? e.response?.statusMessage}';
-        print(
-          'Dio Error Response Data: ${e.response?.data}',
-        ); // Log server's error response
+            'Server error ${e.response?.statusCode}: ${e.response?.data['message'] ?? e.response?.statusMessage}';
       } else {
         errorMessage = 'Connection error: ${e.message}';
       }
@@ -103,51 +115,88 @@ class SubjectRepository {
       throw Exception(errorMessage);
     } catch (e) {
       print('General Error adding subject: $e');
-      throw Exception('An unexpected error occurred: $e');
+      throw Exception('Unexpected error while adding subject.');
     }
   }
 
-  //* Updates an existing subject
-  Future<Subject> updateSubject(Subject subject) async {
+  // Update existing subject
+  Future<Subject> updateSubject(
+    Subject subject, {
+    Uint8List? pdfBytes,
+    String? pdfFilename,
+  }) async {
     try {
       if (subject.subjectID == null) {
-        throw Exception('Subject ID is required for updating a subject.');
+        throw Exception('Subject ID is required for update.');
       }
+
+      FormData formData = FormData.fromMap({
+        'sujetID': subject.subjectID, // Include subject ID for update
+        'titre': subject.subjectName,
+        'description': subject.description ?? '',
+      });
+
+      if (pdfBytes != null && pdfFilename != null) {
+        // If a new PDF is provided, upload it
+        formData.files.add(
+          MapEntry(
+            'pdfFile', // This key must match the name of your file input in PHP ($_FILES['pdfFile'])
+            MultipartFile.fromBytes(pdfBytes, filename: pdfFilename),
+          ),
+        );
+      } else if (subject.pdfUrl != null && subject.pdfUrl!.isNotEmpty) {
+        // If no new PDF is uploaded, but there was an existing one,
+        // send its URL so the backend knows to keep it.
+        // Your backend update_sujet.php should handle this to preserve the existing PDF.
+        formData.fields.add(MapEntry('pdfUrl', subject.pdfUrl!));
+      } else {
+        // If no new PDF and no existing PDF, you might want to send a flag
+        // or just omit the pdfUrl field, depending on your backend's logic for clearing a PDF.
+        // For example, if 'pdfUrl' can be explicitly set to an empty string to remove it.
+        formData.fields.add(
+          MapEntry('pdfUrl', ''),
+        ); // Explicitly send empty if no PDF
+      }
+
+      print('--- Subject Update Request ---');
+      print('URL: ${_dio.options.baseUrl}$_subjectsPath/edit_sujet.php');
+      print('FormData (fields): ${formData.fields}');
+      print('FormData (files): ${formData.files.map((e) => e.key).toList()}');
+      print('---------------------------');
+
       final response = await _dio.post(
-        // PHP uses POST for edit_sujet.php
         '$_subjectsPath/edit_sujet.php',
-        data: subject.toJson(), // Sends subject data as JSON
+        data: formData,
+        // Dio automatically sets Content-Type for FormData
+        // options: Options(headers: {"Content-Type": "multipart/form-data"}),
       );
 
+      print('--- Subject Update Response ---');
+      print('Status: ${response.statusCode}');
+      print('Data: ${response.data}');
+      print('---------------------------');
+
       if (response.statusCode == 200) {
-        if (response.data != null &&
-            (response.data['status'] == 'success' ||
-                response.data['status'] == 'info')) {
-          if (response.data['data'] is Map<String, dynamic>) {
-            return Subject.fromJson(
-              response.data['data'],
-            ); // Parse the full subject data
+        final data = response.data;
+        if (data != null &&
+            (data['status'] == 'success' || data['status'] == 'info')) {
+          final subjectData = data['data'];
+          if (subjectData != null && subjectData is Map<String, dynamic>) {
+            return Subject.fromJson(subjectData);
           } else {
-            // If backend returns success/info but no data (e.g., for "no changes made")
-            // Reconstruct the subject from the input, assuming it was updated successfully.
-            // This is a common pattern if the backend doesn't echo back the full object.
-            return subject;
+            return subject; // fallback to original subject if no updated data returned
           }
         } else {
-          throw Exception(
-            'Failed to update subject: ${response.data?['message'] ?? 'Unknown server error'}',
-          );
+          throw Exception(data?['message'] ?? 'Failed to update subject.');
         }
       } else {
-        throw Exception(
-          'Failed to update subject with status code: ${response.statusCode}. Message: ${response.statusMessage}',
-        );
+        throw Exception('Unexpected status code: ${response.statusCode}.');
       }
     } on DioException catch (e) {
-      String errorMessage = 'Failed to update subject due to a network error.';
+      String errorMessage = 'Network error while updating subject.';
       if (e.response != null) {
         errorMessage =
-            'Server responded with status ${e.response?.statusCode}: ${e.response?.data['message'] ?? e.response?.statusMessage}';
+            'Server error ${e.response?.statusCode}: ${e.response?.data['message'] ?? e.response?.statusMessage}';
       } else {
         errorMessage = 'Connection error: ${e.message}';
       }
@@ -155,16 +204,18 @@ class SubjectRepository {
       throw Exception(errorMessage);
     } catch (e) {
       print('General Error updating subject: $e');
-      throw Exception('An unexpected error occurred: $e');
+      throw Exception('Unexpected error while updating subject.');
     }
   }
 
-  //* Deletes a subject by ID
+  // Delete subject by ID
   Future<String> deleteSubject(int subjectID) async {
     try {
       final response = await _dio.delete(
-        // PHP uses DELETE for delete_sujet.php
-        '$_subjectsPath/delete_sujet.php?sujetID=$subjectID', // Pass ID as query parameter
+        '$_subjectsPath/delete_sujet.php',
+        queryParameters: {
+          'sujetID': subjectID,
+        }, // Use queryParameters for DELETE with ID
       );
 
       if (response.statusCode == 200) {
@@ -172,19 +223,19 @@ class SubjectRepository {
           return response.data['message'] ?? 'Subject deleted successfully.';
         } else {
           throw Exception(
-            'Failed to delete subject: ${response.data?['message'] ?? 'Unknown server error'}',
+            'Failed to delete subject: ${response.data?['message'] ?? 'Unknown error'}',
           );
         }
       } else {
         throw Exception(
-          'Failed to delete subject with status code: ${response.statusCode}. Message: ${response.statusMessage}',
+          'Failed to delete subject with status ${response.statusCode}.',
         );
       }
     } on DioException catch (e) {
-      String errorMessage = 'Failed to delete subject due to a network error.';
+      String errorMessage = 'Network error while deleting subject.';
       if (e.response != null) {
         errorMessage =
-            'Server responded with status ${e.response?.statusCode}: ${e.response?.data['message'] ?? e.response?.statusMessage}';
+            'Server error ${e.response?.statusCode}: ${e.response?.data['message'] ?? e.response?.statusMessage}';
       } else {
         errorMessage = 'Connection error: ${e.message}';
       }
@@ -192,7 +243,7 @@ class SubjectRepository {
       throw Exception(errorMessage);
     } catch (e) {
       print('General Error deleting subject: $e');
-      throw Exception('An unexpected error occurred: $e');
+      throw Exception('Unexpected error while deleting subject.');
     }
   }
 }

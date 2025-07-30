@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/user_cubit.dart';
 import 'package:pfa/Cubit/student_cubit.dart';
+import 'package:pfa/Screens/Gestionnaire/manage_scanned_subject.dart';
 import 'package:pfa/cubit/subject_cubit.dart'; // Import SubjectCubit
 import 'package:pfa/Screens/Gestionnaire/manage_students.dart';
 import 'package:pfa/Screens/Gestionnaire/manage_supervisor.dart';
