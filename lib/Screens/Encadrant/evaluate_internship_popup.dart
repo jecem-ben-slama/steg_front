@@ -85,7 +85,7 @@ class _EvaluateInternshipPopupState extends State<EvaluateInternshipPopup> {
                     decimal: true,
                   ),
                   decoration: const InputDecoration(
-                    labelText: 'Note (0-10)',
+                    labelText: 'Note (0-20)',
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {

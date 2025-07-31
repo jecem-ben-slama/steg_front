@@ -6,10 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:pfa/Repositories/document_repo.dart';
 import 'package:pfa/Utils/auth_interceptor.dart';
 import 'package:pfa/cubit/document_cubit.dart';
+import 'package:pfa/cubit/subject_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:pfa/Utils/l10n/app_localizations.dart';
 
 //* Repositories
 import 'package:pfa/BLoc/Login/login_bloc.dart';
@@ -28,7 +27,7 @@ import 'package:pfa/cubit/internship_cubit.dart';
 import 'package:pfa/cubit/user_cubit.dart';
 import 'package:pfa/cubit/chef_cubit.dart';
 import 'package:pfa/cubit/encadrant_cubit.dart';
-import 'package:pfa/cubit/stats_cubit.dart';// NEW: Import ScannedSubjectCubit
+import 'package:pfa/cubit/stats_cubit.dart'; // NEW: Import ScannedSubjectCubit
 
 // NEW: Import the LocaleProvider
 import 'package:pfa/Utils/locale_provider.dart';
@@ -70,7 +69,6 @@ class _MyAppState extends State<MyApp> {
   late final StudentRepository studentRepository;
   late final DocumentRepository documentRepository;
 
-
   @override
   void initState() {
     super.initState();
@@ -102,7 +100,6 @@ class _MyAppState extends State<MyApp> {
     statsRepository = StatsRepository(dio: dio);
     studentRepository = StudentRepository(dio: dio);
     documentRepository = DocumentRepository(dio: dio);
-
 
     //_setDevToken(); // Uncomment if you use this for development tokens
 
@@ -213,7 +210,6 @@ class _MyAppState extends State<MyApp> {
                     create: (context) =>
                         EncadrantCubit(context.read<EncadrantRepository>()),
                   ),
-                 
                 ],
                 child: const EncadrantHome(),
               ),
@@ -268,7 +264,6 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<DocumentRepository>(
           create: (context) => DocumentRepository(dio: dio),
         ),
-       
       ],
       child: MultiBlocProvider(
         providers: [
@@ -306,8 +301,10 @@ class _MyAppState extends State<MyApp> {
               RepositoryProvider.of<EncadrantRepository>(context),
             ),
           ),
-         
-          
+          BlocProvider<SubjectCubit>(
+            create: (context) =>
+                SubjectCubit(RepositoryProvider.of<SubjectRepository>(context)),
+          ),
         ],
         child: Consumer<LocaleProvider>(
           builder: (context, localeProvider, child) {

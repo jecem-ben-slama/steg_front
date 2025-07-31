@@ -31,19 +31,17 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   Timer? _messageTimer;
 
   // Lists for dropdown options
-  final List<String> niveauEtudeOptions = ['Anneé 1', 'Anneé 2', 'Anneé 3'];
+  final List<String> niveauEtudeOptions = ['Year 1', 'Year 2', 'Year 3'];
 
-  final List<String> facultesOptions = [
-    "FST",
-    "ISTIC",
-    "ISET",
-    "FSEG",
-    "Ecole Ingernieur",
+  final List<String> facultesOptions = ["FST", "ISTIC", "ISET", "FSEG"];
+
+  final List<String> specialitiesOptions = [
+    "Computer Science",
+    "Electronics",
+    "Networks",
   ];
 
-  final List<String> specialitiesOptions = ["Info", "Electronique", "Reseau"];
-
-  final List<String> cycleOptions = ["Licence", "Master", "ingénierie"];
+  final List<String> cycleOptions = ["Licence", "Master", "Engineering"];
 
   // State variables for selected dropdown values
   String? selectedNiveauEtude;
@@ -371,7 +369,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                     child: TextFormField(
                                       controller: cinController,
                                       decoration: const InputDecoration(
-                                        labelText: 'CIN',
+                                        labelText: 'National ID',
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.credit_card),
                                       ),
@@ -382,7 +380,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                     child: DropdownButtonFormField<String>(
                                       value: selectedNiveauEtude,
                                       decoration: const InputDecoration(
-                                        labelText: 'Niveau d\'étude',
+                                        labelText: 'Level of study',
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.school),
                                       ),
@@ -403,7 +401,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                       },
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return 'Please select a Niveau d\'étude.';
+                                          return 'Please select a Level of study.';
                                         }
                                         return null;
                                       },
@@ -420,7 +418,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                     child: DropdownButtonFormField<String>(
                                       value: selectedFaculte,
                                       decoration: const InputDecoration(
-                                        labelText: 'Faculté',
+                                        labelText: 'Institute',
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.apartment),
                                       ),
@@ -442,7 +440,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                       },
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return 'Please select a Faculté.';
+                                          return 'Please select a Institute.';
                                         }
                                         return null;
                                       },
@@ -488,7 +486,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                               DropdownButtonFormField<String>(
                                 value: selectedSpeciality,
                                 decoration: const InputDecoration(
-                                  labelText: 'Spécialité',
+                                  labelText: 'Field of Study',
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.category),
                                 ),
@@ -509,7 +507,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                 },
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please select a Spécialité.';
+                                    return 'Please select a Field.';
                                   }
                                   return null;
                                 },

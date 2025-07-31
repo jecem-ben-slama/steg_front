@@ -22,19 +22,18 @@ class _EncadrantFinishedInternshipsScreenState
 
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
-      case 'validé':
+      case 'Validated':
         return Colors.green;
-      case 'en attente':
+      case 'In Progress':
         return Colors.orange;
-      case 'refusé':
+      case 'Refused':
         return Colors.red;
-      case 'proposé':
+      case 'Proposed':
         return Colors.blue;
-      case 'en cours':
-        return Colors.purple;
-      case 'terminé':
+     
+      case 'Finiched':
         return Colors.grey.shade700;
-      case 'accepté':
+      case 'Accepted':
         return Colors.lightGreen;
       default:
         return Colors.grey;

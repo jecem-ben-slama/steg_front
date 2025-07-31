@@ -32,26 +32,32 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
 
   final List<String> _statusOptions = [
     'All',
-    'Validé',
-    'En attente',
-    'Refusé',
-    'Proposé',
+    'Validated',
+    'In Progress',
+    'Finished',
+    'Refused',
+    'Proposed',
   ];
 
   final List<String> _typeOptions = ['All', 'PFA', 'PFE', 'Stage Ouvrier'];
 
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
-      case 'validé':
-        return Colors.green;
-      case 'en cours':
-        return const Color.fromARGB(255, 19, 82, 145);
-      case 'refusé':
-        return Colors.red;
-      case 'proposé':
-        return Colors.blue;
+      case 'in progress':
+        return Colors.blue.shade700;
+      case 'proposed':
+        return Colors.orange.shade700;
+      case 'refused':
+        return Colors.red.shade700;
+      case 'finished':
+        return Colors.grey.shade700;
+      // Add other cases if your backend can send them
+      case 'validated':
+        return Colors.green.shade700;
+      case 'accepted':
+        return Colors.green.shade700;
       default:
-        return Colors.grey;
+        return Colors.grey.shade500;
     }
   }
 
@@ -71,7 +77,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildDetailRow('Student Name:', internship.studentName),
-                _buildDetailRow('CIN', internship.studentEmail),
+                _buildDetailRow('Email', internship.studentEmail),
                 _buildDetailRow('Subject Title:', internship.subjectTitle),
                 _buildDetailRow(
                   'Professional Supervisor:',
@@ -79,7 +85,7 @@ class _GestionnaireDashboardState extends State<GestionnaireDashboard> {
                 ),
                 _buildDetailRow(
                   'Academic Supervisor:',
-                  "${internship.encadrantPedaName}",
+                  internship.encadrantPedaName ?? 'Not Assigned ',
                 ),
                 _buildDetailRow('Type:', internship.typeStage),
                 _buildDetailRow('Start Date:', internship.dateDebut),
