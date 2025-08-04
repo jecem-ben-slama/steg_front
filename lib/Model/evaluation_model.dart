@@ -8,6 +8,13 @@ class Evaluation extends Equatable {
   final double? note;
   final String? commentaires;
 
+  // --- START OF MODIFICATION ---
+  // Add the new fields as nullable strings
+  final String? displine;
+  final String? interest;
+  final String? presence;
+  // --- END OF MODIFICATION ---
+
   const Evaluation({
     required this.evaluationID,
     required this.stageID,
@@ -15,6 +22,13 @@ class Evaluation extends Equatable {
     required this.dateEvaluation,
     this.note,
     this.commentaires,
+
+    // --- START OF MODIFICATION ---
+    // Add the new fields to the constructor
+    this.displine,
+    this.interest,
+    this.presence,
+    // --- END OF MODIFICATION ---
   });
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
@@ -27,6 +41,13 @@ class Evaluation extends Equatable {
           ? double.tryParse(json['note'].toString())
           : null,
       commentaires: json['commentaires'] as String?,
+
+      // --- START OF MODIFICATION ---
+      // Parse the new fields from the JSON map
+      displine: json['displine'] as String?,
+      interest: json['interest'] as String?,
+      presence: json['presence'] as String?,
+      // --- END OF MODIFICATION ---
     );
   }
 
@@ -38,5 +59,12 @@ class Evaluation extends Equatable {
     dateEvaluation,
     note,
     commentaires,
+
+    // --- START OF MODIFICATION ---
+    // Add the new fields to the props list
+    displine,
+    interest,
+    presence,
+    // --- END OF MODIFICATION ---
   ];
 }

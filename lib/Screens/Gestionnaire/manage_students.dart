@@ -36,6 +36,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
   final List<String> facultesOptions = ["FST", "ISTIC", "ISET", "FSEG"];
 
   final List<String> specialitiesOptions = [
+    "Info",
     "Computer Science",
     "Electronics",
     "Networks",
@@ -329,12 +330,7 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.person_outline),
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Last Name cannot be empty.';
-                                        }
-                                        return null;
-                                      },
+                                      validator: Validators.validateName,
                                     ),
                                   ),
                                 ],
@@ -373,6 +369,17 @@ class _ManageStudentsPopupState extends State<ManageStudentsPopup> {
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.credit_card),
                                       ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'National ID is required.';
+                                        }
+                                        // Check if the CIN is exactly 8 digits long
+                                        if (value.length != 8 ||
+                                            int.tryParse(value) == null) {
+                                          return 'National ID must be exactly 8 digits.';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
                                   const SizedBox(width: 10),

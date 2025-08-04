@@ -144,20 +144,6 @@ class LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
-                          //* Forgot Password
-                          TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Forgot Password?'),
-                                ),
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.blueAccent,
-                            ),
-                            child: const Text('Forgot Password?'),
-                          ),
                         ],
                       ),
                     ),

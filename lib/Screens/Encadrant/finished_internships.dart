@@ -1,3 +1,4 @@
+// lib/Screens/Encadrant/encadrant_finished_internships_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Screens/Encadrant/evaluate_internship_popup.dart';
@@ -22,18 +23,17 @@ class _EncadrantFinishedInternshipsScreenState
 
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
-      case 'Validated':
+      case 'validated':
         return Colors.green;
-      case 'In Progress':
+      case 'in progress':
         return Colors.orange;
-      case 'Refused':
+      case 'refused':
         return Colors.red;
-      case 'Proposed':
+      case 'proposed':
         return Colors.blue;
-     
-      case 'Finiched':
+      case 'finiched':
         return Colors.grey.shade700;
-      case 'Accepted':
+      case 'accepted':
         return Colors.lightGreen;
       default:
         return Colors.grey;
@@ -42,7 +42,7 @@ class _EncadrantFinishedInternshipsScreenState
 
   void _showUnvalidateConfirmationDialog(
     BuildContext context,
-    int internshipId, // This is internshipID from the model
+    int internshipId,
   ) {
     showDialog(
       context: context,
@@ -68,11 +68,14 @@ class _EncadrantFinishedInternshipsScreenState
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 context.read<EncadrantCubit>().evaluateInternship(
-                  stageID:
-                      internshipId, // Pass internshipId (which is stageID in cubit method)
+                  stageID: internshipId,
                   actionType: 'unvalidate',
-                  note: null,
+                  // Pass null for all evaluation-related fields to clear them
                   commentaires: null,
+                  note: null, // Add note here
+                  displine: null,
+                  interest: null,
+                  presence: null,
                 );
               },
             ),
@@ -90,8 +93,8 @@ class _EncadrantFinishedInternshipsScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: const Text(
+            const Center(
+              child: Text(
                 'Internships Awaiting Your Final Evaluation',
                 style: TextStyle(
                   fontSize: 24,
@@ -138,6 +141,9 @@ class _EncadrantFinishedInternshipsScreenState
                       itemCount: state.finishedInternships.length,
                       itemBuilder: (context, index) {
                         final internship = state.finishedInternships[index];
+                        final evaluation = internship.encadrantEvaluation;
+                        final isLoadingForThisInternship =
+                            (state is EvaluationActionLoading);
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 16.0),
@@ -159,14 +165,14 @@ class _EncadrantFinishedInternshipsScreenState
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Subject: ${internship.subjectTitle ?? 'N/A'}', // Use null-aware operator
+                                  'Subject: ${internship.subjectTitle ?? 'N/A'}',
                                   style: const TextStyle(fontSize: 16),
                                 ),
                                 const SizedBox(height: 4),
                                 Text('Type: ${internship.typeStage}'),
                                 Text(
                                   'End Date: ${internship.dateFin.toString().split(' ')[0]}',
-                                ), // Format date
+                                ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Current Status: ${internship.statut}',
@@ -177,11 +183,11 @@ class _EncadrantFinishedInternshipsScreenState
                                 ),
                                 if (internship.estRemunere)
                                   Text(
-                                    'Remuneration: ${internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} TND', // Use null-aware operator
+                                    'Remuneration: ${internship.montantRemuneration?.toStringAsFixed(2) ?? '0.00'} TND',
                                   ),
                                 const SizedBox(height: 10),
                                 // Display Encadrant's evaluation if it exists
-                                if (internship.encadrantEvaluation != null)
+                                if (evaluation != null)
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -193,14 +199,28 @@ class _EncadrantFinishedInternshipsScreenState
                                           fontSize: 15,
                                         ),
                                       ),
+                                      // Correctly display the new fields with null-aware checks
                                       Text(
-                                        'Note: ${internship.encadrantEvaluation!.note?.toStringAsFixed(1) ?? 'N/A'}',
+                                        'Discipline: ${evaluation.displine ?? 'N/A'}',
                                       ),
                                       Text(
-                                        'Comments: ${internship.encadrantEvaluation!.commentaires?.isNotEmpty == true ? internship.encadrantEvaluation!.commentaires : 'No comments'}',
+                                        'Interest: ${evaluation.interest ?? 'N/A'}',
                                       ),
-
-                                      // Corrected to show actual validation status
+                                      Text(
+                                        'Presence: ${evaluation.presence ?? 'N/A'}',
+                                      ),
+                                      // --- START OF MODIFICATION ---
+                                      // Conditionally display the 'note' field as missed days
+                                      if (evaluation.presence?.toLowerCase() ==
+                                              'poor' &&
+                                          evaluation.note != null)
+                                        Text(
+                                          'Missed Days: ${evaluation.note?.toInt()}',
+                                        ),
+                                      // --- END OF MODIFICATION ---
+                                      Text(
+                                        'Comments: ${evaluation.commentaires?.isNotEmpty == true ? evaluation.commentaires : 'No comments'}',
+                                      ),
                                       const SizedBox(height: 10),
                                     ],
                                   )
@@ -217,89 +237,76 @@ class _EncadrantFinishedInternshipsScreenState
                                     ),
                                   ),
                                 // Action Buttons
-                                BlocBuilder<EncadrantCubit, EncadrantState>(
-                                  buildWhen: (previous, current) =>
-                                      (current is EvaluationActionLoading &&
-                                          current.targetStageId ==
-                                              internship.internshipID) ||
-                                      (previous is EvaluationActionLoading &&
-                                          previous.targetStageId ==
-                                              internship.internshipID &&
-                                          !(current
-                                              is EvaluationActionLoading)),
-                                  builder: (context, state) {
-                                    final bool isLoadingForThisInternship =
-                                        (state is EvaluationActionLoading &&
-                                        state.targetStageId ==
-                                            internship.internshipID);
-
-                                    return Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        if (isLoadingForThisInternship)
-                                          const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
-                                        if (!isLoadingForThisInternship) ...[
-                                          ElevatedButton.icon(
-                                            onPressed: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (dialogContext) {
-                                                  return BlocProvider.value(
-                                                    value: context
-                                                        .read<EncadrantCubit>(),
-                                                    child: EvaluateInternshipPopup(
-                                                      internshipId: internship
-                                                          .internshipID, // Use internshipID
-                                                      currentNote: internship
-                                                          .encadrantEvaluation
-                                                          ?.note,
-                                                      currentComments: internship
-                                                          .encadrantEvaluation
-                                                          ?.commentaires,
-                                                    ),
-                                                  );
-                                                },
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    if (isLoadingForThisInternship)
+                                      const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    if (!isLoadingForThisInternship) ...[
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (dialogContext) {
+                                              return BlocProvider.value(
+                                                value: context
+                                                    .read<EncadrantCubit>(),
+                                                child: EvaluateInternshipPopup(
+                                                  internshipId:
+                                                      internship.internshipID,
+                                                  // Pass the existing values to the popup for editing
+                                                  currentComments:
+                                                      evaluation?.commentaires,
+                                                  currentDispline:
+                                                      evaluation?.displine,
+                                                  currentInterest:
+                                                      evaluation?.interest,
+                                                  currentPresence:
+                                                      evaluation?.presence,
+                                                  // --- START OF MODIFICATION ---
+                                                  // Pass the current note value to the popup
+                                                  currentNote: evaluation?.note,
+                                                  // --- END OF MODIFICATION ---
+                                                ),
                                               );
                                             },
-                                            icon: const Icon(Icons.check),
-                                            label: Text(
-                                              internship.encadrantEvaluation !=
-                                                      null
-                                                  ? 'Edit Evaluation'
-                                                  : 'Evaluate',
-                                            ),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
-                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.check),
+                                        label: Text(
+                                          evaluation != null
+                                              ? 'Edit Evaluation'
+                                              : 'Evaluate',
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      OutlinedButton.icon(
+                                        onPressed: () {
+                                          _showUnvalidateConfirmationDialog(
+                                            context,
+                                            internship.internshipID,
+                                          );
+                                        },
+                                        icon: const Icon(Icons.close),
+                                        label: const Text('Refuse'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                          side: const BorderSide(
+                                            color: Colors.red,
                                           ),
-                                          const SizedBox(width: 10),
-                                          OutlinedButton.icon(
-                                            onPressed: () {
-                                              _showUnvalidateConfirmationDialog(
-                                                context,
-                                                internship
-                                                    .internshipID, // Use internshipID
-                                              );
-                                            },
-                                            icon: const Icon(Icons.close),
-                                            label: const Text('Refuse'),
-                                            style: OutlinedButton.styleFrom(
-                                              foregroundColor: Colors.red,
-                                              side: const BorderSide(
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    );
-                                  },
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
                             ),

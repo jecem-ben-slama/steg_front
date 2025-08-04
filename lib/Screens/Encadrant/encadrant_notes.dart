@@ -104,8 +104,8 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                     child: Center(
                       child: CircularProgressIndicator(
                         color: MyColors.darkBlue,
-                      ),
-                    ), // Use consistent color
+                      ), // Use consistent color
+                    ),
                   );
                 } else if (state is EncadrantLoaded) {
                   if (state.internships.isEmpty) {
@@ -141,12 +141,10 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                         final bool isCurrentlyExpanded =
                             _expandedInternshipId == internship.stageID;
 
-                        // Extract only the date part from the date strings for display
-
-                        // Determine if notes can be added based on status
+                        // Corrected condition to add notes
                         final bool canAddNotes =
-                            internship.statut?.toLowerCase() == 'validated' ||
-                            internship.statut?.toLowerCase() == 'refused';
+                            internship.statut?.toLowerCase() == 'in progress' ||
+                            internship.statut?.toLowerCase() == 'proposed';
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 16.0),
@@ -264,7 +262,7 @@ class _EncadrantNotesPageState extends State<EncadrantNotesPage> {
                                   ),
                                   tooltip: canAddNotes
                                       ? 'Add Note'
-                                      : 'Notes can only be added for Validated or Refused internships',
+                                      : 'Notes can only be added for In Progress internships',
                                   onPressed: canAddNotes
                                       ? () {
                                           showDialog(

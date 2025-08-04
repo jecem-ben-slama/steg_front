@@ -87,47 +87,40 @@ class _DeptCardState extends State<DeptCard> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+    return ElevatedButton(
+      onPressed: () {
         _showManagementDialog(context);
       },
-      child: Container(
-        // ... (your existing DeptCard UI)
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).cardColor, // Card background color
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15), // Rounded corners
         ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _getIconForTitle(
-                widget.title,
-              ), // Assuming you have this helper or you can add it
-              size: 40,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(height: 10),
-            Text(
+        elevation: 4, // Increased elevation for better depth
+        shadowColor: Colors.grey.withOpacity(0.3), // Shadow color
+        padding: const EdgeInsets.all(16), // Inner padding
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _getIconForTitle(
               widget.title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-              textAlign: TextAlign.center,
+            ), // Assuming you have this helper or you can add it
+            size: 40,
+            color: Theme.of(context).primaryColor,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            widget.title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

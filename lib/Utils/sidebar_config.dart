@@ -32,7 +32,7 @@ final List<SidebarItemData> gestionnaireSidebarItems = [
   ),
   const SidebarItemData(
     icon: Icons.bar_chart_rounded,
-    label: "Accounting and Finance",
+    label: "Statistics",
     index: 2,
     roles: ['Gestionnaire'],
   ),

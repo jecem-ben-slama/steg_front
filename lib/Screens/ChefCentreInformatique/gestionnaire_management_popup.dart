@@ -35,6 +35,18 @@ class _GestionnaireFormScreenState extends State<GestionnaireFormScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant GestionnaireFormScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.user != oldWidget.user) {
+      _usernameController.text = widget.user?.username ?? '';
+      _emailController.text = widget.user?.email ?? '';
+      _lastnameController.text = widget.user?.lastname ?? '';
+      _passwordController.clear();
+      _selectedRole = widget.user?.role ?? 'Gestionnaire';
+    }
+  }
+
+  @override
   void dispose() {
     _usernameController.dispose();
     _emailController.dispose();
@@ -71,8 +83,6 @@ class _GestionnaireFormScreenState extends State<GestionnaireFormScreen> {
         );
         context.read<UserCubit>().updateUser(updatedUser);
       }
-      // Removed Navigator.of(context).pop();
-      // The parent screen's BlocListener will handle hiding the form.
     }
   }
 
@@ -84,9 +94,7 @@ class _GestionnaireFormScreenState extends State<GestionnaireFormScreen> {
         // Also, no need to pop here, parent listener handles hiding the form.
       },
       builder: (context, state) {
-        // You can add a loading indicator on the form itself if needed
-        // For example, if (state is UserLoading) return CircularProgressIndicator();
-
+        final bool isLoading = state is UserLoading;
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -104,6 +112,10 @@ class _GestionnaireFormScreenState extends State<GestionnaireFormScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a username';
                     }
+                    // Validate that the value only contains letters (and spaces)
+                    if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value)) {
+                      return 'Username can only contain letters and spaces.';
+                    }
                     return null;
                   },
                 ),
@@ -117,6 +129,10 @@ class _GestionnaireFormScreenState extends State<GestionnaireFormScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a last name';
+                    }
+                    // Validate that the value only contains letters (and spaces)
+                    if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value)) {
+                      return 'Last name can only contain letters and spaces.';
                     }
                     return null;
                   },
@@ -193,9 +209,7 @@ class _GestionnaireFormScreenState extends State<GestionnaireFormScreen> {
                 ),
                 const SizedBox(height: 24.0),
                 ElevatedButton(
-                  onPressed: (state is UserLoading)
-                      ? null
-                      : _submitForm, // Disable button while loading
+                  onPressed: (state is UserLoading) ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12.0),
                     shape: RoundedRectangleBorder(

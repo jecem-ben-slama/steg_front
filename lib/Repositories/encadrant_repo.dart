@@ -11,7 +11,7 @@ class EncadrantRepository {
   // Constructor: Takes a Dio instance (typically from AuthService)
   EncadrantRepository({required Dio dio}) : _dio = dio;
 
-   //* Fetch All Assigned Internships for Encadrant
+  //* Fetch All Assigned Internships for Encadrant
   Future<List<AssignedInternship>> getAssignedInternships() async {
     try {
       final response = await _dio.get(
@@ -30,7 +30,8 @@ class EncadrantRepository {
           // If the status is not 'success' but the request itself was 200 OK,
           // it means the server sent a business-logic error message.
           throw Exception(
-              'Failed to fetch internships: ${internshipResponse.message}');
+            'Failed to fetch internships: ${internshipResponse.message}',
+          );
         }
       } else {
         // Handle cases where statusCode is not 200 or response.data is null unexpectedly
@@ -43,10 +44,14 @@ class EncadrantRepository {
       if (e.response != null) {
         // Attempt to parse the server's error message from the response data
         final responseData = e.response?.data;
-        if (responseData != null && responseData is Map<String, dynamic> && responseData.containsKey('message')) {
-          errorMessage = 'Server error: ${e.response?.statusCode} - ${responseData['message']}';
+        if (responseData != null &&
+            responseData is Map<String, dynamic> &&
+            responseData.containsKey('message')) {
+          errorMessage =
+              'Server error: ${e.response?.statusCode} - ${responseData['message']}';
         } else {
-          errorMessage = 'Server error: ${e.response?.statusCode} - ${e.response?.statusMessage ?? 'No message'}';
+          errorMessage =
+              'Server error: ${e.response?.statusCode} - ${e.response?.statusMessage ?? 'No message'}';
         }
       } else {
         errorMessage = 'Network error: ${e.message}';
@@ -57,7 +62,6 @@ class EncadrantRepository {
       print('General Error fetching internships: $e');
       rethrow; // Re-throw any other unexpected errors
     }
-  
   }
 
   //* Fetch Internship Notes (NEW METHOD)
@@ -198,34 +202,36 @@ class EncadrantRepository {
     }
   }
 
-  //** Evaluate Internship
+  //** Evaluate Internship (UPDATED)
   Future<Map<String, dynamic>> evaluateInternship({
     required int stageID,
     required String actionType,
-    double? note,
     String? commentaires,
+    String? displine,
+    String? interest,
+    String? presence,
+    double? note,
   }) async {
     try {
       final Map<String, dynamic> data = {
         'stageID': stageID,
         'actionType': actionType,
+        'commentaires': commentaires ?? '',
+        'displine': displine,
+        'interest': interest,
+        'presence': presence,
+        'note': note, // FIX: Always include the 'note' key, even if it's null.
       };
 
-      if (note != null) {
-        data['note'] = note;
-      }
-      // Send empty string for comments if null, as per PHP backend
-      data['commentaires'] = commentaires ?? '';
-
       final response = await _dio.post(
-        '$_encadrantPath/evaluate_internship.php', // Renamed from validate_internship.php
+        '$_encadrantPath/evaluate_internship.php',
         data: data,
       );
 
       if (response.statusCode == 200 &&
           response.data != null &&
           response.data['status'] == 'success') {
-        return response.data; // This will contain evaluationID, status, message
+        return response.data;
       } else {
         throw Exception(
           'Failed to evaluate internship: ${response.data?['message'] ?? response.statusMessage}',

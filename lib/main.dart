@@ -101,7 +101,6 @@ class _MyAppState extends State<MyApp> {
     studentRepository = StudentRepository(dio: dio);
     documentRepository = DocumentRepository(dio: dio);
 
-    //_setDevToken(); // Uncomment if you use this for development tokens
 
     //* Router
     router = GoRouter(
@@ -221,19 +220,6 @@ class _MyAppState extends State<MyApp> {
         ),
       ],
     );
-  }
-
-  void _setDevToken() async {
-    if (kDebugMode) {
-      final prefs = await SharedPreferences.getInstance();
-      const String devToken =
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTI3Mzc5OTAsImV4cCI6MTc1MzM0Mjc5MCwiZGF0YSI6eyJ1c2VySUQiOjEsInVzZXJuYW1lIjoiZ2VzdGlvbm5haXJlIiwicm9sZSI6Ikdlc3Rpb25uYWlyZSJ9fQ.k9s5rMp5-dRAUWwNbOdV-P0YfV3AjOuG_AwJBrP9Ldk'; // Replace with YOUR token
-
-      await prefs.setString('jwt_token', devToken);
-      debugPrint('Development token set in SharedPreferences.');
-
-      await loginRepository.setToken(devToken);
-    }
   }
 
   @override

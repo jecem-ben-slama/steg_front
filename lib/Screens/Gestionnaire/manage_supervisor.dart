@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pfa/Cubit/user_cubit.dart'; // Make sure this path is correct
 import 'package:pfa/Model/user_model.dart'; // Make sure this path is correct
-import 'dart:math'; // For generating random password
+import 'dart:math';
+
+import 'package:pfa/Utils/Consts/validator.dart'; // For generating random password
 
 // Enum to define message types for styling
 enum MessageType { success, info, error, none }
@@ -331,12 +333,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.person),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'First Name cannot be empty.';
-                                  }
-                                  return null;
-                                },
+                                validator: Validators.validateName,
                               ),
                               const SizedBox(height: 10),
                               TextFormField(
@@ -346,12 +343,7 @@ class _ManageUsersState extends State<ManageUsers> {
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.person_outline),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Last Name cannot be empty.';
-                                  }
-                                  return null;
-                                },
+                               validator: Validators.validateName,
                               ),
                               const SizedBox(height: 10),
                               TextFormField(

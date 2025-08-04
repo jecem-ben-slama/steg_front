@@ -4,14 +4,21 @@ import 'package:pfa/cubit/encadrant_cubit.dart';
 
 class EvaluateInternshipPopup extends StatefulWidget {
   final int internshipId;
-  final double? currentNote;
   final String? currentComments;
+
+  final String? currentDispline;
+  final String? currentInterest;
+  final String? currentPresence;
+  final double? currentNote; // Now represents the number of missed days
 
   const EvaluateInternshipPopup({
     super.key,
     required this.internshipId,
-    this.currentNote,
     this.currentComments,
+    this.currentDispline,
+    this.currentInterest,
+    this.currentPresence,
+    this.currentNote,
   });
 
   @override
@@ -20,57 +27,92 @@ class EvaluateInternshipPopup extends StatefulWidget {
 }
 
 class _EvaluateInternshipPopupState extends State<EvaluateInternshipPopup> {
-  late TextEditingController _noteController;
-  late TextEditingController _commentsController;
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _commentsController;
+  late TextEditingController _noteController;
+
+  String? _selectedDispline;
+  String? _selectedInterest;
+  String? _selectedPresence;
 
   @override
   void initState() {
     super.initState();
-    _noteController = TextEditingController(
-      text: widget.currentNote?.toString() ?? '',
-    );
     _commentsController = TextEditingController(
       text: widget.currentComments ?? '',
     );
+    _noteController = TextEditingController(
+      text: widget.currentNote?.toString() ?? '',
+    );
+    _selectedDispline = widget.currentDispline;
+    _selectedInterest = widget.currentInterest;
+    _selectedPresence = widget.currentPresence;
   }
 
   @override
   void dispose() {
-    _noteController.dispose();
     _commentsController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
   void _saveEvaluation() {
     if (_formKey.currentState?.validate() ?? false) {
-      final double? note = double.tryParse(_noteController.text);
       final String comments = _commentsController.text.trim();
 
+      // Ensure all radio buttons have been selected
+      if (_selectedDispline == null ||
+          _selectedInterest == null ||
+          _selectedPresence == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a rating for all criteria.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      double? missedDays;
+      if (_selectedPresence?.toLowerCase() == 'poor') {
+        missedDays = double.tryParse(_noteController.text.trim());
+        if (missedDays == null || missedDays < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Please enter a valid number of missed days for "Poor" presence.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
+      // --- START OF FIX: Correctly pass all required parameters to the cubit ---
       context.read<EncadrantCubit>().evaluateInternship(
         stageID: widget.internshipId,
-        actionType:
-            'validate', // This action type is for saving/updating evaluation
-        note: note,
+        actionType: 'validate',
         commentaires: comments,
+        displine: _selectedDispline,
+        interest: _selectedInterest,
+        presence: _selectedPresence,
+        note: missedDays, // The `note` parameter is now used for missed days.
       );
-      Navigator.of(
-        context,
-      ).pop(); // Close the dialog immediately after dispatching action
+      // --- END OF FIX ---
+
+      Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final List<String> ratingOptions = ['Excellent', 'Average', 'Poor'];
+
     return BlocListener<EncadrantCubit, EncadrantState>(
-      // Listen for success/error messages related to evaluation action
       listenWhen: (previous, current) =>
           current is EncadrantActionSuccess || current is EncadrantError,
-      listener: (context, state) {
-        // SnackBar messages will be handled by the main screen's BlocConsumer
-        // The dialog closes itself after dispatching the action, so no direct SnackBar here.
-        // This listener is mainly for debugging or if you wanted different feedback here.
-      },
+      listener: (context, state) {},
       child: AlertDialog(
         title: Text('Evaluate Internship ID: ${widget.internshipId}'),
         content: Form(
@@ -78,32 +120,78 @@ class _EvaluateInternshipPopupState extends State<EvaluateInternshipPopup> {
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                TextFormField(
-                  controller: _noteController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Note (0-20)',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      // Note is optional in your PHP, but if entered, it must be valid.
-                      // If you want to make note strictly required for 'validate', uncomment this:
-                      // return 'Please enter a note.';
-                      return null; // Note is optional
-                    }
-                    final double? parsedNote = double.tryParse(value);
-                    if (parsedNote == null ||
-                        parsedNote < 0 ||
-                        parsedNote > 20) {
-                      return 'Note must be a number between 0 and 20.';
-                    }
-                    return null;
-                  },
+                const Text(
+                  'Discipline:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+                ...ratingOptions.map(
+                  (String value) => RadioListTile<String>(
+                    title: Text(value),
+                    value: value,
+                    groupValue: _selectedDispline,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedDispline = newValue;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Interest:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...ratingOptions.map(
+                  (String value) => RadioListTile<String>(
+                    title: Text(value),
+                    value: value,
+                    groupValue: _selectedInterest,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedInterest = newValue;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Presence:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...ratingOptions.map(
+                  (String value) => RadioListTile<String>(
+                    title: Text(value),
+                    value: value,
+                    groupValue: _selectedPresence,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedPresence = newValue;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 15),
+                if (_selectedPresence?.toLowerCase() == 'poor')
+                  TextFormField(
+                    controller: _noteController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Number of Missed Days',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the number of missed days.';
+                      }
+                      if (double.tryParse(value) == null ||
+                          double.tryParse(value)! < 0) {
+                        return 'Please enter a valid number.';
+                      }
+                      return null;
+                    },
+                  ),
                 const SizedBox(height: 15),
                 TextFormField(
                   controller: _commentsController,
@@ -128,7 +216,7 @@ class _EvaluateInternshipPopupState extends State<EvaluateInternshipPopup> {
           ElevatedButton(
             onPressed: _saveEvaluation,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green, // Visual cue for saving
+              backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
             child: const Text('Save Evaluation'),

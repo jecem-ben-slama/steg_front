@@ -178,12 +178,15 @@ class EncadrantCubit extends Cubit<EncadrantState> {
     }
   }
 
-  //* Evaluate or Unvalidate an Internship
+  //** Evaluate or Unvalidate an Internship (UPDATED)
   Future<void> evaluateInternship({
     required int stageID,
     required String actionType,
-    double? note,
     String? commentaires,
+    String? displine,
+    String? interest,
+    String? presence,
+    double? note, // Add the new 'note' parameter here
   }) async {
     try {
       emit(
@@ -193,8 +196,11 @@ class EncadrantCubit extends Cubit<EncadrantState> {
       final result = await _encadrantRepository.evaluateInternship(
         stageID: stageID,
         actionType: actionType,
-        note: note,
         commentaires: commentaires,
+        displine: displine,
+        interest: interest,
+        presence: presence,
+        note: note, // Pass the new 'note' parameter to the repository
       );
 
       // After successful evaluation, re-fetch the finished internships to update the UI
@@ -222,7 +228,6 @@ class EncadrantCubit extends Cubit<EncadrantState> {
       ); // Emit error state
     }
   }
-
   // * Assign Subject to Internship (NEW FUNCTION INTEGRATED HERE)
   Future<void> assignSubjectToInternship(int stageID, int sujetID) async {
     try {

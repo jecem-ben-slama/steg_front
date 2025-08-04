@@ -11,7 +11,7 @@ class GestionnaireManagementScreen extends StatefulWidget {
   State<GestionnaireManagementScreen> createState() =>
       _GestionnaireManagementScreenState();
 }
-
+  
 class _GestionnaireManagementScreenState
     extends State<GestionnaireManagementScreen> {
   final List<String> _availableRoles = [
