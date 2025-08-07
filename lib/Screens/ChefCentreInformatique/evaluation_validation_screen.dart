@@ -201,9 +201,7 @@ class _EvaluationValidationScreenState
                                 Text(
                                   'Evaluation Date: ${evaluation.dateEvaluation}',
                                 ),
-                                Text(
-                                  'Note: ${evaluation.note?.toStringAsFixed(1) ?? 'N/A'} / 10',
-                                ),
+
                                 Text(
                                   'Comments: ${evaluation.commentaires?.isNotEmpty == true ? evaluation.commentaires : 'No comments provided'}',
                                 ),

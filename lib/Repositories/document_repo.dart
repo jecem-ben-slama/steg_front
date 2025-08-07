@@ -16,7 +16,7 @@ class DocumentRepository {
     required String
     filename, // 'filename' is not directly used in PHP, but useful for naming the file locally before sending.
   }) async {
-    const String apiUrl = 'http://localhost/Backend/Gestionnaire/save_pdf.php';
+    const String apiUrl = 'Gestionnaire/save_pdf.php';
 
     try {
       // Encode the PDF bytes to a Base64 string
@@ -97,8 +97,7 @@ class DocumentRepository {
   }) async {
     // This endpoint should return the URL of the saved PDF for a given stageID and pdfType
     // You might need to create a new PHP script for this, e.g., 'get_document_url.php'
-    const String apiUrl =
-        'http://localhost/Backend/Gestionnaire/get_document_url.php';
+    const String apiUrl = 'Gestionnaire/get_document_url.php';
 
     try {
       final response = await _dio.get(

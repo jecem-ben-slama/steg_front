@@ -76,7 +76,8 @@ class _MyAppState extends State<MyApp> {
     dio =
         Dio(
             BaseOptions(
-              baseUrl: 'http://localhost/backend/',
+              baseUrl: 'http://internshipmanagement.atwebpages.com/Backend/',
+              //*baseUrl: 'http://localhost/backend/',
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
               headers: {
@@ -100,7 +101,6 @@ class _MyAppState extends State<MyApp> {
     statsRepository = StatsRepository(dio: dio);
     studentRepository = StudentRepository(dio: dio);
     documentRepository = DocumentRepository(dio: dio);
-
 
     //* Router
     router = GoRouter(
